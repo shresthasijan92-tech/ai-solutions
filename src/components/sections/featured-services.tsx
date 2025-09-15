@@ -1,11 +1,18 @@
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
-import { services } from '@/lib/mock-data';
+import { services as mockServices } from '@/lib/mock-data';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import * as Lucide from 'lucide-react';
+import { getServices } from '@/lib/services';
 
-export function FeaturedServices() {
-  const featuredServices = services.filter((service) => service.featured);
+export async function FeaturedServices() {
+  const allServices = await getServices();
+  const featuredServices = allServices.filter((service) => service.featured);
+
+  // If there are no featured services in the database, fall back to mock data.
+  // This is useful for initial setup before data is seeded.
+  const servicesToDisplay = featuredServices.length > 0 ? featuredServices : mockServices.filter(s => s.featured);
 
   return (
     <section className="py-12 md:py-20">
@@ -19,21 +26,24 @@ export function FeaturedServices() {
           </Button>
         </div>
         <div className="grid gap-6 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-          {featuredServices.map((service) => (
-            <Card key={service.id} className="group flex flex-col transition-all duration-300 hover:border-primary hover:shadow-lg">
-              <CardHeader>
-                <div className="mb-4 flex justify-center">
-                  <div className="rounded-lg bg-primary/10 p-4 text-primary transition-colors duration-300 group-hover:bg-primary group-hover:text-primary-foreground">
-                    <service.icon className="h-8 w-8" />
+          {servicesToDisplay.map((service) => {
+            const Icon = (Lucide as any)[service.icon as any] as Lucide.LucideIcon;
+            return (
+              <Card key={service.id} className="group flex flex-col transition-all duration-300 hover:border-primary hover:shadow-lg">
+                <CardHeader>
+                  <div className="mb-4 flex justify-center">
+                    <div className="rounded-lg bg-primary/10 p-4 text-primary transition-colors duration-300 group-hover:bg-primary group-hover:text-primary-foreground">
+                      {Icon && <Icon className="h-8 w-8" />}
+                    </div>
                   </div>
-                </div>
-                <CardTitle className="text-center font-headline text-xl">{service.title}</CardTitle>
-                <CardDescription className="text-center text-balance pt-2">
-                  {service.description}
-                </CardDescription>
-              </CardHeader>
-            </Card>
-          ))}
+                  <CardTitle className="text-center font-headline text-xl">{service.title}</CardTitle>
+                  <CardDescription className="text-center text-balance pt-2">
+                    {service.description}
+                  </CardDescription>
+                </CardHeader>
+              </Card>
+            );
+          })}
         </div>
       </div>
     </section>

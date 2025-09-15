@@ -10,7 +10,7 @@ export type Service = {
   id: string;
   title: string;
   description: string;
-  icon: LucideIcon;
+  icon: string; // Changed from LucideIcon to string
   benefits: string[];
   price: string;
   featured: boolean;
