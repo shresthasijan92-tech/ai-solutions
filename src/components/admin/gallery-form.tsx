@@ -45,18 +45,26 @@ export function GalleryForm({ image, onSuccess }: GalleryFormProps) {
   const form = useForm<GalleryFormValues>({
     resolver: zodResolver(GalleryFormSchema),
     defaultValues: {
-      title: image?.title || '',
-      imageUrl: image?.imageUrl || '',
-      featured: image?.featured || false,
+      title: '',
+      imageUrl: '',
+      featured: false,
     },
   });
   
   useEffect(() => {
-    form.reset({
-      title: image?.title || '',
-      imageUrl: image?.imageUrl || '',
-      featured: image?.featured || false,
-    });
+    if (image) {
+      form.reset({
+        title: image.title || '',
+        imageUrl: image.imageUrl || '',
+        featured: image.featured || false,
+      });
+    } else {
+      form.reset({
+        title: '',
+        imageUrl: '',
+        featured: false,
+      });
+    }
   }, [image, form]);
 
   const handleFileChange = (
