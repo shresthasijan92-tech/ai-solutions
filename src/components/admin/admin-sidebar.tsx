@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Briefcase, FileText, Image as ImageIcon, Calendar, Users, MessageSquare, BriefcaseBusiness, Database } from 'lucide-react';
+import { Home, Briefcase, FileText, Image as ImageIcon, Calendar, Users, MessageSquare, BriefcaseBusiness } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 import { Logo } from '@/components/logo';
@@ -13,10 +13,9 @@ const adminNavItems = [
   { href: '/admin/projects', label: 'Projects', icon: FileText },
   { href: '/admin/articles', label: 'Articles', icon: FileText },
   { href: '/admin/gallery', label: 'Gallery', icon: ImageIcon },
-  { href: '/admin/events', label: 'Events', icon: Calendar },
+  { href: ' /admin/events', label: 'Events', icon: Calendar },
   { href: '/admin/careers', label: 'Careers', icon: BriefcaseBusiness },
   { href: '/admin/feedback', label: 'Feedback', icon: MessageSquare },
-  { href: '/admin/seeding', label: 'Seeding', icon: Database },
 ];
 
 export function AdminSidebar() {
