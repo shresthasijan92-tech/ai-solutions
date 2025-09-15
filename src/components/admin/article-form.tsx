@@ -80,8 +80,10 @@ export function ArticleForm({ article, onSuccess }: ArticleFormProps) {
       Object.entries(data).forEach(([key, value]) => {
         if (key === 'publishedAt' && value instanceof Date) {
             formData.append(key, value.toISOString());
+        } else if (typeof value === 'boolean') {
+            formData.append(key, value.toString());
         } else {
-            formData.append(key, String(value));
+            formData.append(key, value);
         }
       });
 
@@ -97,7 +99,6 @@ export function ArticleForm({ article, onSuccess }: ArticleFormProps) {
           description: result.message,
         });
         onSuccess();
-        form.reset();
       } else {
         toast({
           variant: 'destructive',
