@@ -1,4 +1,5 @@
 import type { LucideIcon } from 'lucide-react';
+import { Timestamp } from 'firebase/firestore';
 
 export type NavItem = {
   title: string;
@@ -31,7 +32,7 @@ export type Article = {
   title: string;
   excerpt: string;
   imageUrl: string;
-  publishedAt: string;
+  publishedAt: string | Timestamp | Date;
   featured: boolean;
 };
 

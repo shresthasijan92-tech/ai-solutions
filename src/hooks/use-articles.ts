@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
+import { collection, onSnapshot, query, orderBy, Timestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { Article } from '@/lib/definitions';
 
@@ -17,10 +17,14 @@ export function useArticles() {
     const unsubscribe = onSnapshot(
       q,
       (querySnapshot) => {
-        const articlesList: Article[] = querySnapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        } as Article));
+        const articlesList: Article[] = querySnapshot.docs.map((doc) => {
+          const data = doc.data();
+          return {
+            id: doc.id,
+            ...data,
+            publishedAt: data.publishedAt, // This can be a Timestamp
+          } as Article
+        });
         setArticles(articlesList);
         setIsLoading(false);
       },

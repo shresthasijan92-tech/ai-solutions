@@ -9,14 +9,16 @@ import {
   addDoc,
   updateDoc,
   deleteDoc,
+  Timestamp,
 } from 'firebase/firestore';
+import { type Article } from '@/lib/definitions';
 
-const ArticleSchema = z.object({
+const ArticleActionSchema = z.object({
   title: z.string().min(1, 'Title is required'),
   excerpt: z.string().min(1, 'Excerpt is required'),
   imageUrl: z.string().min(1, 'Image is required'),
-  publishedAt: z.string().min(1, 'Date is required'),
-  featured: z.preprocess((val) => val === 'true', z.boolean()),
+  publishedAt: z.date(),
+  featured: z.boolean(),
 });
 
 export type ArticleFormState = {
@@ -32,17 +34,9 @@ export type ArticleFormState = {
 };
 
 export async function createArticle(
-  formData: FormData
+  data: unknown
 ): Promise<ArticleFormState> {
-  const rawData = {
-    title: formData.get('title'),
-    excerpt: formData.get('excerpt'),
-    imageUrl: formData.get('imageUrl'),
-    publishedAt: formData.get('publishedAt'),
-    featured: formData.get('featured'),
-  };
-  
-  const validatedFields = ArticleSchema.safeParse(rawData);
+  const validatedFields = ArticleActionSchema.safeParse(data);
 
   if (!validatedFields.success) {
     return {
@@ -54,7 +48,11 @@ export async function createArticle(
 
   try {
     const articlesCollection = collection(db, 'articles');
-    await addDoc(articlesCollection, validatedFields.data);
+    await addDoc(articlesCollection, {
+      ...validatedFields.data,
+      // Convert JS Date to Firestore Timestamp for server-side consistency
+      publishedAt: Timestamp.fromDate(validatedFields.data.publishedAt),
+    });
   } catch (error) {
     console.error(error);
     return {
@@ -71,17 +69,9 @@ export async function createArticle(
 
 export async function updateArticle(
   id: string,
-  formData: FormData
+  data: unknown
 ): Promise<ArticleFormState> {
-  const rawData = {
-    title: formData.get('title'),
-    excerpt: formData.get('excerpt'),
-    imageUrl: formData.get('imageUrl'),
-    publishedAt: formData.get('publishedAt'),
-    featured: formData.get('featured'),
-  };
-  
-  const validatedFields = ArticleSchema.safeParse(rawData);
+  const validatedFields = ArticleActionSchema.safeParse(data);
 
   if (!validatedFields.success) {
     return {
@@ -93,7 +83,10 @@ export async function updateArticle(
 
   try {
     const articleDoc = doc(db, 'articles', id);
-    await updateDoc(articleDoc, validatedFields.data);
+    await updateDoc(articleDoc, {
+        ...validatedFields.data,
+        publishedAt: Timestamp.fromDate(validatedFields.data.publishedAt),
+    });
   } catch (error) {
     console.error(error);
     return {

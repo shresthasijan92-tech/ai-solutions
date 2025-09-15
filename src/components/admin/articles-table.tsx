@@ -31,11 +31,19 @@ import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { deleteArticle } from '@/lib/actions/articles';
 import Image from 'next/image';
+import { Timestamp } from 'firebase/firestore';
 
 type ArticlesTableProps = {
   articles: Article[];
   onEdit: (article: Article) => void;
 };
+
+const toDate = (timestamp: string | Timestamp | Date): Date => {
+  if (timestamp instanceof Timestamp) {
+    return timestamp.toDate();
+  }
+  return new Date(timestamp);
+}
 
 export function ArticlesTable({ articles, onEdit }: ArticlesTableProps) {
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -99,7 +107,7 @@ export function ArticlesTable({ articles, onEdit }: ArticlesTableProps) {
                         </TableCell>
                         <TableCell className="font-medium">{article.title}</TableCell>
                         <TableCell>
-                            {new Date(article.publishedAt).toLocaleDateString('en-US', {
+                            {toDate(article.publishedAt).toLocaleDateString('en-US', {
                                 year: 'numeric',
                                 month: 'long',
                                 day: 'numeric',

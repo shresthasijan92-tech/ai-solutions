@@ -4,6 +4,14 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { CalendarIcon } from 'lucide-react';
 import { articles as mockArticles } from '@/lib/mock-data';
+import { Timestamp } from 'firebase/firestore';
+
+const toDate = (timestamp: string | Timestamp | Date): Date => {
+  if (timestamp instanceof Timestamp) {
+    return timestamp.toDate();
+  }
+  return new Date(timestamp);
+}
 
 export default async function BlogPage() {
   const articlesFromDb = await getArticles();
@@ -40,7 +48,7 @@ export default async function BlogPage() {
                   <p className="text-muted-foreground flex-grow">{article.excerpt}</p>
                   <div className="mt-4 flex items-center text-sm text-muted-foreground">
                     <CalendarIcon className="h-4 w-4 mr-2" />
-                    <span>{new Date(article.publishedAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
+                    <span>{toDate(article.publishedAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
                   </div>
                 </CardContent>
               </Card>

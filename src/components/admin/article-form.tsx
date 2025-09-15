@@ -6,6 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Loader2, Calendar as CalendarIcon } from 'lucide-react';
 import { format } from 'date-fns';
+import { Timestamp } from 'firebase/firestore';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -37,7 +38,7 @@ import { cn } from '@/lib/utils';
 const ArticleFormSchema = z.object({
   title: z.string().min(1, 'Title is required'),
   excerpt: z.string().min(1, 'Excerpt is required'),
-  imageUrl: z.string().optional(),
+  imageUrl: z.string().min(1, 'An image is required'),
   publishedAt: z.date({
     required_error: "A date of publication is required.",
   }),
@@ -51,6 +52,14 @@ type ArticleFormProps = {
   onSuccess: () => void;
 };
 
+// Helper to convert Firestore Timestamp to Date
+const toDate = (timestamp: string | Timestamp | Date): Date => {
+  if (timestamp instanceof Timestamp) {
+    return timestamp.toDate();
+  }
+  return new Date(timestamp);
+}
+
 export function ArticleForm({ article, onSuccess }: ArticleFormProps) {
   const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
@@ -60,8 +69,8 @@ export function ArticleForm({ article, onSuccess }: ArticleFormProps) {
     defaultValues: {
       title: article?.title || '',
       excerpt: article?.excerpt || '',
-      imageUrl: '', // Always start with empty imageUrl field
-      publishedAt: article?.publishedAt ? new Date(article.publishedAt) : new Date(),
+      imageUrl: article?.imageUrl || '',
+      publishedAt: article?.publishedAt ? toDate(article.publishedAt) : new Date(),
       featured: article?.featured || false,
     },
   });
@@ -79,36 +88,22 @@ export function ArticleForm({ article, onSuccess }: ArticleFormProps) {
 
   const onSubmit = (data: ArticleFormValues) => {
     startTransition(async () => {
-      const formData = new FormData();
+      // If a new image data URI is present in the form data, use it.
+      // Otherwise, if we are editing, fall back to the original article's imageUrl.
+      const imageData = data.imageUrl.startsWith('data:') 
+        ? data.imageUrl 
+        : (article?.imageUrl || '');
       
-      // Handle all fields except imageUrl first
-      Object.entries(data).forEach(([key, value]) => {
-        if (key === 'imageUrl') return; // Skip imageUrl for now
-        if (value === undefined || value === null) return;
-        
-        if (key === 'publishedAt' && value instanceof Date) {
-            formData.append(key, value.toISOString());
-        } else if (typeof value === 'boolean') {
-            formData.append(key, value.toString());
-        } else {
-            formData.append(key, value as string);
-        }
-      });
-      
-      // Now, intelligently handle imageUrl
-      if (data.imageUrl) {
-        // A new image was uploaded
-        formData.append('imageUrl', data.imageUrl);
-      } else if (article?.imageUrl) {
-        // We are editing and no new image was provided, so use the old one
-        formData.append('imageUrl', article.imageUrl);
-      }
+      const payload = {
+        ...data,
+        imageUrl: imageData,
+      };
 
       const action = article
         ? updateArticle.bind(null, article.id)
         : createArticle;
         
-      const result = await action(formData);
+      const result = await action(payload);
 
       if (result.success) {
         toast({
@@ -201,9 +196,6 @@ export function ArticleForm({ article, onSuccess }: ArticleFormProps) {
                     mode="single"
                     selected={field.value}
                     onSelect={field.onChange}
-                    disabled={(date) =>
-                      date > new Date() || date < new Date("1900-01-01")
-                    }
                     initialFocus
                   />
                 </PopoverContent>
@@ -219,11 +211,14 @@ export function ArticleForm({ article, onSuccess }: ArticleFormProps) {
             <FormItem>
               <FormLabel>Image</FormLabel>
               <FormControl>
-                <Input type="file" accept="image/*" onChange={(e) => handleFileChange(e, onChange)} {...rest} />
+                <Input type="file" accept="image/*" onChange={(e) => handleFileChange(e, onChange)} />
               </FormControl>
               <FormDescription>
                 Upload an image from your device. If editing, leave this blank to keep the existing image.
               </FormDescription>
+              {value && !value.startsWith('data:') && (
+                <div className="mt-2 text-sm text-muted-foreground">Current image is set. Upload a new one to replace it.</div>
+              )}
               <FormMessage />
             </FormItem>
           )}
