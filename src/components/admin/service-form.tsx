@@ -1,6 +1,6 @@
 'use client';
 
-import { useActionState, useEffect, useRef } from 'react';
+import { useActionState, useEffect, useRef, useTransition } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -42,6 +42,7 @@ export function ServiceForm({ service, onSuccess }: ServiceFormProps) {
   const initialState: ServiceFormState = { message: '', errors: {} };
   const formAction = service ? updateService.bind(null, service.id) : createService;
   const [state, dispatch] = useActionState(formAction, initialState);
+  const [isPending, startTransition] = useTransition();
 
   const form = useForm<z.infer<typeof ServiceFormSchema>>({
     resolver: zodResolver(ServiceFormSchema),
@@ -73,16 +74,15 @@ export function ServiceForm({ service, onSuccess }: ServiceFormProps) {
     }
   }, [state, toast, onSuccess, form]);
   
-  // Custom submit handler to integrate react-hook-form with server action
   const handleSubmit = (data: z.infer<typeof ServiceFormSchema>) => {
     const formData = new FormData();
     Object.entries(data).forEach(([key, value]) => {
       formData.append(key, String(value));
     });
-    dispatch(formData);
+    startTransition(() => {
+      dispatch(formData);
+    });
   };
-  
-  const { isSubmitting } = form.formState;
 
   return (
     <Form {...form}>
@@ -160,8 +160,8 @@ export function ServiceForm({ service, onSuccess }: ServiceFormProps) {
           )}
         />
         
-        <Button type="submit" disabled={isSubmitting} className="w-full sm:w-auto">
-          {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+        <Button type="submit" disabled={isPending} className="w-full sm:w-auto">
+          {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           {service ? 'Update Service' : 'Create Service'}
         </Button>
       </form>
