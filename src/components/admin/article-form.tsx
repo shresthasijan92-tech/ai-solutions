@@ -1,6 +1,6 @@
 'use client';
 
-import { useTransition } from 'react';
+import { useEffect, useTransition } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -29,10 +29,7 @@ import {
 import { Calendar } from '@/components/ui/calendar';
 import { useToast } from '@/hooks/use-toast';
 import { type Article } from '@/lib/definitions';
-import {
-  createArticle,
-  updateArticle,
-} from '@/lib/actions/articles';
+import { createArticle, updateArticle } from '@/lib/actions/articles';
 import { cn } from '@/lib/utils';
 
 const ArticleFormSchema = z.object({
@@ -40,7 +37,7 @@ const ArticleFormSchema = z.object({
   excerpt: z.string().min(1, 'Excerpt is required'),
   imageUrl: z.string().min(1, 'An image is required'),
   publishedAt: z.date({
-    required_error: "A date of publication is required.",
+    required_error: 'A date of publication is required.',
   }),
   featured: z.boolean(),
 });
@@ -58,7 +55,7 @@ const toDate = (timestamp: string | Timestamp | Date): Date => {
     return timestamp.toDate();
   }
   return new Date(timestamp);
-}
+};
 
 export function ArticleForm({ article, onSuccess }: ArticleFormProps) {
   const { toast } = useToast();
@@ -75,7 +72,24 @@ export function ArticleForm({ article, onSuccess }: ArticleFormProps) {
     },
   });
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, fieldChange: (value: string) => void) => {
+  // This useEffect hook is the critical fix. It will reset the form's state
+  // whenever the 'article' prop changes, ensuring the form is always
+  // populated with the correct data for editing.
+  useEffect(() => {
+    form.reset({
+      title: article?.title || '',
+      excerpt: article?.excerpt || '',
+      imageUrl: article?.imageUrl || '',
+      publishedAt: article?.publishedAt ? toDate(article.publishedAt) : new Date(),
+      featured: article?.featured || false,
+    });
+  }, [article, form]);
+
+
+  const handleFileChange = (
+    e: React.ChangeEvent<HTMLInputElement>,
+    fieldChange: (value: string) => void
+  ) => {
     const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
@@ -90,10 +104,10 @@ export function ArticleForm({ article, onSuccess }: ArticleFormProps) {
     startTransition(async () => {
       // If a new image data URI is present in the form data, use it.
       // Otherwise, if we are editing, fall back to the original article's imageUrl.
-      const imageData = data.imageUrl.startsWith('data:') 
-        ? data.imageUrl 
-        : (article?.imageUrl || '');
-      
+      const imageData = data.imageUrl.startsWith('data:')
+        ? data.imageUrl
+        : article?.imageUrl || '';
+
       const payload = {
         ...data,
         imageUrl: imageData,
@@ -102,7 +116,7 @@ export function ArticleForm({ article, onSuccess }: ArticleFormProps) {
       const action = article
         ? updateArticle.bind(null, article.id)
         : createArticle;
-        
+
       const result = await action(payload);
 
       if (result.success) {
@@ -117,15 +131,15 @@ export function ArticleForm({ article, onSuccess }: ArticleFormProps) {
           title: 'Error',
           description: result.message,
         });
-         if (result.errors) {
-            Object.entries(result.errors).forEach(([key, value]) => {
-                if (value) {
-                    form.setError(key as keyof ArticleFormValues, {
-                        type: 'manual',
-                        message: value.join(', '),
-                    });
-                }
-            });
+        if (result.errors) {
+          Object.entries(result.errors).forEach(([key, value]) => {
+            if (value) {
+              form.setError(key as keyof ArticleFormValues, {
+                type: 'manual',
+                message: value.join(', '),
+              });
+            }
+          });
         }
       }
     });
@@ -133,10 +147,7 @@ export function ArticleForm({ article, onSuccess }: ArticleFormProps) {
 
   return (
     <Form {...form}>
-      <form
-        onSubmit={form.handleSubmit(onSubmit)}
-        className="space-y-6"
-      >
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         <FormField
           control={form.control}
           name="title"
@@ -166,7 +177,7 @@ export function ArticleForm({ article, onSuccess }: ArticleFormProps) {
             </FormItem>
           )}
         />
-         <FormField
+        <FormField
           control={form.control}
           name="publishedAt"
           render={({ field }) => (
@@ -176,14 +187,14 @@ export function ArticleForm({ article, onSuccess }: ArticleFormProps) {
                 <PopoverTrigger asChild>
                   <FormControl>
                     <Button
-                      variant={"outline"}
+                      variant={'outline'}
                       className={cn(
-                        "w-[240px] pl-3 text-left font-normal",
-                        !field.value && "text-muted-foreground"
+                        'w-[240px] pl-3 text-left font-normal',
+                        !field.value && 'text-muted-foreground'
                       )}
                     >
                       {field.value ? (
-                        format(field.value, "PPP")
+                        format(field.value, 'PPP')
                       ) : (
                         <span>Pick a date</span>
                       )}
@@ -211,13 +222,20 @@ export function ArticleForm({ article, onSuccess }: ArticleFormProps) {
             <FormItem>
               <FormLabel>Image</FormLabel>
               <FormControl>
-                <Input type="file" accept="image/*" onChange={(e) => handleFileChange(e, onChange)} />
+                <Input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => handleFileChange(e, onChange)}
+                />
               </FormControl>
               <FormDescription>
-                Upload an image from your device. If editing, leave this blank to keep the existing image.
+                Upload an image from your device. If editing, leave this blank
+                to keep the existing image.
               </FormDescription>
               {value && !value.startsWith('data:') && (
-                <div className="mt-2 text-sm text-muted-foreground">Current image is set. Upload a new one to replace it.</div>
+                <div className="mt-2 text-sm text-muted-foreground">
+                  Current image is set. Upload a new one to replace it.
+                </div>
               )}
               <FormMessage />
             </FormItem>
