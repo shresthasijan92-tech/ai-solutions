@@ -49,7 +49,7 @@ type ArticleFormProps = {
   onSuccess: () => void;
 };
 
-// Helper to convert Firestore Timestamp to Date
+// Helper to convert Firestore Timestamp or string to Date
 const toDate = (timestamp: string | Timestamp | Date): Date => {
   if (timestamp instanceof Timestamp) {
     return timestamp.toDate();
@@ -64,17 +64,14 @@ export function ArticleForm({ article, onSuccess }: ArticleFormProps) {
   const form = useForm<ArticleFormValues>({
     resolver: zodResolver(ArticleFormSchema),
     defaultValues: {
-      title: article?.title || '',
-      excerpt: article?.excerpt || '',
-      imageUrl: article?.imageUrl || '',
-      publishedAt: article?.publishedAt ? toDate(article.publishedAt) : new Date(),
-      featured: article?.featured || false,
+      title: '',
+      excerpt: '',
+      imageUrl: '',
+      publishedAt: new Date(),
+      featured: false,
     },
   });
-
-  // This useEffect hook is the critical fix. It will reset the form's state
-  // whenever the 'article' prop changes, ensuring the form is always
-  // populated with the correct data for editing.
+  
   useEffect(() => {
     form.reset({
       title: article?.title || '',
@@ -194,7 +191,7 @@ export function ArticleForm({ article, onSuccess }: ArticleFormProps) {
                       )}
                     >
                       {field.value ? (
-                        format(field.value, 'PPP')
+                        format(toDate(field.value), 'PPP')
                       ) : (
                         <span>Pick a date</span>
                       )}
