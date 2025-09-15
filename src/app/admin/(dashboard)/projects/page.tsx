@@ -15,11 +15,14 @@ import { ProjectsTable } from '@/components/admin/projects-table';
 import { useProjects } from '@/hooks/use-projects';
 import { type Project } from '@/lib/definitions';
 import { Skeleton } from '@/components/ui/skeleton';
+import { projects as mockProjects } from '@/lib/mock-data';
 
 export default function AdminProjectsPage() {
-  const { projects, isLoading, error } = useProjects();
+  const { projects: projectsFromDb, isLoading, error } = useProjects();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
+
+  const projects = isLoading || projectsFromDb.length > 0 ? projectsFromDb : mockProjects;
 
   const handleAddClick = () => {
     setEditingProject(null);

@@ -15,11 +15,14 @@ import { ServicesTable } from '@/components/admin/services-table';
 import { useServices } from '@/hooks/use-services';
 import { type Service } from '@/lib/definitions';
 import { Skeleton } from '@/components/ui/skeleton';
+import { services as mockServices } from '@/lib/mock-data';
 
 export default function AdminServicesPage() {
-  const { services, isLoading, error } = useServices();
+  const { services: servicesFromDb, isLoading, error } = useServices();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingService, setEditingService] = useState<Service | null>(null);
+
+  const services = isLoading || servicesFromDb.length > 0 ? servicesFromDb : mockServices;
 
   const handleAddClick = () => {
     setEditingService(null);

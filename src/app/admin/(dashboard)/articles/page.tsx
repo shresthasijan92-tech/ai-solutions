@@ -15,11 +15,14 @@ import { ArticlesTable } from '@/components/admin/articles-table';
 import { useArticles } from '@/hooks/use-articles';
 import { type Article } from '@/lib/definitions';
 import { Skeleton } from '@/components/ui/skeleton';
+import { articles as mockArticles } from '@/lib/mock-data';
 
 export default function AdminArticlesPage() {
-  const { articles, isLoading, error } = useArticles();
+  const { articles: articlesFromDb, isLoading, error } = useArticles();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingArticle, setEditingArticle] = useState<Article | null>(null);
+
+  const articles = isLoading || articlesFromDb.length > 0 ? articlesFromDb : mockArticles;
 
   const handleAddClick = () => {
     setEditingArticle(null);
