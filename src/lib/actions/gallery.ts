@@ -74,6 +74,7 @@ export async function updateGalleryImage(
     const galleryDoc = doc(db, 'gallery', id);
     await updateDoc(galleryDoc, validatedFields.data);
   } catch (error) {
+    console.error(error);
     return {
       message: 'Database Error: Failed to Update Gallery Image.',
       success: false,
