@@ -1,6 +1,6 @@
 'use client';
 
-import { useTransition, useEffect } from 'react';
+import { useTransition } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -37,7 +37,7 @@ import { cn } from '@/lib/utils';
 const ArticleFormSchema = z.object({
   title: z.string().min(1, 'Title is required'),
   excerpt: z.string().min(1, 'Excerpt is required'),
-  imageUrl: z.string().url('A valid image URL is required'),
+  imageUrl: z.string().min(1, 'An image is required'),
   publishedAt: z.date({
     required_error: "A date of publication is required.",
   }),
@@ -66,10 +66,21 @@ export function ArticleForm({ article, onSuccess }: ArticleFormProps) {
     },
   });
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, fieldChange: (value: string) => void) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        fieldChange(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const onSubmit = (data: ArticleFormValues) => {
     startTransition(async () => {
       const formData = new FormData();
-      Object.entries(data).forEach(([key, value]) => {
+       Object.entries(data).forEach(([key, value]) => {
         if (key === 'publishedAt' && value instanceof Date) {
             formData.append(key, value.toISOString());
         } else if (typeof value === 'boolean') {
@@ -192,12 +203,12 @@ export function ArticleForm({ article, onSuccess }: ArticleFormProps) {
           name="imageUrl"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Image URL</FormLabel>
+              <FormLabel>Image</FormLabel>
               <FormControl>
-                <Input placeholder="https://example.com/image.jpg" {...field} />
+                <Input type="file" accept="image/*" onChange={(e) => handleFileChange(e, field.onChange)} />
               </FormControl>
               <FormDescription>
-                Provide a full web link to an image for the article.
+                Upload an image from your device.
               </FormDescription>
               <FormMessage />
             </FormItem>

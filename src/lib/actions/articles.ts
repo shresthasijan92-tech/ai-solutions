@@ -14,7 +14,7 @@ import {
 const ArticleSchema = z.object({
   title: z.string().min(1, 'Title is required'),
   excerpt: z.string().min(1, 'Excerpt is required'),
-  imageUrl: z.string().url('Image URL must be a valid URL'),
+  imageUrl: z.string().min(1, 'Image is required'),
   publishedAt: z.string().min(1, 'Date is required'),
   featured: z.preprocess((val) => val === 'true', z.boolean()),
 });
@@ -54,6 +54,7 @@ export async function createArticle(
     const articlesCollection = collection(db, 'articles');
     await addDoc(articlesCollection, validatedFields.data);
   } catch (error) {
+    console.error(error);
     return {
       message: 'Database Error: Failed to Create Article.',
       success: false,
@@ -90,6 +91,7 @@ export async function updateArticle(
     const articleDoc = doc(db, 'articles', id);
     await updateDoc(articleDoc, validatedFields.data);
   } catch (error) {
+    console.error(error);
     return {
       message: 'Database Error: Failed to Update Article.',
       success: false,
