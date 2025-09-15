@@ -2,7 +2,6 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { ArrowRight } from 'lucide-react';
 import { projects } from '@/lib/mock-data';
-import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -23,18 +22,16 @@ export function FeaturedProjects() {
         </div>
         <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-3">
           {featuredProjects.map((project) => {
-            const image = PlaceHolderImages.find(p => p.id === project.imageId);
             return (
               <Card key={project.id} className="overflow-hidden group">
                 <CardHeader className="p-0">
                   <div className="relative h-48 w-full overflow-hidden">
-                    {image && (
+                    {project.imageUrl && (
                       <Image
-                        src={image.imageUrl}
+                        src={project.imageUrl}
                         alt={project.title}
                         fill
                         className="object-cover transition-transform duration-300 group-hover:scale-105"
-                        data-ai-hint={image.imageHint}
                       />
                     )}
                   </div>

@@ -14,7 +14,7 @@ export async function getProjects(): Promise<Project[]> {
         id: doc.id,
         title: data.title,
         description: data.description,
-        imageId: data.imageId,
+        imageUrl: data.imageUrl,
         technologies: data.technologies || [],
         featured: data.featured || false,
         link: data.link || '',

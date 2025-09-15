@@ -2,7 +2,6 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { ArrowRight } from 'lucide-react';
 import { galleryImages } from '@/lib/mock-data';
-import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Button } from '@/components/ui/button';
 
 export function FeaturedGallery() {
@@ -21,16 +20,14 @@ export function FeaturedGallery() {
         </div>
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
           {featuredImages.map((galleryImage, index) => {
-            const image = PlaceHolderImages.find(p => p.id === galleryImage.imageId);
             return (
               <div key={galleryImage.id} className="relative aspect-square overflow-hidden rounded-lg group">
-                {image && (
+                {galleryImage.imageUrl && (
                   <Image
-                    src={image.imageUrl}
+                    src={galleryImage.imageUrl}
                     alt={galleryImage.title}
                     fill
                     className="object-cover transition-transform duration-300 group-hover:scale-105"
-                    data-ai-hint={image.imageHint}
                   />
                 )}
                 <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">

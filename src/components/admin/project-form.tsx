@@ -19,25 +19,17 @@ import {
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { type Project } from '@/lib/definitions';
 import {
   createProject,
   updateProject,
 } from '@/lib/actions/projects';
-import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 const ProjectFormSchema = z.object({
   title: z.string().min(1, 'Title is required'),
   description: z.string().min(1, 'Description is required'),
-  imageId: z.string().min(1, 'Image is required'),
+  imageUrl: z.string().url('A valid image URL is required'),
   technologies: z.string().min(1, 'At least one technology is required'),
   link: z.string().url('Must be a valid URL'),
   featured: z.boolean(),
@@ -59,7 +51,7 @@ export function ProjectForm({ project, onSuccess }: ProjectFormProps) {
     defaultValues: {
       title: project?.title || '',
       description: project?.description || '',
-      imageId: project?.imageId || '',
+      imageUrl: project?.imageUrl || '',
       technologies: project?.technologies.join(', ') || '',
       link: project?.link || '',
       featured: project?.featured || false,
@@ -143,26 +135,16 @@ export function ProjectForm({ project, onSuccess }: ProjectFormProps) {
         />
         <FormField
           control={form.control}
-          name="imageId"
+          name="imageUrl"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Image</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a project image" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  {PlaceHolderImages.filter((img) =>
-                    img.id.startsWith('project-')
-                  ).map((image) => (
-                    <SelectItem key={image.id} value={image.id}>
-                      {image.description}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <FormLabel>Image URL</FormLabel>
+              <FormControl>
+                <Input placeholder="https://example.com/image.jpg" {...field} />
+              </FormControl>
+              <FormDescription>
+                Provide a full web link to an image for the project.
+              </FormDescription>
               <FormMessage />
             </FormItem>
           )}

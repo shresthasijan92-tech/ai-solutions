@@ -3,7 +3,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import Image from 'next/image';
 import Link from 'next/link';
-import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Button } from '@/components/ui/button';
 import { ArrowRight } from 'lucide-react';
 import { projects as mockProjects } from '@/lib/mock-data';
@@ -20,18 +19,16 @@ export default async function ProjectsPage() {
       ) : (
         <div className="grid gap-6 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
           {projects.map((project) => {
-            const image = PlaceHolderImages.find(p => p.id === project.imageId);
             return (
               <Card key={project.id} className="overflow-hidden group flex flex-col">
                 <CardHeader className="p-0">
                   <div className="relative h-48 w-full overflow-hidden">
-                    {image && (
+                    {project.imageUrl && (
                       <Image
-                        src={image.imageUrl}
+                        src={project.imageUrl}
                         alt={project.title}
                         fill
                         className="object-cover transition-transform duration-300 group-hover:scale-105"
-                        data-ai-hint={image.imageHint}
                       />
                     )}
                   </div>

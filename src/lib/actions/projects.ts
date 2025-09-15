@@ -14,7 +14,7 @@ import {
 const ProjectSchema = z.object({
   title: z.string().min(1, 'Title is required'),
   description: z.string().min(1, 'Description is required'),
-  imageId: z.string().min(1, 'Image is required'),
+  imageUrl: z.string().url('Image URL must be a valid URL'),
   technologies: z
     .string()
     .min(1, 'At least one technology is required')
@@ -28,7 +28,7 @@ export type ProjectFormState = {
   errors?: {
     title?: string[];
     description?: string[];
-    imageId?: string[];
+    imageUrl?: string[];
     technologies?: string[];
     link?: string[];
     featured?: string[];
@@ -42,7 +42,7 @@ export async function createProject(
   const validatedFields = ProjectSchema.safeParse({
     title: formData.get('title'),
     description: formData.get('description'),
-    imageId: formData.get('imageId'),
+    imageUrl: formData.get('imageUrl'),
     technologies: formData.get('technologies'),
     link: formData.get('link'),
     featured: formData.get('featured'),
@@ -79,7 +79,7 @@ export async function updateProject(
   const validatedFields = ProjectSchema.safeParse({
     title: formData.get('title'),
     description: formData.get('description'),
-    imageId: formData.get('imageId'),
+    imageUrl: formData.get('imageUrl'),
     technologies: formData.get('technologies'),
     link: formData.get('link'),
     featured: formData.get('featured'),

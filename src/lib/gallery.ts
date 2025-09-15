@@ -13,7 +13,7 @@ export async function getGalleryImages(): Promise<GalleryImage[]> {
       return {
         id: doc.id,
         title: data.title,
-        imageId: data.imageId,
+        imageUrl: data.imageUrl,
         featured: data.featured || false,
       } as GalleryImage;
     });

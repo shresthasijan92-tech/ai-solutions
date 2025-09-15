@@ -31,7 +31,6 @@ import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { deleteGalleryImage } from '@/lib/actions/gallery';
 import Image from 'next/image';
-import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 type GalleryTableProps = {
   galleryImages: GalleryImageDef[];
@@ -84,13 +83,12 @@ export function GalleryTable({ galleryImages, onEdit }: GalleryTableProps) {
           </TableHeader>
           <TableBody>
             {galleryImages.map((galleryImage) => {
-                const image = PlaceHolderImages.find(p => p.id === galleryImage.imageId);
                 return (
                     <TableRow key={galleryImage.id}>
                         <TableCell>
-                        {image && (
+                        {galleryImage.imageUrl && (
                             <Image
-                            src={image.imageUrl}
+                            src={galleryImage.imageUrl}
                             alt={galleryImage.title}
                             width={80}
                             height={60}

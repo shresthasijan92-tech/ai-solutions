@@ -2,7 +2,6 @@ import { getArticles } from '@/lib/articles';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import Image from 'next/image';
 import Link from 'next/link';
-import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { CalendarIcon } from 'lucide-react';
 import { articles as mockArticles } from '@/lib/mock-data';
 
@@ -18,18 +17,16 @@ export default async function BlogPage() {
       ) : (
         <div className="grid gap-8 md:grid-cols-1 lg:grid-cols-3">
           {articles.map((article) => {
-             const image = PlaceHolderImages.find(p => p.id === article.imageId);
              return (
               <Card key={article.id} className="overflow-hidden group flex flex-col">
                 <CardHeader className="p-0">
                   <Link href={`/blog/${article.id}`} className="block relative h-48 w-full overflow-hidden">
-                    {image && (
+                    {article.imageUrl && (
                       <Image
-                        src={image.imageUrl}
+                        src={article.imageUrl}
                         alt={article.title}
                         fill
                         className="object-cover transition-transform duration-300 group-hover:scale-105"
-                        data-ai-hint={image.imageHint}
                       />
                     )}
                   </Link>

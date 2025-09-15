@@ -20,7 +20,7 @@ export type Project = {
   id: string;
   title: string;
   description: string;
-  imageId: string;
+  imageUrl: string;
   technologies: string[];
   featured: boolean;
   link: string;
@@ -30,7 +30,7 @@ export type Article = {
   id:string;
   title: string;
   excerpt: string;
-  imageId: string;
+  imageUrl: string;
   publishedAt: string;
   featured: boolean;
 };
@@ -38,7 +38,7 @@ export type Article = {
 export type GalleryImage = {
   id: string;
   title: string;
-  imageId: string;
+  imageUrl: string;
   featured: boolean;
 };
 

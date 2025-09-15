@@ -21,13 +21,6 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import {
   Popover,
   PopoverContent,
   PopoverTrigger,
@@ -39,13 +32,12 @@ import {
   createArticle,
   updateArticle,
 } from '@/lib/actions/articles';
-import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { cn } from '@/lib/utils';
 
 const ArticleFormSchema = z.object({
   title: z.string().min(1, 'Title is required'),
   excerpt: z.string().min(1, 'Excerpt is required'),
-  imageId: z.string().min(1, 'Image is required'),
+  imageUrl: z.string().url('A valid image URL is required'),
   publishedAt: z.date({
     required_error: "A date of publication is required.",
   }),
@@ -68,7 +60,7 @@ export function ArticleForm({ article, onSuccess }: ArticleFormProps) {
     defaultValues: {
       title: article?.title || '',
       excerpt: article?.excerpt || '',
-      imageId: article?.imageId || '',
+      imageUrl: article?.imageUrl || '',
       publishedAt: article?.publishedAt ? new Date(article.publishedAt) : new Date(),
       featured: article?.featured || false,
     },
@@ -197,26 +189,16 @@ export function ArticleForm({ article, onSuccess }: ArticleFormProps) {
         />
         <FormField
           control={form.control}
-          name="imageId"
+          name="imageUrl"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Image</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select an article image" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  {PlaceHolderImages.filter((img) =>
-                    img.id.startsWith('blog-')
-                  ).map((image) => (
-                    <SelectItem key={image.id} value={image.id}>
-                      {image.description}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <FormLabel>Image URL</FormLabel>
+              <FormControl>
+                <Input placeholder="https://example.com/image.jpg" {...field} />
+              </FormControl>
+              <FormDescription>
+                Provide a full web link to an image for the article.
+              </FormDescription>
               <FormMessage />
             </FormItem>
           )}

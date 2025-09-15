@@ -18,24 +18,16 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { type GalleryImage } from '@/lib/definitions';
 import {
   createGalleryImage,
   updateGalleryImage,
 } from '@/lib/actions/gallery';
-import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 const GalleryFormSchema = z.object({
   title: z.string().min(1, 'Title is required'),
-  imageId: z.string().min(1, 'Image is required'),
+  imageUrl: z.string().url('A valid image URL is required'),
   featured: z.boolean(),
 });
 
@@ -54,7 +46,7 @@ export function GalleryForm({ image, onSuccess }: GalleryFormProps) {
     resolver: zodResolver(GalleryFormSchema),
     defaultValues: {
       title: image?.title || '',
-      imageId: image?.imageId || '',
+      imageUrl: image?.imageUrl || '',
       featured: image?.featured || false,
     },
   });
@@ -119,26 +111,16 @@ export function GalleryForm({ image, onSuccess }: GalleryFormProps) {
         />
         <FormField
           control={form.control}
-          name="imageId"
+          name="imageUrl"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Image</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a gallery image" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  {PlaceHolderImages.filter((img) =>
-                    img.id.startsWith('gallery-')
-                  ).map((image) => (
-                    <SelectItem key={image.id} value={image.id}>
-                      {image.description}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <FormLabel>Image URL</FormLabel>
+              <FormControl>
+                <Input placeholder="https://example.com/image.jpg" {...field} />
+              </FormControl>
+              <FormDescription>
+                Provide a full web link to an image for the gallery.
+              </FormDescription>
               <FormMessage />
             </FormItem>
           )}

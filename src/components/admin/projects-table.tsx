@@ -32,7 +32,6 @@ import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { deleteProject } from '@/lib/actions/projects';
 import Image from 'next/image';
-import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 type ProjectsTableProps = {
   projects: Project[];
@@ -86,13 +85,12 @@ export function ProjectsTable({ projects, onEdit }: ProjectsTableProps) {
           </TableHeader>
           <TableBody>
             {projects.map((project) => {
-                const image = PlaceHolderImages.find(p => p.id === project.imageId);
                 return (
                     <TableRow key={project.id}>
                         <TableCell>
-                        {image && (
+                        {project.imageUrl && (
                             <Image
-                            src={image.imageUrl}
+                            src={project.imageUrl}
                             alt={project.title}
                             width={80}
                             height={60}

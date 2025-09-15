@@ -14,7 +14,7 @@ import {
 const ArticleSchema = z.object({
   title: z.string().min(1, 'Title is required'),
   excerpt: z.string().min(1, 'Excerpt is required'),
-  imageId: z.string().min(1, 'Image is required'),
+  imageUrl: z.string().url('Image URL must be a valid URL'),
   publishedAt: z.string().min(1, 'Published date is required'),
   featured: z.preprocess((val) => val === 'true', z.boolean()),
 });
@@ -24,7 +24,7 @@ export type ArticleFormState = {
   errors?: {
     title?: string[];
     excerpt?: string[];
-    imageId?: string[];
+    imageUrl?: string[];
     publishedAt?: string[];
     featured?: string[];
   };
@@ -37,7 +37,7 @@ export async function createArticle(
   const validatedFields = ArticleSchema.safeParse({
     title: formData.get('title'),
     excerpt: formData.get('excerpt'),
-    imageId: formData.get('imageId'),
+    imageUrl: formData.get('imageUrl'),
     publishedAt: formData.get('publishedAt'),
     featured: formData.get('featured'),
   });
@@ -73,7 +73,7 @@ export async function updateArticle(
   const validatedFields = ArticleSchema.safeParse({
     title: formData.get('title'),
     excerpt: formData.get('excerpt'),
-    imageId: formData.get('imageId'),
+    imageUrl: formData.get('imageUrl'),
     publishedAt: formData.get('publishedAt'),
     featured: formData.get('featured'),
   });

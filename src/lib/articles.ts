@@ -14,7 +14,7 @@ export async function getArticles(): Promise<Article[]> {
         id: doc.id,
         title: data.title,
         excerpt: data.excerpt,
-        imageId: data.imageId,
+        imageUrl: data.imageUrl,
         publishedAt: data.publishedAt,
         featured: data.featured || false,
       } as Article;

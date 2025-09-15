@@ -31,7 +31,6 @@ import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { deleteArticle } from '@/lib/actions/articles';
 import Image from 'next/image';
-import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 type ArticlesTableProps = {
   articles: Article[];
@@ -85,13 +84,12 @@ export function ArticlesTable({ articles, onEdit }: ArticlesTableProps) {
           </TableHeader>
           <TableBody>
             {articles.map((article) => {
-                const image = PlaceHolderImages.find(p => p.id === article.imageId);
                 return (
                     <TableRow key={article.id}>
                         <TableCell>
-                        {image && (
+                        {article.imageUrl && (
                             <Image
-                            src={image.imageUrl}
+                            src={article.imageUrl}
                             alt={article.title}
                             width={80}
                             height={60}
@@ -165,4 +163,3 @@ export function ArticlesTable({ articles, onEdit }: ArticlesTableProps) {
     </>
   );
 }
-
