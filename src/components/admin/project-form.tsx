@@ -1,6 +1,6 @@
 'use client';
 
-import { useTransition } from 'react';
+import { useEffect, useTransition } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -29,7 +29,7 @@ import {
 const ProjectFormSchema = z.object({
   title: z.string().min(1, 'Title is required'),
   description: z.string().min(1, 'Description is required'),
-  imageUrl: z.string().url('A valid image URL is required'),
+  imageUrl: z.string().min(1, 'An image is required'),
   technologies: z.string().min(1, 'At least one technology is required'),
   link: z.string().url('Must be a valid URL'),
   featured: z.boolean(),
@@ -49,27 +49,52 @@ export function ProjectForm({ project, onSuccess }: ProjectFormProps) {
   const form = useForm<ProjectFormValues>({
     resolver: zodResolver(ProjectFormSchema),
     defaultValues: {
+      title: '',
+      description: '',
+      imageUrl: '',
+      technologies: '',
+      link: '',
+      featured: false,
+    },
+  });
+  
+  useEffect(() => {
+    form.reset({
       title: project?.title || '',
       description: project?.description || '',
       imageUrl: project?.imageUrl || '',
       technologies: project?.technologies.join(', ') || '',
       link: project?.link || '',
       featured: project?.featured || false,
-    },
-  });
+    });
+  }, [project, form]);
+  
+  const handleFileChange = (
+    e: React.ChangeEvent<HTMLInputElement>,
+    fieldChange: (value: string) => void
+  ) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        fieldChange(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   const onSubmit = (data: ProjectFormValues) => {
     startTransition(async () => {
-      const formData = new FormData();
-       Object.entries(data).forEach(([key, value]) => {
-        formData.append(key, String(value));
-      });
+       const payload = {
+        ...data,
+        technologies: data.technologies.split(',').map(t => t.trim())
+      };
 
       const action = project
         ? updateProject.bind(null, project.id)
         : createProject;
         
-      const result = await action(formData);
+      const result = await action(payload);
 
       if (result.success) {
         toast({
@@ -149,6 +174,19 @@ export function ProjectForm({ project, onSuccess }: ProjectFormProps) {
             </FormItem>
           )}
         />
+        <FormItem>
+          <FormLabel>Or Upload Image</FormLabel>
+          <FormControl>
+            <Input
+              type="file"
+              accept="image/*"
+              onChange={(e) => handleFileChange(e, (value) => form.setValue('imageUrl', value))}
+            />
+          </FormControl>
+          <FormDescription>
+            Upload an image from your device. This will override the Image URL field.
+          </FormDescription>
+        </FormItem>
         <FormField
           control={form.control}
           name="technologies"

@@ -14,13 +14,12 @@ import {
 const ProjectSchema = z.object({
   title: z.string().min(1, 'Title is required'),
   description: z.string().min(1, 'Description is required'),
-  imageUrl: z.string().url('Image URL must be a valid URL'),
+  imageUrl: z.string().min(1, 'Image is required'),
   technologies: z
-    .string()
-    .min(1, 'At least one technology is required')
-    .transform((str) => str.split(',').map((tech) => tech.trim())),
+    .array(z.string())
+    .min(1, 'At least one technology is required'),
   link: z.string().url('Must be a valid URL'),
-  featured: z.preprocess((val) => val === 'true', z.boolean()),
+  featured: z.boolean(),
 });
 
 export type ProjectFormState = {
@@ -37,16 +36,9 @@ export type ProjectFormState = {
 };
 
 export async function createProject(
-  formData: FormData
+  data: unknown
 ): Promise<ProjectFormState> {
-  const validatedFields = ProjectSchema.safeParse({
-    title: formData.get('title'),
-    description: formData.get('description'),
-    imageUrl: formData.get('imageUrl'),
-    technologies: formData.get('technologies'),
-    link: formData.get('link'),
-    featured: formData.get('featured'),
-  });
+  const validatedFields = ProjectSchema.safeParse(data);
 
   if (!validatedFields.success) {
     return {
@@ -60,6 +52,7 @@ export async function createProject(
     const projectsCollection = collection(db, 'projects');
     await addDoc(projectsCollection, validatedFields.data);
   } catch (error) {
+    console.error(error);
     return {
       message: 'Database Error: Failed to Create Project.',
       success: false,
@@ -74,16 +67,9 @@ export async function createProject(
 
 export async function updateProject(
   id: string,
-  formData: FormData
+  data: unknown
 ): Promise<ProjectFormState> {
-  const validatedFields = ProjectSchema.safeParse({
-    title: formData.get('title'),
-    description: formData.get('description'),
-    imageUrl: formData.get('imageUrl'),
-    technologies: formData.get('technologies'),
-    link: formData.get('link'),
-    featured: formData.get('featured'),
-  });
+  const validatedFields = ProjectSchema.safeParse(data);
 
   if (!validatedFields.success) {
     return {
@@ -97,6 +83,7 @@ export async function updateProject(
     const projectDoc = doc(db, 'projects', id);
     await updateDoc(projectDoc, validatedFields.data);
   } catch (error) {
+    console.error(error);
     return {
       message: 'Database Error: Failed to Update Project.',
       success: false,

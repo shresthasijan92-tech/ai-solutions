@@ -99,17 +99,7 @@ export function ArticleForm({ article, onSuccess }: ArticleFormProps) {
 
   const onSubmit = (data: ArticleFormValues) => {
     startTransition(async () => {
-      // If a new image data URI is present in the form data, use it.
-      // Otherwise, if we are editing, fall back to the original article's imageUrl.
-      const imageData = data.imageUrl.startsWith('data:')
-        ? data.imageUrl
-        : article?.imageUrl || '';
-
-      const payload = {
-        ...data,
-        imageUrl: imageData,
-      };
-
+      const payload = { ...data };
       const action = article
         ? updateArticle.bind(null, article.id)
         : createArticle;
@@ -215,29 +205,32 @@ export function ArticleForm({ article, onSuccess }: ArticleFormProps) {
         <FormField
           control={form.control}
           name="imageUrl"
-          render={({ field: { onChange, value, ...rest } }) => (
+          render={({ field }) => (
             <FormItem>
-              <FormLabel>Image</FormLabel>
+              <FormLabel>Image URL</FormLabel>
               <FormControl>
-                <Input
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => handleFileChange(e, onChange)}
-                />
+                <Input placeholder="https://example.com/image.jpg" {...field} />
               </FormControl>
               <FormDescription>
-                Upload an image from your device. If editing, leave this blank
-                to keep the existing image.
+                Provide a full web link to an image for the article.
               </FormDescription>
-              {value && !value.startsWith('data:') && (
-                <div className="mt-2 text-sm text-muted-foreground">
-                  Current image is set. Upload a new one to replace it.
-                </div>
-              )}
               <FormMessage />
             </FormItem>
           )}
         />
+        <FormItem>
+          <FormLabel>Or Upload Image</FormLabel>
+          <FormControl>
+            <Input
+              type="file"
+              accept="image/*"
+              onChange={(e) => handleFileChange(e, (value) => form.setValue('imageUrl', value))}
+            />
+          </FormControl>
+          <FormDescription>
+            Upload an image from your device. This will override the Image URL field.
+          </FormDescription>
+        </FormItem>
         <FormField
           control={form.control}
           name="featured"

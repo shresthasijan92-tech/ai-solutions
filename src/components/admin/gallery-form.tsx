@@ -1,6 +1,6 @@
 'use client';
 
-import { useTransition } from 'react';
+import { useEffect, useTransition } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -27,7 +27,7 @@ import {
 
 const GalleryFormSchema = z.object({
   title: z.string().min(1, 'Title is required'),
-  imageUrl: z.string().url('A valid image URL is required'),
+  imageUrl: z.string().min(1, 'An image is required'),
   featured: z.boolean(),
 });
 
@@ -50,19 +50,38 @@ export function GalleryForm({ image, onSuccess }: GalleryFormProps) {
       featured: image?.featured || false,
     },
   });
+  
+  useEffect(() => {
+    form.reset({
+      title: image?.title || '',
+      imageUrl: image?.imageUrl || '',
+      featured: image?.featured || false,
+    });
+  }, [image, form]);
+
+  const handleFileChange = (
+    e: React.ChangeEvent<HTMLInputElement>,
+    fieldChange: (value: string) => void
+  ) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        fieldChange(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   const onSubmit = (data: GalleryFormValues) => {
     startTransition(async () => {
-      const formData = new FormData();
-      Object.entries(data).forEach(([key, value]) => {
-        formData.append(key, String(value));
-      });
+      const payload = { ...data };
 
       const action = image
         ? updateGalleryImage.bind(null, image.id)
         : createGalleryImage;
         
-      const result = await action(formData);
+      const result = await action(payload);
 
       if (result.success) {
         toast({
@@ -125,6 +144,19 @@ export function GalleryForm({ image, onSuccess }: GalleryFormProps) {
             </FormItem>
           )}
         />
+        <FormItem>
+          <FormLabel>Or Upload Image</FormLabel>
+          <FormControl>
+            <Input
+              type="file"
+              accept="image/*"
+              onChange={(e) => handleFileChange(e, (value) => form.setValue('imageUrl', value))}
+            />
+          </FormControl>
+          <FormDescription>
+            Upload an image from your device. This will override the Image URL field.
+          </FormDescription>
+        </FormItem>
         <FormField
           control={form.control}
           name="featured"

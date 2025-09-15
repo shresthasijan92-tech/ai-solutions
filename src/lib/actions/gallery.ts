@@ -13,8 +13,8 @@ import {
 
 const GalleryImageSchema = z.object({
   title: z.string().min(1, 'Title is required'),
-  imageUrl: z.string().url('Image URL must be a valid URL'),
-  featured: z.preprocess((val) => val === 'true', z.boolean()),
+  imageUrl: z.string().min(1, 'Image is required'),
+  featured: z.boolean(),
 });
 
 export type GalleryImageFormState = {
@@ -28,13 +28,9 @@ export type GalleryImageFormState = {
 };
 
 export async function createGalleryImage(
-  formData: FormData
+  data: unknown
 ): Promise<GalleryImageFormState> {
-  const validatedFields = GalleryImageSchema.safeParse({
-    title: formData.get('title'),
-    imageUrl: formData.get('imageUrl'),
-    featured: formData.get('featured'),
-  });
+  const validatedFields = GalleryImageSchema.safeParse(data);
 
   if (!validatedFields.success) {
     return {
@@ -62,13 +58,9 @@ export async function createGalleryImage(
 
 export async function updateGalleryImage(
   id: string,
-  formData: FormData
+  data: unknown
 ): Promise<GalleryImageFormState> {
-  const validatedFields = GalleryImageSchema.safeParse({
-    title: formData.get('title'),
-    imageUrl: formData.get('imageUrl'),
-    featured: formData.get('featured'),
-  });
+  const validatedFields = GalleryImageSchema.safeParse(data);
 
   if (!validatedFields.success) {
     return {
