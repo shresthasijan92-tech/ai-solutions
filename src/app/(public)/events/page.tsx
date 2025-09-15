@@ -3,9 +3,11 @@ import { Card, CardContent, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { MapPin } from 'lucide-react';
+import { events as mockEvents } from '@/lib/mock-data';
 
 export default async function EventsPage() {
-  const events = await getEvents();
+  const eventsFromDb = await getEvents();
+  const events = eventsFromDb.length > 0 ? eventsFromDb : mockEvents;
 
   return (
     <div className="container py-12">

@@ -6,9 +6,11 @@ import Link from 'next/link';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Button } from '@/components/ui/button';
 import { ArrowRight } from 'lucide-react';
+import { projects as mockProjects } from '@/lib/mock-data';
 
 export default async function ProjectsPage() {
-  const projects = await getProjects();
+  const projectsFromDb = await getProjects();
+  const projects = projectsFromDb.length > 0 ? projectsFromDb : mockProjects;
 
   return (
     <div className="container py-12">

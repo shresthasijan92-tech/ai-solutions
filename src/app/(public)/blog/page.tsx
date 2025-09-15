@@ -4,9 +4,11 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { CalendarIcon } from 'lucide-react';
+import { articles as mockArticles } from '@/lib/mock-data';
 
 export default async function BlogPage() {
-  const articles = await getArticles();
+  const articlesFromDb = await getArticles();
+  const articles = articlesFromDb.length > 0 ? articlesFromDb : mockArticles;
 
   return (
     <div className="container py-12">

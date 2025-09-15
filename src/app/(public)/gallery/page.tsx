@@ -1,9 +1,11 @@
 import { getGalleryImages } from '@/lib/gallery';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import Image from 'next/image';
+import { galleryImages as mockGalleryImages } from '@/lib/mock-data';
 
 export default async function GalleryPage() {
-  const galleryImages = await getGalleryImages();
+  const galleryImagesFromDb = await getGalleryImages();
+  const galleryImages = galleryImagesFromDb.length > 0 ? galleryImagesFromDb : mockGalleryImages;
 
   return (
     <div className="container py-12">
