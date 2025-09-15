@@ -83,13 +83,11 @@ export function GalleryForm({ image, onSuccess }: GalleryFormProps) {
 
   const onSubmit = (data: GalleryFormValues) => {
     startTransition(async () => {
-      const payload = { ...data };
-
       const action = image
         ? updateGalleryImage.bind(null, image.id)
         : createGalleryImage;
         
-      const result = await action(payload);
+      const result = await action(data);
 
       if (result.success) {
         toast({

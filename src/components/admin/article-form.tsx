@@ -73,13 +73,23 @@ export function ArticleForm({ article, onSuccess }: ArticleFormProps) {
   });
   
   useEffect(() => {
-    form.reset({
-      title: article?.title || '',
-      excerpt: article?.excerpt || '',
-      imageUrl: article?.imageUrl || '',
-      publishedAt: article?.publishedAt ? toDate(article.publishedAt) : new Date(),
-      featured: article?.featured || false,
-    });
+    if (article) {
+      form.reset({
+        title: article.title || '',
+        excerpt: article.excerpt || '',
+        imageUrl: article.imageUrl || '',
+        publishedAt: article.publishedAt ? toDate(article.publishedAt) : new Date(),
+        featured: article.featured || false,
+      });
+    } else {
+       form.reset({
+        title: '',
+        excerpt: '',
+        imageUrl: '',
+        publishedAt: new Date(),
+        featured: false,
+      });
+    }
   }, [article, form]);
 
 
@@ -99,12 +109,11 @@ export function ArticleForm({ article, onSuccess }: ArticleFormProps) {
 
   const onSubmit = (data: ArticleFormValues) => {
     startTransition(async () => {
-      const payload = { ...data };
       const action = article
         ? updateArticle.bind(null, article.id)
         : createArticle;
 
-      const result = await action(payload);
+      const result = await action(data);
 
       if (result.success) {
         toast({

@@ -2,14 +2,24 @@
 
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
-import { db } from '@/lib/firebase';
+import { db, app } from '@/lib/firebase';
+import {
+  getStorage,
+  ref,
+  uploadString,
+  getDownloadURL,
+  deleteObject,
+} from 'firebase/storage';
 import {
   collection,
   doc,
   addDoc,
   updateDoc,
   deleteDoc,
+  getDoc,
 } from 'firebase/firestore';
+
+const storage = getStorage(app);
 
 const GalleryImageSchema = z.object({
   title: z.string().min(1, 'Title is required'),
@@ -27,8 +37,18 @@ export type GalleryImageFormState = {
   success?: boolean;
 };
 
+async function handleImageUpload(
+  dataUri: string,
+  folder: string
+): Promise<string> {
+  const fileName = `${folder}/${Date.now()}`;
+  const storageRef = ref(storage, fileName);
+  const uploadResult = await uploadString(storageRef, dataUri, 'data_url');
+  return getDownloadURL(uploadResult.ref);
+}
+
 export async function createGalleryImage(
-  data: unknown
+  data: z.infer<typeof GalleryImageSchema>
 ): Promise<GalleryImageFormState> {
   const validatedFields = GalleryImageSchema.safeParse(data);
 
@@ -39,11 +59,19 @@ export async function createGalleryImage(
       success: false,
     };
   }
+  
+  const { imageUrl, ...rest } = validatedFields.data;
+  let finalImageUrl = imageUrl;
 
   try {
+    if (imageUrl.startsWith('data:image')) {
+      finalImageUrl = await handleImageUpload(imageUrl, 'gallery');
+    }
+    
     const galleryCollection = collection(db, 'gallery');
-    await addDoc(galleryCollection, validatedFields.data);
+    await addDoc(galleryCollection, { ...rest, imageUrl: finalImageUrl });
   } catch (error) {
+    console.error(error);
     return {
       message: 'Database Error: Failed to Create Gallery Image.',
       success: false,
@@ -58,7 +86,7 @@ export async function createGalleryImage(
 
 export async function updateGalleryImage(
   id: string,
-  data: unknown
+  data: z.infer<typeof GalleryImageSchema>
 ): Promise<GalleryImageFormState> {
   const validatedFields = GalleryImageSchema.safeParse(data);
 
@@ -70,9 +98,30 @@ export async function updateGalleryImage(
     };
   }
 
+  const { imageUrl, ...rest } = validatedFields.data;
+  let finalImageUrl = imageUrl;
+
   try {
-    const galleryDoc = doc(db, 'gallery', id);
-    await updateDoc(galleryDoc, validatedFields.data);
+    const galleryDocRef = doc(db, 'gallery', id);
+    const existingDoc = await getDoc(galleryDocRef);
+    const existingData = existingDoc.data();
+
+    if (imageUrl.startsWith('data:image')) {
+      finalImageUrl = await handleImageUpload(imageUrl, 'gallery');
+
+      if (existingData?.imageUrl && existingData.imageUrl.includes('firebasestorage')) {
+        try {
+          const oldImageRef = ref(storage, existingData.imageUrl);
+          await deleteObject(oldImageRef);
+        } catch (storageError: any) {
+           if (storageError.code !== 'storage/object-not-found') {
+             console.warn('Could not delete old image, may not exist:', storageError);
+           }
+        }
+      }
+    }
+    
+    await updateDoc(galleryDocRef, { ...rest, imageUrl: finalImageUrl });
   } catch (error) {
     console.error(error);
     return {
@@ -87,15 +136,41 @@ export async function updateGalleryImage(
   return { message: 'Successfully updated gallery image.', success: true };
 }
 
+async function deleteImageFromStorage(imageUrl: string) {
+    if (imageUrl.includes('firebasestorage')) {
+        try {
+            const imageRef = ref(storage, imageUrl);
+            await deleteObject(imageRef);
+        } catch (error: any) {
+            if (error.code === 'storage/object-not-found') {
+                console.warn("Image to delete was not found in storage.");
+            } else {
+                throw error;
+            }
+        }
+    }
+}
+
 export async function deleteGalleryImage(id: string): Promise<{ message: string, success: boolean }> {
   try {
-    const galleryDoc = doc(db, 'gallery', id);
-    await deleteDoc(galleryDoc);
+    const galleryDocRef = doc(db, 'gallery', id);
+    const docSnap = await getDoc(galleryDocRef);
+
+    if (docSnap.exists()) {
+        const { imageUrl } = docSnap.data();
+        if (imageUrl) {
+            await deleteImageFromStorage(imageUrl);
+        }
+    }
+
+    await deleteDoc(galleryDocRef);
+
     revalidatePath('/admin/gallery');
     revalidatePath('/gallery');
     revalidatePath('/');
     return { message: 'Successfully deleted gallery image.', success: true };
   } catch (error) {
+    console.error('Delete Error:', error);
     return {
       message: 'Database Error: Failed to Delete Gallery Image.',
       success: false,

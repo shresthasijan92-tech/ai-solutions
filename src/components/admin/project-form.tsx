@@ -59,14 +59,25 @@ export function ProjectForm({ project, onSuccess }: ProjectFormProps) {
   });
   
   useEffect(() => {
-    form.reset({
-      title: project?.title || '',
-      description: project?.description || '',
-      imageUrl: project?.imageUrl || '',
-      technologies: project?.technologies.join(', ') || '',
-      link: project?.link || '',
-      featured: project?.featured || false,
-    });
+    if (project) {
+      form.reset({
+        title: project.title || '',
+        description: project.description || '',
+        imageUrl: project.imageUrl || '',
+        technologies: project.technologies.join(', ') || '',
+        link: project.link || '',
+        featured: project.featured || false,
+      });
+    } else {
+       form.reset({
+        title: '',
+        description: '',
+        imageUrl: '',
+        technologies: '',
+        link: '',
+        featured: false,
+      });
+    }
   }, [project, form]);
   
   const handleFileChange = (
