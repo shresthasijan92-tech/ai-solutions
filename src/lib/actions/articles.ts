@@ -34,13 +34,15 @@ export type ArticleFormState = {
 export async function createArticle(
   formData: FormData
 ): Promise<ArticleFormState> {
-  const validatedFields = ArticleSchema.safeParse({
+  const rawData = {
     title: formData.get('title'),
     excerpt: formData.get('excerpt'),
     imageUrl: formData.get('imageUrl'),
     publishedAt: formData.get('publishedAt'),
     featured: formData.get('featured'),
-  });
+  };
+  
+  const validatedFields = ArticleSchema.safeParse(rawData);
 
   if (!validatedFields.success) {
     return {
@@ -71,13 +73,15 @@ export async function updateArticle(
   id: string,
   formData: FormData
 ): Promise<ArticleFormState> {
-  const validatedFields = ArticleSchema.safeParse({
+  const rawData = {
     title: formData.get('title'),
     excerpt: formData.get('excerpt'),
     imageUrl: formData.get('imageUrl'),
     publishedAt: formData.get('publishedAt'),
     featured: formData.get('featured'),
-  });
+  };
+  
+  const validatedFields = ArticleSchema.safeParse(rawData);
 
   if (!validatedFields.success) {
     return {

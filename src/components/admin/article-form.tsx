@@ -60,7 +60,7 @@ export function ArticleForm({ article, onSuccess }: ArticleFormProps) {
     defaultValues: {
       title: article?.title || '',
       excerpt: article?.excerpt || '',
-      imageUrl: article?.imageUrl || '',
+      imageUrl: '', // Always start with empty imageUrl field
       publishedAt: article?.publishedAt ? new Date(article.publishedAt) : new Date(),
       featured: article?.featured || false,
     },
@@ -80,24 +80,29 @@ export function ArticleForm({ article, onSuccess }: ArticleFormProps) {
   const onSubmit = (data: ArticleFormValues) => {
     startTransition(async () => {
       const formData = new FormData();
-       Object.entries(data).forEach(([key, value]) => {
+      
+      // Handle all fields except imageUrl first
+      Object.entries(data).forEach(([key, value]) => {
+        if (key === 'imageUrl') return; // Skip imageUrl for now
         if (value === undefined || value === null) return;
+        
         if (key === 'publishedAt' && value instanceof Date) {
             formData.append(key, value.toISOString());
         } else if (typeof value === 'boolean') {
             formData.append(key, value.toString());
-        } else if (key === 'imageUrl' && !value && article) {
-          formData.append(key, article.imageUrl);
-        }
-        else {
+        } else {
             formData.append(key, value as string);
         }
       });
       
-      if (article && !formData.has('imageUrl')) {
+      // Now, intelligently handle imageUrl
+      if (data.imageUrl) {
+        // A new image was uploaded
+        formData.append('imageUrl', data.imageUrl);
+      } else if (article?.imageUrl) {
+        // We are editing and no new image was provided, so use the old one
         formData.append('imageUrl', article.imageUrl);
       }
-
 
       const action = article
         ? updateArticle.bind(null, article.id)
@@ -217,7 +222,7 @@ export function ArticleForm({ article, onSuccess }: ArticleFormProps) {
                 <Input type="file" accept="image/*" onChange={(e) => handleFileChange(e, onChange)} {...rest} />
               </FormControl>
               <FormDescription>
-                Upload an image from your device.
+                Upload an image from your device. If editing, leave this blank to keep the existing image.
               </FormDescription>
               <FormMessage />
             </FormItem>
