@@ -29,11 +29,12 @@ async function seedCollection(collectionName: string, data: any[]) {
   const collectionRef = collection(db, collectionName);
   const batch = writeBatch(db);
   data.forEach((item) => {
+    const itemCopy = { ...item };
     // Firestore can't store functions/React components, so we convert icon component to string name
-    if (collectionName === 'services' && typeof item.icon !== 'string') {
-        item.icon = item.icon.displayName || 'BrainCircuit';
+    if (collectionName === 'services' && typeof itemCopy.icon !== 'string') {
+        itemCopy.icon = itemCopy.icon.displayName || 'BrainCircuit';
     }
-    const { id, ...rest } = item;
+    const { id, ...rest } = itemCopy;
     const docRef = doc(collectionRef, id);
     batch.set(docRef, rest);
   });
