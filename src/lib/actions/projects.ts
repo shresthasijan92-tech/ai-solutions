@@ -17,6 +17,7 @@ import {
   updateDoc,
   deleteDoc,
   getDoc,
+  setDoc,
 } from 'firebase/firestore';
 
 const storage = getStorage(app);
@@ -125,7 +126,14 @@ export async function updateProject(
       }
     }
     
-    await updateDoc(projectDocRef, { ...rest, imageUrl: finalImageUrl });
+    const projectData = { ...rest, imageUrl: finalImageUrl };
+
+    if (existingDoc.exists()) {
+        await updateDoc(projectDocRef, projectData);
+    } else {
+        await setDoc(projectDocRef, projectData);
+    }
+
   } catch (error) {
     console.error(error);
     return {

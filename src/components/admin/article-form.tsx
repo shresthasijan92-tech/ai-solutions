@@ -109,9 +109,7 @@ export function ArticleForm({ article, onSuccess }: ArticleFormProps) {
 
   const onSubmit = (data: ArticleFormValues) => {
     startTransition(async () => {
-      const isMockItem = article && !article.id.match(/^[a-zA-Z0-9]{20}$/);
-      
-      const action = article && !isMockItem
+      const action = article?.id
         ? updateArticle.bind(null, article.id)
         : createArticle;
 
@@ -265,7 +263,7 @@ export function ArticleForm({ article, onSuccess }: ArticleFormProps) {
 
         <Button type="submit" disabled={isPending} className="w-full sm:w-auto">
           {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          {article ? 'Update Article' : 'Create Article'}
+          {article?.id ? 'Update Article' : 'Create Article'}
         </Button>
       </form>
     </Form>

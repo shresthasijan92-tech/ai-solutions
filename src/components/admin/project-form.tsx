@@ -101,9 +101,7 @@ export function ProjectForm({ project, onSuccess }: ProjectFormProps) {
         technologies: data.technologies.split(',').map(t => t.trim())
       };
       
-      const isMockItem = project && !project.id.match(/^[a-zA-Z0-9]{20}$/);
-
-      const action = project && !isMockItem
+      const action = project?.id
         ? updateProject.bind(null, project.id)
         : createProject;
         
@@ -255,7 +253,7 @@ export function ProjectForm({ project, onSuccess }: ProjectFormProps) {
 
         <Button type="submit" disabled={isPending} className="w-full sm:w-auto">
           {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          {project ? 'Update Project' : 'Create Project'}
+          {project?.id ? 'Update Project' : 'Create Project'}
         </Button>
       </form>
     </Form>

@@ -18,6 +18,7 @@ import {
   deleteDoc,
   Timestamp,
   getDoc,
+  setDoc,
 } from 'firebase/firestore';
 
 const storage = getStorage(app);
@@ -126,11 +127,18 @@ export async function updateArticle(
       }
     }
     
-    await updateDoc(articleDocRef, {
-      ...rest,
-      imageUrl: finalImageUrl,
-      publishedAt: Timestamp.fromDate(rest.publishedAt),
-    });
+    const articleData = {
+        ...rest,
+        imageUrl: finalImageUrl,
+        publishedAt: Timestamp.fromDate(rest.publishedAt),
+    };
+
+    if (existingDoc.exists()) {
+        await updateDoc(articleDocRef, articleData);
+    } else {
+        await setDoc(articleDocRef, articleData);
+    }
+
   } catch (error) {
     console.error(error);
     return {

@@ -83,11 +83,7 @@ export function GalleryForm({ image, onSuccess }: GalleryFormProps) {
 
   const onSubmit = (data: GalleryFormValues) => {
     startTransition(async () => {
-      // If the item being edited is from mock data, it won't have a "real" ID from the DB.
-      // In this case, we should create a new item instead of trying to update a non-existent one.
-      const isMockItem = image && !image.id.match(/^[a-zA-Z0-9]{20}$/);
-      
-      const action = image && !isMockItem
+      const action = image?.id
         ? updateGalleryImage.bind(null, image.id)
         : createGalleryImage;
         
@@ -190,7 +186,7 @@ export function GalleryForm({ image, onSuccess }: GalleryFormProps) {
 
         <Button type="submit" disabled={isPending} className="w-full sm:w-auto">
           {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          {image ? 'Update Image' : 'Create Image'}
+          {image?.id ? 'Update Image' : 'Create Image'}
         </Button>
       </form>
     </Form>

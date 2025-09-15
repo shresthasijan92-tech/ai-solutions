@@ -17,13 +17,14 @@ import {
   updateDoc,
   deleteDoc,
   getDoc,
+  setDoc,
 } from 'firebase/firestore';
 
 const storage = getStorage(app);
 
 const GalleryImageSchema = z.object({
   title: z.string().min(1, 'Title is required'),
-  imageUrl: z.string().min(1, 'Image is required'),
+  imageUrl: z.string().min(1, 'An image is required'),
   featured: z.boolean(),
 });
 
@@ -120,7 +121,14 @@ export async function updateGalleryImage(
       }
     }
     
-    await updateDoc(galleryDocRef, { ...rest, imageUrl: finalImageUrl });
+    const galleryData = { ...rest, imageUrl: finalImageUrl };
+
+    if (existingDoc.exists()) {
+        await updateDoc(galleryDocRef, galleryData);
+    } else {
+        await setDoc(galleryDocRef, galleryData);
+    }
+
   } catch (error) {
     console.error(error);
     return {
