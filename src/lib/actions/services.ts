@@ -9,7 +9,7 @@ const ServiceSchema = z.object({
   title: z.string().min(1, 'Title is required'),
   description: z.string().min(1, 'Description is required'),
   icon: z.string().min(1, 'Icon is required'),
-  featured: z.boolean(),
+  featured: z.preprocess((val) => val === 'true', z.boolean()),
 });
 
 export type ServiceFormState = {
@@ -30,7 +30,7 @@ export async function createService(
     title: formData.get('title'),
     description: formData.get('description'),
     icon: formData.get('icon'),
-    featured: formData.get('featured') === 'on',
+    featured: formData.get('featured'),
   });
 
   if (!validatedFields.success) {
@@ -62,7 +62,7 @@ export async function updateService(
     title: formData.get('title'),
     description: formData.get('description'),
     icon: formData.get('icon'),
-    featured: formData.get('featured') === 'on',
+    featured: formData.get('featured'),
   });
 
   if (!validatedFields.success) {
