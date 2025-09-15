@@ -30,6 +30,8 @@ const ServiceFormSchema = z.object({
   featured: z.boolean(),
 });
 
+type ServiceFormValues = z.infer<typeof ServiceFormSchema>;
+
 type ServiceFormProps = {
   service?: Service | null;
   onSuccess: () => void;
@@ -44,7 +46,7 @@ export function ServiceForm({ service, onSuccess }: ServiceFormProps) {
   const [state, dispatch] = useActionState(formAction, initialState);
   const [isPending, startTransition] = useTransition();
 
-  const form = useForm<z.infer<typeof ServiceFormSchema>>({
+  const form = useForm<ServiceFormValues>({
     resolver: zodResolver(ServiceFormSchema),
     defaultValues: {
       title: service?.title || '',
@@ -74,7 +76,7 @@ export function ServiceForm({ service, onSuccess }: ServiceFormProps) {
     }
   }, [state, toast, onSuccess, form]);
   
-  const handleSubmit = (data: z.infer<typeof ServiceFormSchema>) => {
+  const handleSubmit = (data: ServiceFormValues) => {
     const formData = new FormData();
     Object.entries(data).forEach(([key, value]) => {
       formData.append(key, String(value));
