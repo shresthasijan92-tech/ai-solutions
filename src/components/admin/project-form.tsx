@@ -88,7 +88,6 @@ export function ProjectForm({ project, onSuccess }: ProjectFormProps) {
           description: state.message,
         });
         onSuccess();
-        formRef.current?.reset();
         form.reset();
       }
     }

@@ -76,7 +76,6 @@ export function ServiceForm({ service, onSuccess }: ServiceFormProps) {
           description: state.message,
         });
         onSuccess();
-        formRef.current?.reset();
         form.reset();
       }
     }
