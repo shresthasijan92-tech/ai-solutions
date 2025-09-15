@@ -37,7 +37,7 @@ import { cn } from '@/lib/utils';
 const ArticleFormSchema = z.object({
   title: z.string().min(1, 'Title is required'),
   excerpt: z.string().min(1, 'Excerpt is required'),
-  imageUrl: z.string().min(1, 'An image is required'),
+  imageUrl: z.string().optional(),
   publishedAt: z.date({
     required_error: "A date of publication is required.",
   }),
@@ -81,14 +81,23 @@ export function ArticleForm({ article, onSuccess }: ArticleFormProps) {
     startTransition(async () => {
       const formData = new FormData();
        Object.entries(data).forEach(([key, value]) => {
+        if (value === undefined || value === null) return;
         if (key === 'publishedAt' && value instanceof Date) {
             formData.append(key, value.toISOString());
         } else if (typeof value === 'boolean') {
             formData.append(key, value.toString());
-        } else {
-            formData.append(key, value);
+        } else if (key === 'imageUrl' && !value && article) {
+          formData.append(key, article.imageUrl);
+        }
+        else {
+            formData.append(key, value as string);
         }
       });
+      
+      if (article && !formData.has('imageUrl')) {
+        formData.append('imageUrl', article.imageUrl);
+      }
+
 
       const action = article
         ? updateArticle.bind(null, article.id)
@@ -201,11 +210,11 @@ export function ArticleForm({ article, onSuccess }: ArticleFormProps) {
         <FormField
           control={form.control}
           name="imageUrl"
-          render={({ field }) => (
+          render={({ field: { onChange, value, ...rest } }) => (
             <FormItem>
               <FormLabel>Image</FormLabel>
               <FormControl>
-                <Input type="file" accept="image/*" onChange={(e) => handleFileChange(e, field.onChange)} />
+                <Input type="file" accept="image/*" onChange={(e) => handleFileChange(e, onChange)} {...rest} />
               </FormControl>
               <FormDescription>
                 Upload an image from your device.
