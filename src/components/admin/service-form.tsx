@@ -1,10 +1,9 @@
 'use client';
 
-import { useFormState } from 'react-dom';
+import { useActionState, useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useEffect, useRef } from 'react';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -42,7 +41,7 @@ export function ServiceForm({ service, onSuccess }: ServiceFormProps) {
   
   const initialState: ServiceFormState = { message: '', errors: {} };
   const formAction = service ? updateService.bind(null, service.id) : createService;
-  const [state, dispatch] = useFormState(formAction, initialState);
+  const [state, dispatch] = useActionState(formAction, initialState);
 
   const form = useForm<z.infer<typeof ServiceFormSchema>>({
     resolver: zodResolver(ServiceFormSchema),

@@ -1,10 +1,9 @@
 'use client';
 
-import { useFormState } from 'react-dom';
+import { useActionState, useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useEffect, useRef } from 'react';
 import { Loader2 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -60,7 +59,7 @@ export function ProjectForm({ project, onSuccess }: ProjectFormProps) {
   const formAction = project
     ? updateProject.bind(null, project.id)
     : createProject;
-  const [state, dispatch] = useFormState(formAction, initialState);
+  const [state, dispatch] = useActionState(formAction, initialState);
 
   const form = useForm<ProjectFormValues>({
     resolver: zodResolver(ProjectFormSchema),
