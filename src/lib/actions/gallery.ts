@@ -29,11 +29,7 @@ const GalleryImageSchema = z.object({
 
 export type GalleryImageFormState = {
   message: string;
-  errors?: {
-    title?: string[];
-    imageUrl?: string[];
-    featured?: string[];
-  };
+  errors?: z.ZodError<z.infer<typeof GalleryImageSchema>>['formErrors']['fieldErrors'];
   success?: boolean;
 };
 
@@ -104,19 +100,22 @@ export async function updateGalleryImage(
   try {
     const galleryDocRef = doc(db, 'gallery', id);
     const existingDoc = await getDoc(galleryDocRef);
-    const existingData = existingDoc.data();
+    
 
     if (imageUrl.startsWith('data:image')) {
       finalImageUrl = await handleImageUpload(imageUrl, 'gallery');
 
-      if (existingData?.imageUrl && existingData.imageUrl.includes('firebasestorage')) {
-        try {
-          const oldImageRef = ref(storage, existingData.imageUrl);
-          await deleteObject(oldImageRef);
-        } catch (storageError: any) {
-           if (storageError.code !== 'storage/object-not-found') {
-             console.warn('Could not delete old image, may not exist:', storageError);
-           }
+      if (existingDoc.exists()) {
+        const existingData = existingDoc.data();
+        if (existingData?.imageUrl && existingData.imageUrl.includes('firebasestorage')) {
+          try {
+            const oldImageRef = ref(storage, existingData.imageUrl);
+            await deleteObject(oldImageRef);
+          } catch (storageError: any) {
+             if (storageError.code !== 'storage/object-not-found') {
+               console.warn('Could not delete old image, may not exist:', storageError);
+             }
+          }
         }
       }
     }

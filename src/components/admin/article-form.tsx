@@ -109,7 +109,9 @@ export function ArticleForm({ article, onSuccess }: ArticleFormProps) {
 
   const onSubmit = (data: ArticleFormValues) => {
     startTransition(async () => {
-      const action = article
+      const isMockItem = article && !article.id.match(/^[a-zA-Z0-9]{20}$/);
+      
+      const action = article && !isMockItem
         ? updateArticle.bind(null, article.id)
         : createArticle;
 
@@ -218,7 +220,7 @@ export function ArticleForm({ article, onSuccess }: ArticleFormProps) {
             <FormItem>
               <FormLabel>Image URL</FormLabel>
               <FormControl>
-                <Input placeholder="https://example.com/image.jpg" {...field} />
+                <Input placeholder="https://example.com/image.jpg" {...field} value={field.value ?? ''} />
               </FormControl>
               <FormDescription>
                 Provide a full web link to an image for the article.

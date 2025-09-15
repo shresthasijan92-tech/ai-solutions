@@ -100,8 +100,10 @@ export function ProjectForm({ project, onSuccess }: ProjectFormProps) {
         ...data,
         technologies: data.technologies.split(',').map(t => t.trim())
       };
+      
+      const isMockItem = project && !project.id.match(/^[a-zA-Z0-9]{20}$/);
 
-      const action = project
+      const action = project && !isMockItem
         ? updateProject.bind(null, project.id)
         : createProject;
         
@@ -176,7 +178,7 @@ export function ProjectForm({ project, onSuccess }: ProjectFormProps) {
             <FormItem>
               <FormLabel>Image URL</FormLabel>
               <FormControl>
-                <Input placeholder="https://example.com/image.jpg" {...field} />
+                <Input placeholder="https://example.com/image.jpg" {...field} value={field.value ?? ''} />
               </FormControl>
               <FormDescription>
                 Provide a full web link to an image for the project.

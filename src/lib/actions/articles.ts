@@ -107,19 +107,21 @@ export async function updateArticle(
   try {
     const articleDocRef = doc(db, 'articles', id);
     const existingDoc = await getDoc(articleDocRef);
-    const existingData = existingDoc.data();
 
     if (imageUrl.startsWith('data:image')) {
       finalImageUrl = await handleImageUpload(imageUrl, 'articles');
       
-      if (existingData?.imageUrl && existingData.imageUrl.includes('firebasestorage')) {
-        try {
-            const oldImageRef = ref(storage, existingData.imageUrl);
-            await deleteObject(oldImageRef);
-        } catch (storageError: any) {
-            if (storageError.code !== 'storage/object-not-found') {
-                console.warn('Could not delete old image, may not exist:', storageError);
-            }
+      if (existingDoc.exists()) {
+        const existingData = existingDoc.data();
+        if (existingData?.imageUrl && existingData.imageUrl.includes('firebasestorage')) {
+          try {
+              const oldImageRef = ref(storage, existingData.imageUrl);
+              await deleteObject(oldImageRef);
+          } catch (storageError: any) {
+              if (storageError.code !== 'storage/object-not-found') {
+                  console.warn('Could not delete old image, may not exist:', storageError);
+              }
+          }
         }
       }
     }

@@ -83,7 +83,11 @@ export function GalleryForm({ image, onSuccess }: GalleryFormProps) {
 
   const onSubmit = (data: GalleryFormValues) => {
     startTransition(async () => {
-      const action = image
+      // If the item being edited is from mock data, it won't have a "real" ID from the DB.
+      // In this case, we should create a new item instead of trying to update a non-existent one.
+      const isMockItem = image && !image.id.match(/^[a-zA-Z0-9]{20}$/);
+      
+      const action = image && !isMockItem
         ? updateGalleryImage.bind(null, image.id)
         : createGalleryImage;
         
@@ -141,7 +145,7 @@ export function GalleryForm({ image, onSuccess }: GalleryFormProps) {
             <FormItem>
               <FormLabel>Image URL</FormLabel>
               <FormControl>
-                <Input placeholder="https://example.com/image.jpg" {...field} />
+                <Input placeholder="https://example.com/image.jpg" {...field} value={field.value ?? ''} />
               </FormControl>
               <FormDescription>
                 Provide a full web link to an image for the gallery.
