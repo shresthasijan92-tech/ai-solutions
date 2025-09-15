@@ -4,6 +4,7 @@ import { useActionState, useEffect, useRef, useTransition } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { Loader2 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -20,8 +21,11 @@ import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { type Service } from '@/lib/definitions';
-import { createService, updateService, type ServiceFormState } from '@/lib/actions/services';
-import { Loader2 } from 'lucide-react';
+import {
+  createService,
+  updateService,
+  type ServiceFormState,
+} from '@/lib/actions/services';
 
 const ServiceFormSchema = z.object({
   title: z.string().min(1, 'Title is required'),
@@ -40,9 +44,11 @@ type ServiceFormProps = {
 export function ServiceForm({ service, onSuccess }: ServiceFormProps) {
   const { toast } = useToast();
   const formRef = useRef<HTMLFormElement>(null);
-  
+
   const initialState: ServiceFormState = { message: '', errors: {} };
-  const formAction = service ? updateService.bind(null, service.id) : createService;
+  const formAction = service
+    ? updateService.bind(null, service.id)
+    : createService;
   const [state, dispatch] = useActionState(formAction, initialState);
   const [isPending, startTransition] = useTransition();
 
@@ -75,7 +81,7 @@ export function ServiceForm({ service, onSuccess }: ServiceFormProps) {
       }
     }
   }, [state, toast, onSuccess, form]);
-  
+
   const handleSubmit = (data: ServiceFormValues) => {
     const formData = new FormData();
     Object.entries(data).forEach(([key, value]) => {
@@ -113,7 +119,10 @@ export function ServiceForm({ service, onSuccess }: ServiceFormProps) {
             <FormItem>
               <FormLabel>Description</FormLabel>
               <FormControl>
-                <Textarea placeholder="A short description of the service" {...field} />
+                <Textarea
+                  placeholder="A short description of the service"
+                  {...field}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -130,7 +139,12 @@ export function ServiceForm({ service, onSuccess }: ServiceFormProps) {
               </FormControl>
               <FormDescription>
                 Enter a valid icon name from{' '}
-                <a href="https://lucide.dev/icons/" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                <a
+                  href="https://lucide.dev/icons/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary hover:underline"
+                >
                   lucide-react
                 </a>
                 .
@@ -151,9 +165,7 @@ export function ServiceForm({ service, onSuccess }: ServiceFormProps) {
                 />
               </FormControl>
               <div className="space-y-1 leading-none">
-                <FormLabel>
-                  Feature on homepage
-                </FormLabel>
+                <FormLabel>Feature on homepage</FormLabel>
                 <FormDescription>
                   Check this to display this service on the homepage.
                 </FormDescription>
@@ -161,7 +173,7 @@ export function ServiceForm({ service, onSuccess }: ServiceFormProps) {
             </FormItem>
           )}
         />
-        
+
         <Button type="submit" disabled={isPending} className="w-full sm:w-auto">
           {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           {service ? 'Update Service' : 'Create Service'}
