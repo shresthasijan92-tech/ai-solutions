@@ -13,7 +13,7 @@ const adminNavItems = [
   { href: '/admin/projects', label: 'Projects', icon: FileText },
   { href: '/admin/articles', label: 'Articles', icon: FileText },
   { href: '/admin/gallery', label: 'Gallery', icon: ImageIcon },
-  { href: ' /admin/events', label: 'Events', icon: Calendar },
+  { href: '/admin/events', label: 'Events', icon: Calendar },
   { href: '/admin/careers', label: 'Careers', icon: BriefcaseBusiness },
   { href: '/admin/feedback', label: 'Feedback', icon: MessageSquare },
 ];
