@@ -1,6 +1,6 @@
 'use client';
 
-import { useActionState, useEffect, useRef, useTransition } from 'react';
+import { useEffect, useState, useTransition } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -43,13 +43,6 @@ type ServiceFormProps = {
 
 export function ServiceForm({ service, onSuccess }: ServiceFormProps) {
   const { toast } = useToast();
-  const formRef = useRef<HTMLFormElement>(null);
-
-  const initialState: ServiceFormState = { message: '', errors: {} };
-  const formAction = service
-    ? updateService.bind(null, service.id)
-    : createService;
-  const [state, dispatch] = useActionState(formAction, initialState);
   const [isPending, startTransition] = useTransition();
 
   const form = useForm<ServiceFormValues>({
@@ -62,40 +55,51 @@ export function ServiceForm({ service, onSuccess }: ServiceFormProps) {
     },
   });
 
-  useEffect(() => {
-    if (state.message) {
-      if (state.errors) {
-        toast({
-          variant: 'destructive',
-          title: 'Error',
-          description: state.message,
-        });
-      } else {
+  const onSubmit = (data: ServiceFormValues) => {
+    startTransition(async () => {
+      const formData = new FormData();
+      Object.entries(data).forEach(([key, value]) => {
+        formData.append(key, String(value));
+      });
+
+      const action = service
+        ? updateService.bind(null, service.id)
+        : createService;
+      
+      const result = await action(formData);
+      
+      if (result.success) {
         toast({
           title: 'Success!',
-          description: state.message,
+          description: result.message,
         });
         onSuccess();
         form.reset();
+      } else {
+        toast({
+          variant: 'destructive',
+          title: 'Error',
+          description: result.message,
+        });
+        // Optionally set form errors if they are returned from the server
+        if (result.errors) {
+            Object.entries(result.errors).forEach(([key, value]) => {
+                if (value) {
+                    form.setError(key as keyof ServiceFormValues, {
+                        type: 'manual',
+                        message: value.join(', '),
+                    });
+                }
+            });
+        }
       }
-    }
-  }, [state, toast, onSuccess, form]);
-
-  const handleSubmit = (data: ServiceFormValues) => {
-    const formData = new FormData();
-    Object.entries(data).forEach(([key, value]) => {
-      formData.append(key, String(value));
-    });
-    startTransition(() => {
-      dispatch(formData);
     });
   };
 
   return (
     <Form {...form}>
       <form
-        ref={formRef}
-        onSubmit={form.handleSubmit(handleSubmit)}
+        onSubmit={form.handleSubmit(onSubmit)}
         className="space-y-6"
       >
         <FormField

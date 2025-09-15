@@ -37,7 +37,6 @@ export type ProjectFormState = {
 };
 
 export async function createProject(
-  prevState: ProjectFormState,
   formData: FormData
 ): Promise<ProjectFormState> {
   const validatedFields = ProjectSchema.safeParse({
@@ -75,7 +74,6 @@ export async function createProject(
 
 export async function updateProject(
   id: string,
-  prevState: ProjectFormState,
   formData: FormData
 ): Promise<ProjectFormState> {
   const validatedFields = ProjectSchema.safeParse({

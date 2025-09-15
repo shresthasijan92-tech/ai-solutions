@@ -20,10 +20,10 @@ export type ServiceFormState = {
     icon?: string[];
     featured?: string[];
   };
+  success?: boolean;
 };
 
 export async function createService(
-  prevState: ServiceFormState,
   formData: FormData
 ): Promise<ServiceFormState> {
   const validatedFields = ServiceSchema.safeParse({
@@ -37,6 +37,7 @@ export async function createService(
     return {
       message: 'Failed to create service.',
       errors: validatedFields.error.flatten().fieldErrors,
+      success: false,
     };
   }
 
@@ -44,18 +45,20 @@ export async function createService(
     const servicesCollection = collection(db, 'services');
     await addDoc(servicesCollection, validatedFields.data);
   } catch (error) {
-    return { message: 'Database Error: Failed to Create Service.' };
+    return { 
+        message: 'Database Error: Failed to Create Service.',
+        success: false 
+    };
   }
 
   revalidatePath('/admin/services');
   revalidatePath('/services');
   revalidatePath('/');
-  return { message: 'Successfully created service.' };
+  return { message: 'Successfully created service.', success: true };
 }
 
 export async function updateService(
   id: string,
-  prevState: ServiceFormState,
   formData: FormData
 ): Promise<ServiceFormState> {
   const validatedFields = ServiceSchema.safeParse({
@@ -69,6 +72,7 @@ export async function updateService(
     return {
       message: 'Failed to update service.',
       errors: validatedFields.error.flatten().fieldErrors,
+      success: false,
     };
   }
 
@@ -76,24 +80,27 @@ export async function updateService(
     const serviceDoc = doc(db, 'services', id);
     await updateDoc(serviceDoc, validatedFields.data);
   } catch (error) {
-    return { message: 'Database Error: Failed to Update Service.' };
+    return { 
+        message: 'Database Error: Failed to Update Service.',
+        success: false,
+    };
   }
 
   revalidatePath('/admin/services');
   revalidatePath('/services');
   revalidatePath('/');
-  return { message: 'Successfully updated service.' };
+  return { message: 'Successfully updated service.', success: true };
 }
 
-export async function deleteService(id: string) {
+export async function deleteService(id: string): Promise<{ message: string, success: boolean }> {
   try {
     const serviceDoc = doc(db, 'services', id);
     await deleteDoc(serviceDoc);
     revalidatePath('/admin/services');
     revalidatePath('/services');
     revalidatePath('/');
-    return { message: 'Successfully deleted service.' };
+    return { message: 'Successfully deleted service.', success: true };
   } catch (error) {
-    return { message: 'Database Error: Failed to Delete Service.' };
+    return { message: 'Database Error: Failed to Delete Service.', success: false };
   }
 }

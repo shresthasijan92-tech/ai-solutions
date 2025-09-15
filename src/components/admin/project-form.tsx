@@ -1,6 +1,6 @@
 'use client';
 
-import { useActionState, useEffect, useRef, useTransition } from 'react';
+import { useTransition } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -31,7 +31,6 @@ import { type Project } from '@/lib/definitions';
 import {
   createProject,
   updateProject,
-  type ProjectFormState,
 } from '@/lib/actions/projects';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 
@@ -53,13 +52,6 @@ type ProjectFormProps = {
 
 export function ProjectForm({ project, onSuccess }: ProjectFormProps) {
   const { toast } = useToast();
-  const formRef = useRef<HTMLFormElement>(null);
-
-  const initialState: ProjectFormState = { message: '', errors: {} };
-  const formAction = project
-    ? updateProject.bind(null, project.id)
-    : createProject;
-  const [state, dispatch] = useActionState(formAction, initialState);
   const [isPending, startTransition] = useTransition();
 
   const form = useForm<ProjectFormValues>({
@@ -74,40 +66,50 @@ export function ProjectForm({ project, onSuccess }: ProjectFormProps) {
     },
   });
 
-  useEffect(() => {
-    if (state.message) {
-      if (state.errors) {
-        toast({
-          variant: 'destructive',
-          title: 'Error',
-          description: state.message,
-        });
-      } else {
+  const onSubmit = (data: ProjectFormValues) => {
+    startTransition(async () => {
+      const formData = new FormData();
+       Object.entries(data).forEach(([key, value]) => {
+        formData.append(key, String(value));
+      });
+
+      const action = project
+        ? updateProject.bind(null, project.id)
+        : createProject;
+        
+      const result = await action(formData);
+
+      if (result.success) {
         toast({
           title: 'Success!',
-          description: state.message,
+          description: result.message,
         });
         onSuccess();
         form.reset();
+      } else {
+        toast({
+          variant: 'destructive',
+          title: 'Error',
+          description: result.message,
+        });
+         if (result.errors) {
+            Object.entries(result.errors).forEach(([key, value]) => {
+                if (value) {
+                    form.setError(key as keyof ProjectFormValues, {
+                        type: 'manual',
+                        message: value.join(', '),
+                    });
+                }
+            });
+        }
       }
-    }
-  }, [state, toast, onSuccess, form]);
-
-  const handleSubmit = (data: ProjectFormValues) => {
-    const formData = new FormData();
-    Object.entries(data).forEach(([key, value]) => {
-      formData.append(key, String(value));
-    });
-    startTransition(() => {
-      dispatch(formData);
     });
   };
 
   return (
     <Form {...form}>
       <form
-        ref={formRef}
-        onSubmit={form.handleSubmit(handleSubmit)}
+        onSubmit={form.handleSubmit(onSubmit)}
         className="space-y-6"
       >
         <FormField
