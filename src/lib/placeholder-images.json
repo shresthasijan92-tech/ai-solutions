@@ -7,7 +7,7 @@
     { "id": "blog-1", "description": "The future of AI in business.", "imageUrl": "https://picsum.photos/seed/b1/600/400", "imageHint": "AI business" },
     { "id": "blog-2", "description": "Ethical considerations in machine learning.", "imageUrl": "https://picsum.photos/seed/b2/600/400", "imageHint": "machine learning" },
     { "id": "blog-3", "description": "Getting started with Genkit.", "imageUrl": "https://picsum.photos/seed/b3/600/400", "imageHint": "abstract code" },
-    { "id": "gallery-1", "description": "Team brainstorming session.", "imageUrl": "https://picsum.photos/seed/g1/400/600", "imageHint": "team meeting" },
+    { "id": "gallery-1", "description": "Team brainstorming session.", "imageUrl": "https://picsum.photos/seed/teamwork/400/600", "imageHint": "team meeting" },
     { "id": "gallery-2", "description": "Our modern office space.", "imageUrl": "https://picsum.photos/seed/g2/600/400", "imageHint": "office space" },
     { "id": "gallery-3", "description": "Presenting at an AI conference.", "imageUrl": "https://picsum.photos/seed/g3/600/400", "imageHint": "conference presentation" },
     { "id": "gallery-4", "description": "Data visualization on a large screen.", "imageUrl": "https://picsum.photos/seed/g4/600/400", "imageHint": "data visualization" },
