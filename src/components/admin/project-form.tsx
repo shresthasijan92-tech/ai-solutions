@@ -80,20 +80,6 @@ export function ProjectForm({ project, onSuccess }: ProjectFormProps) {
     }
   }, [project, form]);
   
-  const handleFileChange = (
-    e: React.ChangeEvent<HTMLInputElement>,
-    fieldChange: (value: string) => void
-  ) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        fieldChange(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
   const onSubmit = (data: ProjectFormValues) => {
     startTransition(async () => {
        const payload = {
@@ -185,19 +171,6 @@ export function ProjectForm({ project, onSuccess }: ProjectFormProps) {
             </FormItem>
           )}
         />
-        <FormItem>
-          <FormLabel>Or Upload Image</FormLabel>
-          <FormControl>
-            <Input
-              type="file"
-              accept="image/*"
-              onChange={(e) => handleFileChange(e, (value) => form.setValue('imageUrl', value))}
-            />
-          </FormControl>
-          <FormDescription>
-            Upload an image from your device. This will override the Image URL field.
-          </FormDescription>
-        </FormItem>
         <FormField
           control={form.control}
           name="technologies"

@@ -39,16 +39,6 @@ export type ProjectFormState = {
   success?: boolean;
 };
 
-async function handleImageUpload(
-  dataUri: string,
-  folder: string
-): Promise<string> {
-  const fileName = `${folder}/${Date.now()}`;
-  const storageRef = ref(storage, fileName);
-  const uploadResult = await uploadString(storageRef, dataUri, 'data_url');
-  return getDownloadURL(uploadResult.ref);
-}
-
 export async function createProject(
   data: z.infer<typeof ProjectSchema>
 ): Promise<ProjectFormState> {
@@ -62,16 +52,11 @@ export async function createProject(
     };
   }
   
-  const { imageUrl, ...rest } = validatedFields.data;
-  let finalImageUrl = imageUrl;
+  const { ...rest } = validatedFields.data;
 
   try {
-    if (imageUrl.startsWith('data:image')) {
-      finalImageUrl = await handleImageUpload(imageUrl, 'projects');
-    }
-    
     const projectsCollection = collection(db, 'projects');
-    await addDoc(projectsCollection, { ...rest, imageUrl: finalImageUrl });
+    await addDoc(projectsCollection, { ...rest });
 
   } catch (error) {
     console.error(error);
@@ -101,32 +86,13 @@ export async function updateProject(
     };
   }
 
-  const { imageUrl, ...rest } = validatedFields.data;
-  let finalImageUrl = imageUrl;
+  const { ...rest } = validatedFields.data;
 
   try {
     const projectDocRef = doc(db, 'projects', id);
     const existingDoc = await getDoc(projectDocRef);
-
-    if (imageUrl.startsWith('data:image')) {
-      finalImageUrl = await handleImageUpload(imageUrl, 'projects');
-      
-      if (existingDoc.exists()) {
-        const existingData = existingDoc.data();
-        if (existingData?.imageUrl && existingData.imageUrl.includes('firebasestorage')) {
-          try {
-              const oldImageRef = ref(storage, existingData.imageUrl);
-              await deleteObject(oldImageRef);
-          } catch (storageError: any) {
-              if (storageError.code !== 'storage/object-not-found') {
-                  console.warn('Could not delete old image, may not exist:', storageError);
-              }
-          }
-        }
-      }
-    }
     
-    const projectData = { ...rest, imageUrl: finalImageUrl };
+    const projectData = { ...rest };
 
     if (existingDoc.exists()) {
         await updateDoc(projectDocRef, projectData);
