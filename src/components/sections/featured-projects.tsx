@@ -1,13 +1,16 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { ArrowRight } from 'lucide-react';
-import { projects } from '@/lib/mock-data';
+import { getProjects } from '@/lib/projects';
+import { projects as mockProjects } from '@/lib/mock-data';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 
-export function FeaturedProjects() {
-  const featuredProjects = projects.filter((project) => project.featured);
+export async function FeaturedProjects() {
+  const allProjects = await getProjects();
+  const featuredProjects = allProjects.filter((project) => project.featured);
+  const projectsToDisplay = featuredProjects.length > 0 ? featuredProjects : mockProjects.filter(p => p.featured);
 
   return (
     <section className="bg-secondary py-12 md:py-20">
@@ -21,7 +24,7 @@ export function FeaturedProjects() {
           </Button>
         </div>
         <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-3">
-          {featuredProjects.map((project) => {
+          {projectsToDisplay.map((project) => {
             return (
               <Card key={project.id} className="overflow-hidden group">
                 <CardHeader className="p-0">
