@@ -49,13 +49,13 @@ const homepageContentSuggestionsPrompt = ai.definePrompt({
   },
   prompt: `You are an AI assistant specializing in user interface and user experience design.
 
-You are helping an administrator of a website called AISolutions Hub to design the homepage.
+You are helping an administrator of a website called AI Solutions to design the homepage.
 
 The administrator has selected the following content to be featured on the homepage: {{featuredContent}}.
 
 Based on this selection, suggest the best representation and layout for this content on the homepage, optimizing for user engagement. Consider factors such as visual appeal, information hierarchy, and ease of navigation.
 
-Provide concrete suggestions, taking into account the brand of AISolutions Hub which can be described as:
+Provide concrete suggestions, taking into account the brand of AI Solutions which can be described as:
 * Professional
 * Innovative
 * Client-focused

@@ -31,7 +31,7 @@ export function SiteFooter() {
         </div>
         <div className="mt-8 flex items-center justify-between border-t pt-4">
           <p className="text-sm text-muted-foreground">
-            © {new Date().getFullYear()} AISolutions Hub. All rights reserved.
+            © {new Date().getFullYear()} AI Solutions. All rights reserved.
           </p>
           <div className="flex items-center gap-2">
             <Button variant="ghost" size="icon" asChild>

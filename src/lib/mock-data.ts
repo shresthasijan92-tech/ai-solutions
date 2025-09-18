@@ -45,8 +45,8 @@ export const jobs: Job[] = [
 ];
 
 export const testimonials: Testimonial[] = [
-    { id: 't1', name: 'Jane Doe', company: 'Innovate Corp', feedback: 'AISolutions Hub transformed our operations. Their custom AI model was a game-changer for our business.', rating: 5, createdAt: '2024-05-20', status: 'approved' },
+    { id: 't1', name: 'Jane Doe', company: 'Innovate Corp', feedback: 'AI Solutions transformed our operations. Their custom AI model was a game-changer for our business.', rating: 5, createdAt: '2024-05-20', status: 'approved' },
     { id: 't2', name: 'John Smith', company: 'TechForward', feedback: 'The team was incredibly professional and knowledgeable. They delivered beyond our expectations.', rating: 5, createdAt: '2024-04-12', status: 'approved' },
     { id: 't3', name: 'Emily White', company: 'DataDriven Inc.', feedback: 'Their data analytics services provided the clarity we needed to scale our marketing efforts effectively.', rating: 4, createdAt: '2024-03-01', status: 'approved' },
-    { id: 't4', name: 'Michael Brown', company: 'NextGen Solutions', feedback: 'Working with AISolutions Hub was a great experience. Highly recommend their strategy consulting.', rating: 5, createdAt: '2024-06-30', status: 'pending' },
+    { id: 't4', name: 'Michael Brown', company: 'NextGen Solutions', feedback: 'Working with AI Solutions was a great experience. Highly recommend their strategy consulting.', rating: 5, createdAt: '2024-06-30', status: 'pending' },
 ];
