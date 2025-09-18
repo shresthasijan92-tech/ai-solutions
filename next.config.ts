@@ -52,6 +52,12 @@ const nextConfig: NextConfig = {
         port: '',
         pathname: '/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'postgradonline.simge.edu.sg',
+        port: '',
+        pathname: '/**',
+      },
     ],
   },
 };
