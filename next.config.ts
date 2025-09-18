@@ -30,13 +30,13 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: 'https',
-        hostname: 'cdn.mos.cms.futurecdn.net',
+        hostname: 'www.sorenkaplan.com',
         port: '',
         pathname: '/**',
       },
       {
         protocol: 'https',
-        hostname: 'assets.everspringpartners.com',
+        hostname: 't7solution.com',
         port: '',
         pathname: '/**',
       },

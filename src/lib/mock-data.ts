@@ -11,20 +11,20 @@ export const services: Service[] = [
 ];
 
 export const projects: Project[] = [
-  { id: 'p1', title: 'E-commerce Recommendation Engine', description: 'Increased customer engagement and sales by 20% with a personalized product recommendation system.', imageUrl: 'https://picsum.photos/seed/shopping/600/400', technologies: ['Python', 'TensorFlow', 'Firebase'], featured: true, link: '/projects/p1' },
-  { id: 'p2', title: 'Predictive Maintenance for Manufacturing', description: 'Reduced equipment downtime by 30% by predicting failures before they happen.', imageUrl: 'https://picsum.photos/seed/factory/600/400', technologies: ['SCIKIT-LEARN', 'Pandas', 'Next.js'], featured: true, link: '/projects/p2' },
+  { id: 'p1', title: 'E-commerce Recommendation Engine', description: 'Increased customer engagement and sales by 20% with a personalized product recommendation system.', imageUrl: 'https://picsum.photos/seed/ecommerce/600/400', technologies: ['Python', 'TensorFlow', 'Firebase'], featured: true, link: '/projects/p1' },
+  { id: 'p2', title: 'Predictive Maintenance for Manufacturing', description: 'Reduced equipment downtime by 30% by predicting failures before they happen.', imageUrl: 'https://picsum.photos/seed/manufacturing/600/400', technologies: ['SCIKIT-LEARN', 'Pandas', 'Next.js'], featured: true, link: '/projects/p2' },
   { id: 'p3', title: 'Automated Customer Support Chatbot', description: 'Improved customer satisfaction by providing instant, 24/7 support and resolving 80% of inquiries.', imageUrl: 'https://picsum.photos/seed/p3/600/400', technologies: ['Google Dialogflow', 'Node.js', 'React'], featured: true, link: '/projects/p3' },
   { id: 'p4', title: 'Retail Foot-Traffic Analysis', description: 'Optimized store layouts and marketing campaigns using computer vision to analyze customer behavior.', imageUrl: 'https://picsum.photos/seed/p4/600/400', technologies: ['OpenCV', 'YOLO', 'Google Cloud'], featured: false, link: '/projects/p4' },
 ];
 
 export const articles: Article[] = [
-  { id: 'a1', title: 'The Generative AI Revolution: What It Means for Your Business', excerpt: 'Explore how generative AI is reshaping industries and how you can leverage it for a competitive edge.', imageUrl: 'https://cdn.mos.cms.futurecdn.net/DVffQnnibMWmNpx2Wfb5Se.jpg', publishedAt: '2024-07-15', featured: true },
+  { id: 'a1', title: 'The Generative AI Revolution: What It Means for Your Business', excerpt: 'Explore how generative AI is reshaping industries and how you can leverage it for a competitive edge.', imageUrl: 'https://picsum.photos/seed/ai-business/600/400', publishedAt: '2024-07-15', featured: true },
   { id: 'a2', title: '5 Common Pitfalls to Avoid in Your Next Machine Learning Project', excerpt: 'Learn from common mistakes to ensure your ML projects are successful and deliver real value.', imageUrl: 'https://picsum.photos/seed/b2/600/400', publishedAt: '2024-06-28', featured: true },
   { id: 'a3', title: 'An Introduction to Genkit and the Future of AI Development', excerpt: 'A deep dive into Google\'s new Genkit framework and how it simplifies building AI-powered applications.', imageUrl: 'https://picsum.photos/seed/b3/600/400', publishedAt: '2024-06-10', featured: true },
 ];
 
 export const galleryImages: GalleryImage[] = [
-  { id: 'g1', title: 'Team Collaboration', imageUrl: 'https://picsum.photos/seed/teamwork/400/600', featured: true },
+  { id: 'g1', title: 'Team Collaboration', imageUrl: 'https://picsum.photos/seed/meeting/400/600', featured: true },
   { id: 'g2', title: 'Office Environment', imageUrl: 'https://picsum.photos/seed/g2/600/400', featured: true },
   { id: 'g3', title: 'AI Conference Talk', imageUrl: 'https://picsum.photos/seed/g3/600/400', featured: true },
   { id: 'g4', title: 'Data Insights', imageUrl: 'https://picsum.photos/seed/g4/600/400', featured: false },
