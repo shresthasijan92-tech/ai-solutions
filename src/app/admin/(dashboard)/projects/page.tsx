@@ -55,7 +55,7 @@ export default function AdminProjectsPage() {
               Add Project
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-lg">
+          <DialogContent className="sm:max-w-2xl">
             <DialogHeader>
               <DialogTitle>
                 {editingProject ? 'Edit Project' : 'Add New Project'}
