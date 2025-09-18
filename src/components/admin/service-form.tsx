@@ -237,7 +237,7 @@ export function ServiceForm({ service, onSuccess }: ServiceFormProps) {
 
         <Button type="submit" disabled={isPending} className="w-full sm:w-auto">
           {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          {service?.id ? 'Update Service' : 'Create Service'}
+          {service?.id ? 'Save Changes' : 'Create Service'}
         </Button>
       </form>
     </Form>

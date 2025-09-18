@@ -223,7 +223,7 @@ export function EventForm({ event, onSuccess }: EventFormProps) {
 
         <Button type="submit" disabled={isPending} className="w-full sm:w-auto">
           {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          {event ? 'Update Event' : 'Create Event'}
+          {event ? 'Save Changes' : 'Create Event'}
         </Button>
       </form>
     </Form>

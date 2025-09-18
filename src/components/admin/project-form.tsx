@@ -253,7 +253,7 @@ export function ProjectForm({ project, onSuccess }: ProjectFormProps) {
 
         <Button type="submit" disabled={isPending} className="w-full sm:w-auto">
           {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          {project?.id ? 'Update Project' : 'Create Project'}
+          {project?.id ? 'Save Changes' : 'Create Project'}
         </Button>
       </form>
     </Form>
