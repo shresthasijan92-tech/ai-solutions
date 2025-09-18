@@ -2,36 +2,54 @@
 
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
-import { db } from '@/lib/firebase';
-import { collection, doc, addDoc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { db, app } from '@/lib/firebase';
+import {
+  getStorage,
+  ref,
+  uploadString,
+  getDownloadURL,
+  deleteObject,
+} from 'firebase/storage';
+import {
+  collection,
+  doc,
+  addDoc,
+  updateDoc,
+  deleteDoc,
+  getDoc,
+  setDoc,
+} from 'firebase/firestore';
+
+const storage = getStorage(app);
 
 const ServiceSchema = z.object({
   title: z.string().min(1, 'Title is required'),
   description: z.string().min(1, 'Description is required'),
   icon: z.string().min(1, 'Icon is required'),
-  featured: z.preprocess((val) => val === 'true', z.boolean()),
+  imageUrl: z.string().optional(),
+  featured: z.boolean(),
 });
 
 export type ServiceFormState = {
   message: string;
-  errors?: {
-    title?: string[];
-    description?: string[];
-    icon?: string[];
-    featured?: string[];
-  };
+  errors?: z.ZodError<z.infer<typeof ServiceSchema>>['formErrors']['fieldErrors'];
   success?: boolean;
 };
 
+async function handleImageUpload(
+  dataUri: string,
+  folder: string
+): Promise<string> {
+  const fileName = `${folder}/${Date.now()}`;
+  const storageRef = ref(storage, fileName);
+  const uploadResult = await uploadString(storageRef, dataUri, 'data_url');
+  return getDownloadURL(uploadResult.ref);
+}
+
 export async function createService(
-  formData: FormData
+  data: z.infer<typeof ServiceSchema>
 ): Promise<ServiceFormState> {
-  const validatedFields = ServiceSchema.safeParse({
-    title: formData.get('title'),
-    description: formData.get('description'),
-    icon: formData.get('icon'),
-    featured: formData.get('featured'),
-  });
+  const validatedFields = ServiceSchema.safeParse(data);
 
   if (!validatedFields.success) {
     return {
@@ -41,10 +59,18 @@ export async function createService(
     };
   }
 
+  const { imageUrl, ...rest } = validatedFields.data;
+  let finalImageUrl = imageUrl;
+
   try {
+    if (imageUrl && imageUrl.startsWith('data:image')) {
+      finalImageUrl = await handleImageUpload(imageUrl, 'services');
+    }
+    
     const servicesCollection = collection(db, 'services');
-    await addDoc(servicesCollection, validatedFields.data);
+    await addDoc(servicesCollection, { ...rest, imageUrl: finalImageUrl });
   } catch (error) {
+    console.error(error);
     return { 
         message: 'Database Error: Failed to Create Service.',
         success: false 
@@ -59,14 +85,9 @@ export async function createService(
 
 export async function updateService(
   id: string,
-  formData: FormData
+  data: z.infer<typeof ServiceSchema>
 ): Promise<ServiceFormState> {
-  const validatedFields = ServiceSchema.safeParse({
-    title: formData.get('title'),
-    description: formData.get('description'),
-    icon: formData.get('icon'),
-    featured: formData.get('featured'),
-  });
+  const validatedFields = ServiceSchema.safeParse(data);
 
   if (!validatedFields.success) {
     return {
@@ -76,10 +97,41 @@ export async function updateService(
     };
   }
 
+  const { imageUrl, ...rest } = validatedFields.data;
+  let finalImageUrl = imageUrl;
+
   try {
-    const serviceDoc = doc(db, 'services', id);
-    await updateDoc(serviceDoc, validatedFields.data);
+    const serviceDocRef = doc(db, 'services', id);
+    const existingDoc = await getDoc(serviceDocRef);
+
+    if (imageUrl && imageUrl.startsWith('data:image')) {
+      finalImageUrl = await handleImageUpload(imageUrl, 'services');
+      
+      if (existingDoc.exists()) {
+        const existingData = existingDoc.data();
+        if (existingData?.imageUrl && existingData.imageUrl.includes('firebasestorage')) {
+          try {
+              const oldImageRef = ref(storage, existingData.imageUrl);
+              await deleteObject(oldImageRef);
+          } catch (storageError: any) {
+              if (storageError.code !== 'storage/object-not-found') {
+                  console.warn('Could not delete old image, may not exist:', storageError);
+              }
+          }
+        }
+      }
+    }
+    
+    const serviceData = { ...rest, imageUrl: finalImageUrl };
+    
+    if (existingDoc.exists()) {
+        await updateDoc(serviceDocRef, serviceData);
+    } else {
+        await setDoc(serviceDocRef, serviceData);
+    }
+
   } catch (error) {
+    console.error(error);
     return { 
         message: 'Database Error: Failed to Update Service.',
         success: false,
@@ -92,10 +144,34 @@ export async function updateService(
   return { message: 'Successfully updated service.', success: true };
 }
 
+async function deleteImageFromStorage(imageUrl: string) {
+    if (imageUrl && imageUrl.includes('firebasestorage')) {
+        try {
+            const imageRef = ref(storage, imageUrl);
+            await deleteObject(imageRef);
+        } catch (error: any) {
+            if (error.code === 'storage/object-not-found') {
+                console.warn("Image to delete was not found in storage.");
+            } else {
+                throw error;
+            }
+        }
+    }
+}
+
 export async function deleteService(id: string): Promise<{ message: string, success: boolean }> {
   try {
-    const serviceDoc = doc(db, 'services', id);
-    await deleteDoc(serviceDoc);
+    const serviceDocRef = doc(db, 'services', id);
+    const docSnap = await getDoc(serviceDocRef);
+
+    if (docSnap.exists()) {
+        const { imageUrl } = docSnap.data();
+        if (imageUrl) {
+            await deleteImageFromStorage(imageUrl);
+        }
+    }
+    
+    await deleteDoc(serviceDocRef);
     revalidatePath('/admin/services');
     revalidatePath('/services');
     revalidatePath('/');

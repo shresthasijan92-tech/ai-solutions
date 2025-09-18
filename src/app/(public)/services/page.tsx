@@ -1,12 +1,11 @@
 import { getServices } from '@/lib/services';
-import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardDescription, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import * as Lucide from 'lucide-react';
 import { services as mockServices } from '@/lib/mock-data';
+import Image from 'next/image';
 
 export default async function ServicesPage() {
   const servicesFromDb = await getServices();
-
-  // Fallback to mock data if the database is empty
   const services = servicesFromDb.length > 0 ? servicesFromDb : mockServices;
 
   return (
@@ -19,18 +18,30 @@ export default async function ServicesPage() {
           {services.map((service) => {
             const Icon = (Lucide as any)[service.icon as any] as Lucide.LucideIcon;
             return (
-              <Card key={service.id} className="group flex flex-col transition-all duration-300 hover:border-primary hover:shadow-lg">
-                <CardHeader>
-                  <div className="mb-4 flex justify-center">
-                    <div className="rounded-lg bg-primary/10 p-4 text-primary transition-colors duration-300 group-hover:bg-primary group-hover:text-primary-foreground">
-                      {Icon && <Icon className="h-8 w-8" />}
+              <Card key={service.id} className="group flex flex-col overflow-hidden transition-all duration-300 hover:border-primary hover:shadow-lg">
+                <CardHeader className="p-0">
+                  {service.imageUrl && (
+                    <div className="relative h-48 w-full">
+                      <Image 
+                        src={service.imageUrl}
+                        alt={service.title}
+                        fill
+                        className="object-cover"
+                      />
                     </div>
+                  )}
+                </CardHeader>
+                <CardContent className="p-6 flex flex-col flex-grow">
+                  <div className="mb-4 flex items-center gap-4">
+                    <div className="rounded-lg bg-primary/10 p-3 text-primary transition-colors duration-300 group-hover:bg-primary group-hover:text-primary-foreground">
+                      {Icon && <Icon className="h-6 w-6" />}
+                    </div>
+                    <CardTitle className="font-headline text-xl">{service.title}</CardTitle>
                   </div>
-                  <CardTitle className="text-center font-headline text-xl">{service.title}</CardTitle>
-                  <CardDescription className="text-center text-balance pt-2">
+                  <CardDescription className="text-balance flex-grow">
                     {service.description}
                   </CardDescription>
-                </CardHeader>
+                </CardContent>
               </Card>
             )
           })}

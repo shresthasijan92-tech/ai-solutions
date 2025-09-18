@@ -11,7 +11,8 @@ export type Service = {
   id: string;
   title: string;
   description: string;
-  icon: string; // Changed from LucideIcon to string
+  icon: string;
+  imageUrl?: string;
   benefits?: string[];
   price?: string;
   featured: boolean;

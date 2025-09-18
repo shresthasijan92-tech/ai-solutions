@@ -2,29 +2,29 @@ import { BrainCircuit, Bot, LineChart, Code, TestTube2, Layers3 } from 'lucide-r
 import type { Service, Project, Article, GalleryImage, Event, Job, Testimonial } from './definitions';
 
 export const services: Service[] = [
-  { id: 's1', title: 'AI Strategy Consulting', description: 'Develop a roadmap for AI integration tailored to your business goals.', icon: 'BrainCircuit', benefits: ['Competitive Advantage', 'ROI-focused plan', 'Risk Mitigation'], price: 'Starting at $5,000', featured: true },
-  { id: 's2', title: 'Custom AI Model Development', description: 'Build bespoke machine learning models to solve your unique challenges.', icon: 'Bot', benefits: ['Tailored Solutions', 'High Accuracy', 'Scalable Architecture'], price: 'Starting at $15,000', featured: true },
-  { id: 's3', title: 'Data Analytics & Visualization', description: 'Unlock insights from your data with advanced analytics and intuitive dashboards.', icon: 'LineChart', benefits: ['Actionable Insights', 'Data-driven Decisions', 'Performance Tracking'], price: 'Starting at $7,500', featured: true },
-  { id: 's4', title: 'Natural Language Processing', description: 'Implement solutions for sentiment analysis, chatbots, and text summarization.', icon: 'Code', benefits: ['Enhanced Customer Service', 'Automated Processes', 'Insightful Text Analysis'], price: 'Starting at $10,000', featured: false },
-  { id: 's5', title: 'Computer Vision Solutions', description: 'Leverage image and video analysis for automation and quality control.', icon: 'TestTube2', benefits: ['Improved Efficiency', 'Error Reduction', 'Automated Inspection'], price: 'Starting at $12,000', featured: false },
-  { id: 's6', title: 'AI Integration Services', description: 'Seamlessly integrate AI capabilities into your existing software and workflows.', icon: 'Layers3', benefits: ['Modernized Systems', 'Streamlined Operations', 'Enhanced Functionality'], price: 'Starting at $8,000', featured: false },
+  { id: 's1', title: 'AI Strategy Consulting', description: 'Develop a roadmap for AI integration tailored to your business goals.', icon: 'BrainCircuit', imageUrl: 'https://picsum.photos/seed/s1/600/400', benefits: ['Competitive Advantage', 'ROI-focused plan', 'Risk Mitigation'], price: 'Starting at $5,000', featured: true },
+  { id: 's2', title: 'Custom AI Model Development', description: 'Build bespoke machine learning models to solve your unique challenges.', icon: 'Bot', imageUrl: 'https://picsum.photos/seed/s2/600/400', benefits: ['Tailored Solutions', 'High Accuracy', 'Scalable Architecture'], price: 'Starting at $15,000', featured: true },
+  { id: 's3', title: 'Data Analytics & Visualization', description: 'Unlock insights from your data with advanced analytics and intuitive dashboards.', icon: 'LineChart', imageUrl: 'https://picsum.photos/seed/s3/600/400', benefits: ['Actionable Insights', 'Data-driven Decisions', 'Performance Tracking'], price: 'Starting at $7,500', featured: true },
+  { id: 's4', title: 'Natural Language Processing', description: 'Implement solutions for sentiment analysis, chatbots, and text summarization.', icon: 'Code', imageUrl: 'https://picsum.photos/seed/s4/600/400', benefits: ['Enhanced Customer Service', 'Automated Processes', 'Insightful Text Analysis'], price: 'Starting at $10,000', featured: false },
+  { id: 's5', title: 'Computer Vision Solutions', description: 'Leverage image and video analysis for automation and quality control.', icon: 'TestTube2', imageUrl: 'https://picsum.photos/seed/s5/600/400', benefits: ['Improved Efficiency', 'Error Reduction', 'Automated Inspection'], price: 'Starting at $12,000', featured: false },
+  { id: 's6', title: 'AI Integration Services', description: 'Seamlessly integrate AI capabilities into your existing software and workflows.', icon: 'Layers3', imageUrl: 'https://picsum.photos/seed/s6/600/400', benefits: ['Modernized Systems', 'Streamlined Operations', 'Enhanced Functionality'], price: 'Starting at $8,000', featured: false },
 ];
 
 export const projects: Project[] = [
-  { id: 'p1', title: 'E-commerce Recommendation Engine', description: 'Increased customer engagement and sales by 20% with a personalized product recommendation system.', imageUrl: 'https://picsum.photos/seed/p1/600/400', technologies: ['Python', 'TensorFlow', 'Firebase'], featured: true, link: '/projects/p1' },
-  { id: 'p2', title: 'Predictive Maintenance for Manufacturing', description: 'Reduced equipment downtime by 30% by predicting failures before they happen.', imageUrl: 'https://picsum.photos/seed/p2/600/400', technologies: ['SCIKIT-LEARN', 'Pandas', 'Next.js'], featured: true, link: '/projects/p2' },
+  { id: 'p1', title: 'E-commerce Recommendation Engine', description: 'Increased customer engagement and sales by 20% with a personalized product recommendation system.', imageUrl: 'https://picsum.photos/seed/shopping/600/400', technologies: ['Python', 'TensorFlow', 'Firebase'], featured: true, link: '/projects/p1' },
+  { id: 'p2', title: 'Predictive Maintenance for Manufacturing', description: 'Reduced equipment downtime by 30% by predicting failures before they happen.', imageUrl: 'https://picsum.photos/seed/factory/600/400', technologies: ['SCIKIT-LEARN', 'Pandas', 'Next.js'], featured: true, link: '/projects/p2' },
   { id: 'p3', title: 'Automated Customer Support Chatbot', description: 'Improved customer satisfaction by providing instant, 24/7 support and resolving 80% of inquiries.', imageUrl: 'https://picsum.photos/seed/p3/600/400', technologies: ['Google Dialogflow', 'Node.js', 'React'], featured: true, link: '/projects/p3' },
   { id: 'p4', title: 'Retail Foot-Traffic Analysis', description: 'Optimized store layouts and marketing campaigns using computer vision to analyze customer behavior.', imageUrl: 'https://picsum.photos/seed/p4/600/400', technologies: ['OpenCV', 'YOLO', 'Google Cloud'], featured: false, link: '/projects/p4' },
 ];
 
 export const articles: Article[] = [
-  { id: 'a1', title: 'The Generative AI Revolution: What It Means for Your Business', excerpt: 'Explore how generative AI is reshaping industries and how you can leverage it for a competitive edge.', imageUrl: 'https://picsum.photos/seed/b1/600/400', publishedAt: '2024-07-15', featured: true },
+  { id: 'a1', title: 'The Generative AI Revolution: What It Means for Your Business', excerpt: 'Explore how generative AI is reshaping industries and how you can leverage it for a competitive edge.', imageUrl: 'https://cdn.mos.cms.futurecdn.net/DVffQnnibMWmNpx2Wfb5Se.jpg', publishedAt: '2024-07-15', featured: true },
   { id: 'a2', title: '5 Common Pitfalls to Avoid in Your Next Machine Learning Project', excerpt: 'Learn from common mistakes to ensure your ML projects are successful and deliver real value.', imageUrl: 'https://picsum.photos/seed/b2/600/400', publishedAt: '2024-06-28', featured: true },
   { id: 'a3', title: 'An Introduction to Genkit and the Future of AI Development', excerpt: 'A deep dive into Google\'s new Genkit framework and how it simplifies building AI-powered applications.', imageUrl: 'https://picsum.photos/seed/b3/600/400', publishedAt: '2024-06-10', featured: true },
 ];
 
 export const galleryImages: GalleryImage[] = [
-  { id: 'g1', title: 'Team Collaboration', imageUrl: 'https://picsum.photos/seed/g1/400/600', featured: true },
+  { id: 'g1', title: 'Team Collaboration', imageUrl: 'https://picsum.photos/seed/teamwork/400/600', featured: true },
   { id: 'g2', title: 'Office Environment', imageUrl: 'https://picsum.photos/seed/g2/600/400', featured: true },
   { id: 'g3', title: 'AI Conference Talk', imageUrl: 'https://picsum.photos/seed/g3/600/400', featured: true },
   { id: 'g4', title: 'Data Insights', imageUrl: 'https://picsum.photos/seed/g4/600/400', featured: false },

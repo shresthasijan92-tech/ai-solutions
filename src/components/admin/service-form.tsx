@@ -1,6 +1,6 @@
 'use client';
 
-import { useTransition } from 'react';
+import { useEffect, useTransition } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -30,6 +30,7 @@ const ServiceFormSchema = z.object({
   title: z.string().min(1, 'Title is required'),
   description: z.string().min(1, 'Description is required'),
   icon: z.string().min(1, 'Icon name from lucide-react is required'),
+  imageUrl: z.string().optional(),
   featured: z.boolean(),
 });
 
@@ -47,25 +48,55 @@ export function ServiceForm({ service, onSuccess }: ServiceFormProps) {
   const form = useForm<ServiceFormValues>({
     resolver: zodResolver(ServiceFormSchema),
     defaultValues: {
-      title: service?.title || '',
-      description: service?.description || '',
-      icon: service?.icon || '',
-      featured: service?.featured || false,
+      title: '',
+      description: '',
+      icon: '',
+      imageUrl: '',
+      featured: false,
     },
   });
 
+  useEffect(() => {
+    if (service) {
+      form.reset({
+        title: service.title || '',
+        description: service.description || '',
+        icon: service.icon || '',
+        imageUrl: service.imageUrl || '',
+        featured: service.featured || false,
+      });
+    } else {
+      form.reset({
+        title: '',
+        description: '',
+        icon: '',
+        imageUrl: '',
+        featured: false,
+      });
+    }
+  }, [service, form]);
+  
+  const handleFileChange = (
+    e: React.ChangeEvent<HTMLInputElement>,
+    fieldChange: (value: string) => void
+  ) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        fieldChange(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const onSubmit = (data: ServiceFormValues) => {
     startTransition(async () => {
-      const formData = new FormData();
-      Object.entries(data).forEach(([key, value]) => {
-        formData.append(key, String(value));
-      });
-
-      const action = service
+      const action = service?.id
         ? updateService.bind(null, service.id)
         : createService;
       
-      const result = await action(formData);
+      const result = await action(data);
       
       if (result.success) {
         toast({
@@ -156,6 +187,35 @@ export function ServiceForm({ service, onSuccess }: ServiceFormProps) {
         />
         <FormField
           control={form.control}
+          name="imageUrl"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Image URL</FormLabel>
+              <FormControl>
+                <Input placeholder="https://example.com/image.jpg" {...field} value={field.value ?? ''} />
+              </FormControl>
+              <FormDescription>
+                Provide a full web link to an image for the service.
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormItem>
+          <FormLabel>Or Upload Image</FormLabel>
+          <FormControl>
+            <Input
+              type="file"
+              accept="image/*"
+              onChange={(e) => handleFileChange(e, (value) => form.setValue('imageUrl', value))}
+            />
+          </FormControl>
+          <FormDescription>
+            Upload an image from your device. This will override the Image URL field.
+          </FormDescription>
+        </FormItem>
+        <FormField
+          control={form.control}
           name="featured"
           render={({ field }) => (
             <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
@@ -177,7 +237,7 @@ export function ServiceForm({ service, onSuccess }: ServiceFormProps) {
 
         <Button type="submit" disabled={isPending} className="w-full sm:w-auto">
           {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          {service ? 'Update Service' : 'Create Service'}
+          {service?.id ? 'Update Service' : 'Create Service'}
         </Button>
       </form>
     </Form>
