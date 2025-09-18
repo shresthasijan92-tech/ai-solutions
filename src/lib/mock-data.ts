@@ -24,7 +24,7 @@ export const articles: Article[] = [
 ];
 
 export const galleryImages: GalleryImage[] = [
-  { id: 'g1', title: 'Team Collaboration', imageUrl: 'https://picsum.photos/seed/meeting/400/600', featured: true },
+  { id: 'g1', title: 'Team Collaboration', imageUrl: 'https://picsum.photos/seed/teamwork/400/600', featured: true },
   { id: 'g2', title: 'Office Environment', imageUrl: 'https://picsum.photos/seed/g2/600/400', featured: true },
   { id: 'g3', title: 'AI Conference Talk', imageUrl: 'https://picsum.photos/seed/g3/600/400', featured: true },
   { id: 'g4', title: 'Data Insights', imageUrl: 'https://picsum.photos/seed/g4/600/400', featured: false },
