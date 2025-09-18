@@ -1,7 +1,7 @@
 {
   "placeholderImages": [
-    { "id": "project-1", "description": "AI-powered data analysis platform.", "imageUrl": "https://picsum.photos/seed/ecommerce/600/400", "imageHint": "e-commerce shopping" },
-    { "id": "project-2", "description": "Machine learning model for sales forecasting.", "imageUrl": "https://picsum.photos/seed/p2/600/400", "imageHint": "sales forecasting" },
+    { "id": "project-1", "description": "AI-powered data analysis platform.", "imageUrl": "https://picsum.photos/seed/shopping/600/400", "imageHint": "e-commerce online shopping" },
+    { "id": "project-2", "description": "Predictive maintenance for manufacturing.", "imageUrl": "https://picsum.photos/seed/factory/600/400", "imageHint": "factory manufacturing" },
     { "id": "project-3", "description": "Natural Language Processing for customer support.", "imageUrl": "https://picsum.photos/seed/p3/600/400", "imageHint": "customer support" },
     { "id": "project-4", "description": "Computer vision for retail analytics.", "imageUrl": "https://picsum.photos/seed/p4/600/400", "imageHint": "retail analytics" },
     { "id": "blog-1", "description": "The future of AI in business.", "imageUrl": "https://picsum.photos/seed/b1/600/400", "imageHint": "AI business" },
