@@ -2,15 +2,19 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { ArrowRight } from 'lucide-react';
 import { getProjects } from '@/lib/projects';
-import { projects as mockProjects } from '@/lib/mock-data';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { projects as mockProjects } from '@/lib/mock-data';
 
 export async function FeaturedProjects() {
   const allProjects = await getProjects();
   const featuredProjects = allProjects.filter((project) => project.featured);
   const projectsToDisplay = featuredProjects.length > 0 ? featuredProjects : mockProjects.filter(p => p.featured);
+
+  if (projectsToDisplay.length === 0) {
+    return null;
+  }
 
   return (
     <section className="bg-secondary py-12 md:py-20">
