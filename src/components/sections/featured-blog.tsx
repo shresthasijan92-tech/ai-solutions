@@ -1,12 +1,27 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { ArrowRight, CalendarIcon } from 'lucide-react';
-import { articles } from '@/lib/mock-data';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { getArticles } from '@/lib/articles';
+import { articles as mockArticles } from '@/lib/mock-data';
+import { Timestamp } from 'firebase/firestore';
 
-export function FeaturedBlog() {
-  const featuredArticles = articles.filter((article) => article.featured);
+const toDate = (timestamp: string | Timestamp | Date): Date => {
+  if (timestamp instanceof Timestamp) {
+    return timestamp.toDate();
+  }
+  return new Date(timestamp);
+}
+
+export async function FeaturedBlog() {
+  const allArticles = await getArticles();
+  const featuredArticlesFromDb = allArticles.filter((article) => article.featured);
+  const featuredArticles = featuredArticlesFromDb.length > 0 ? featuredArticlesFromDb : mockArticles.filter(a => a.featured);
+
+  if (featuredArticles.length === 0) {
+    return null;
+  }
 
   return (
     <section className="py-12 md:py-20">
@@ -44,7 +59,7 @@ export function FeaturedBlog() {
                   <p className="text-muted-foreground flex-grow">{article.excerpt}</p>
                   <div className="mt-4 flex items-center text-sm text-muted-foreground">
                     <CalendarIcon className="h-4 w-4 mr-2" />
-                    <span>{new Date(article.publishedAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
+                    <span>{toDate(article.publishedAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
                   </div>
                 </CardContent>
               </Card>
