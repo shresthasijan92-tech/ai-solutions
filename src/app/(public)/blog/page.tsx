@@ -2,9 +2,10 @@ import { getArticles } from '@/lib/articles';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import Image from 'next/image';
 import Link from 'next/link';
-import { CalendarIcon } from 'lucide-react';
+import { CalendarIcon, ArrowRight } from 'lucide-react';
 import { articles as mockArticles } from '@/lib/mock-data';
 import { Timestamp } from 'firebase/firestore';
+import { Button } from '@/components/ui/button';
 
 const toDate = (timestamp: string | Timestamp | Date): Date => {
   if (timestamp instanceof Timestamp) {
@@ -25,10 +26,11 @@ export default async function BlogPage() {
       ) : (
         <div className="grid gap-8 md:grid-cols-1 lg:grid-cols-3">
           {articles.map((article) => {
+             const articleLink = article.fullArticleUrl || `/blog/${article.id}`;
              return (
               <Card key={article.id} className="overflow-hidden group flex flex-col">
                 <CardHeader className="p-0">
-                  <Link href={`/blog/${article.id}`} className="block relative h-48 w-full overflow-hidden">
+                  <Link href={articleLink} target={article.fullArticleUrl ? '_blank' : '_self'} rel="noopener noreferrer" className="block relative h-48 w-full overflow-hidden">
                     {article.imageUrl && (
                       <Image
                         src={article.imageUrl}
@@ -41,14 +43,23 @@ export default async function BlogPage() {
                 </CardHeader>
                 <CardContent className="p-6 flex flex-col flex-grow">
                   <h3 className="font-headline text-xl mb-2 font-semibold leading-tight">
-                    <Link href={`/blog/${article.id}`} className="hover:text-primary transition-colors">
+                    <Link href={articleLink} target={article.fullArticleUrl ? '_blank' : '_self'} rel="noopener noreferrer" className="hover:text-primary transition-colors">
                       {article.title}
                     </Link>
                   </h3>
                   <p className="text-muted-foreground flex-grow">{article.excerpt}</p>
-                  <div className="mt-4 flex items-center text-sm text-muted-foreground">
-                    <CalendarIcon className="h-4 w-4 mr-2" />
-                    <span>{toDate(article.publishedAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
+                   <div className="mt-4 flex items-center justify-between text-sm text-muted-foreground">
+                    <div className="flex items-center">
+                        <CalendarIcon className="h-4 w-4 mr-2" />
+                        <span>{toDate(article.publishedAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
+                    </div>
+                    {article.fullArticleUrl && (
+                        <Button variant="link" className="p-0 h-auto self-start" asChild>
+                           <Link href={article.fullArticleUrl} target="_blank" rel="noopener noreferrer">
+                                Read Full Article <ArrowRight className="ml-2 h-4 w-4" />
+                            </Link>
+                        </Button>
+                    )}
                   </div>
                 </CardContent>
               </Card>

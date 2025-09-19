@@ -35,6 +35,7 @@ export type Article = {
   imageUrl: string;
   publishedAt: string | Timestamp | Date;
   featured: boolean;
+  fullArticleUrl?: string;
 };
 
 export type GalleryImage = {

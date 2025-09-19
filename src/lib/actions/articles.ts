@@ -29,6 +29,7 @@ const ArticleActionSchema = z.object({
   imageUrl: z.string().min(1, 'Image is required'),
   publishedAt: z.date(),
   featured: z.boolean(),
+  fullArticleUrl: z.string().url('Must be a valid URL').optional().or(z.literal('')),
 });
 
 export type ArticleFormState = {

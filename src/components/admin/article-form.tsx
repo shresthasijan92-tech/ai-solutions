@@ -40,6 +40,7 @@ const ArticleFormSchema = z.object({
     required_error: 'A date of publication is required.',
   }),
   featured: z.boolean(),
+  fullArticleUrl: z.string().url({ message: "Please enter a valid URL." }).optional().or(z.literal('')),
 });
 
 type ArticleFormValues = z.infer<typeof ArticleFormSchema>;
@@ -69,6 +70,7 @@ export function ArticleForm({ article, onSuccess }: ArticleFormProps) {
       imageUrl: '',
       publishedAt: new Date(),
       featured: false,
+      fullArticleUrl: '',
     },
   });
   
@@ -80,6 +82,7 @@ export function ArticleForm({ article, onSuccess }: ArticleFormProps) {
         imageUrl: article.imageUrl || '',
         publishedAt: article.publishedAt ? toDate(article.publishedAt) : new Date(),
         featured: article.featured || false,
+        fullArticleUrl: article.fullArticleUrl || '',
       });
     } else {
        form.reset({
@@ -88,24 +91,11 @@ export function ArticleForm({ article, onSuccess }: ArticleFormProps) {
         imageUrl: '',
         publishedAt: new Date(),
         featured: false,
+        fullArticleUrl: '',
       });
     }
   }, [article, form]);
 
-
-  const handleFileChange = (
-    e: React.ChangeEvent<HTMLInputElement>,
-    fieldChange: (value: string) => void
-  ) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        fieldChange(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
 
   const onSubmit = (data: ArticleFormValues) => {
     startTransition(async () => {
@@ -227,19 +217,22 @@ export function ArticleForm({ article, onSuccess }: ArticleFormProps) {
             </FormItem>
           )}
         />
-        <FormItem>
-          <FormLabel>Or Upload Image</FormLabel>
-          <FormControl>
-            <Input
-              type="file"
-              accept="image/*"
-              onChange={(e) => handleFileChange(e, (value) => form.setValue('imageUrl', value))}
-            />
-          </FormControl>
-          <FormDescription>
-            Upload an image from your device. This will override the Image URL field.
-          </FormDescription>
-        </FormItem>
+        <FormField
+          control={form.control}
+          name="fullArticleUrl"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Full Article URL</FormLabel>
+              <FormControl>
+                <Input placeholder="https://example.com/full-article" {...field} value={field.value ?? ''} />
+              </FormControl>
+              <FormDescription>
+                Link to the complete article. Leave blank if not applicable.
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
         <FormField
           control={form.control}
           name="featured"

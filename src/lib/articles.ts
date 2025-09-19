@@ -22,6 +22,7 @@ export async function getArticles(): Promise<Article[]> {
         imageUrl: data.imageUrl,
         publishedAt: publishedAt,
         featured: data.featured || false,
+        fullArticleUrl: data.fullArticleUrl,
       } as Article;
     });
     return articlesList;
