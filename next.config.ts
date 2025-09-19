@@ -76,6 +76,12 @@ const nextConfig: NextConfig = {
         port: '',
         pathname: '/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'howays.com',
+        port: '',
+        pathname: '/**',
+      },
     ],
   },
 };
