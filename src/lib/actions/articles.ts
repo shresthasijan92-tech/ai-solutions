@@ -75,15 +75,15 @@ export async function createArticle(
       imageUrl: finalImageUrl,
       publishedAt: Timestamp.fromDate(rest.publishedAt),
     });
+
+    revalidatePath('/admin/articles');
+    revalidatePath('/blog');
+    revalidatePath('/');
+    return { message: 'Successfully created article.', success: true };
   } catch (error) {
     console.error(error);
     return { message: 'Failed to create article.', success: false };
   }
-
-  revalidatePath('/admin/articles');
-  revalidatePath('/blog');
-  revalidatePath('/');
-  return { message: 'Successfully created article.', success: true };
 }
 
 export async function updateArticle(
@@ -137,15 +137,14 @@ export async function updateArticle(
         await setDoc(articleDocRef, articleData);
     }
 
+    revalidatePath('/admin/articles');
+    revalidatePath('/blog');
+    revalidatePath('/');
+    return { message: 'Successfully updated article.', success: true };
   } catch (error) {
     console.error(error);
     return { message: 'Failed to update article.', success: false };
   }
-
-  revalidatePath('/admin/articles');
-  revalidatePath('/blog');
-  revalidatePath('/');
-  return { message: 'Successfully updated article.', success: true };
 }
 
 async function deleteImageFromStorage(imageUrl: string) {
