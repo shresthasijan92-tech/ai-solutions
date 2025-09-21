@@ -7,7 +7,7 @@ import { z } from 'zod';
 const ContactFormSchema = z.object({
   fullName: z.string(),
   email: z.string().email(),
-  companyName: z.string().optional(),
+  companyName: z.string().min(1, 'Company name is required'),
   contactNumber: z.string().optional(),
   projectDetails: z.string(),
 });

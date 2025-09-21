@@ -23,7 +23,7 @@ import { sendContactMessage } from '@/lib/actions/contact';
 const ContactFormSchema = z.object({
   fullName: z.string().min(1, 'Full name is required'),
   email: z.string().email('Invalid email address'),
-  companyName: z.string().optional(),
+  companyName: z.string().min(1, 'Company name is required'),
   contactNumber: z.string().optional(),
   projectDetails: z.string().min(10, 'Please provide some details about your project (min. 10 characters)'),
 });
@@ -99,7 +99,7 @@ export function ContactForm() {
           name="companyName"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Company Name (Optional)</FormLabel>
+              <FormLabel>Company Name</FormLabel>
               <FormControl>
                 <Input placeholder="Your Company Inc." {...field} />
               </FormControl>
