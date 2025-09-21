@@ -12,6 +12,11 @@ export function useTestimonials(approvedOnly = false) {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    // Start with mock data to ensure the UI is populated for the demo.
+    const filteredMockData = mockTestimonials.filter(t => !approvedOnly || t.status === 'approved');
+    setTestimonials(filteredMockData);
+    setIsLoading(false);
+
     const testimonialsCol = collection(db, 'testimonials');
     
     let q;
@@ -24,10 +29,7 @@ export function useTestimonials(approvedOnly = false) {
     const unsubscribe = onSnapshot(
       q,
       (querySnapshot) => {
-        if (querySnapshot.empty && mockTestimonials.length > 0) {
-            // If firestore is empty, but we have mock data, use it.
-            setTestimonials(mockTestimonials.filter(t => !approvedOnly || t.status === 'approved'));
-        } else {
+        if (!querySnapshot.empty) {
             const testimonialsList: Testimonial[] = querySnapshot.docs.map((doc) => {
               const data = doc.data();
               return {
@@ -36,15 +38,15 @@ export function useTestimonials(approvedOnly = false) {
                 createdAt: (data.createdAt as Timestamp).toDate().toISOString(),
               } as Testimonial;
             });
+            // If the database has data, use it.
             setTestimonials(testimonialsList);
         }
+        // If query is empty, we just keep the mock data that's already set.
         setIsLoading(false);
       },
       (err) => {
         console.error('Error fetching testimonials from Firestore:', err);
-        console.warn('Using mock data as a fallback.');
-        // Don't set an error message to display, just use the mock data.
-        setTestimonials(mockTestimonials.filter(t => !approvedOnly || t.status === 'approved'));
+        // Silently fail and rely on the mock data already set.
         setIsLoading(false);
       }
     );
