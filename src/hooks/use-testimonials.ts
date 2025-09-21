@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { collection, onSnapshot, query, where, orderBy, Timestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { Testimonial } from '@/lib/definitions';
+import { testimonials as mockTestimonials } from '@/lib/mock-data';
 
 export function useTestimonials(approvedOnly = false) {
   const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
@@ -23,20 +24,25 @@ export function useTestimonials(approvedOnly = false) {
     const unsubscribe = onSnapshot(
       q,
       (querySnapshot) => {
-        const testimonialsList: Testimonial[] = querySnapshot.docs.map((doc) => {
-          const data = doc.data();
-          return {
-            id: doc.id,
-            ...data,
-            createdAt: (data.createdAt as Timestamp).toDate().toISOString(),
-          } as Testimonial;
-        });
-        setTestimonials(testimonialsList);
+        if (querySnapshot.empty) {
+            setTestimonials(mockTestimonials.filter(t => !approvedOnly || t.status === 'approved'));
+        } else {
+            const testimonialsList: Testimonial[] = querySnapshot.docs.map((doc) => {
+              const data = doc.data();
+              return {
+                id: doc.id,
+                ...data,
+                createdAt: (data.createdAt as Timestamp).toDate().toISOString(),
+              } as Testimonial;
+            });
+            setTestimonials(testimonialsList);
+        }
         setIsLoading(false);
       },
       (err) => {
         console.error('Error fetching testimonials:', err);
-        setError('Failed to fetch testimonials. Please try again later.');
+        setError('Failed to fetch testimonials. Using mock data as a fallback.');
+        setTestimonials(mockTestimonials.filter(t => !approvedOnly || t.status === 'approved'));
         setIsLoading(false);
       }
     );
