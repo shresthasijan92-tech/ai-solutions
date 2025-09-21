@@ -77,11 +77,7 @@ export async function createArticle(
     });
   } catch (error) {
     console.error(error);
-    // SIMULATE SUCCESS FOR DEMO
-    revalidatePath('/admin/articles');
-    revalidatePath('/blog');
-    revalidatePath('/');
-    return { message: 'Successfully created article (simulated).', success: true };
+    return { message: 'Failed to create article.', success: false };
   }
 
   revalidatePath('/admin/articles');
@@ -143,11 +139,7 @@ export async function updateArticle(
 
   } catch (error) {
     console.error(error);
-    // SIMULATE SUCCESS FOR DEMO
-    revalidatePath('/admin/articles');
-    revalidatePath('/blog');
-    revalidatePath('/');
-    return { message: 'Successfully updated article (simulated).', success: true };
+    return { message: 'Failed to update article.', success: false };
   }
 
   revalidatePath('/admin/articles');
@@ -190,10 +182,6 @@ export async function deleteArticle(id: string): Promise<{ message: string, succ
     return { message: 'Successfully deleted article.', success: true };
   } catch (error) {
     console.error('Delete Error:', error);
-    // SIMULATE SUCCESS FOR DEMO
-    revalidatePath('/admin/articles');
-    revalidatePath('/blog');
-    revalidatePath('/');
-    return { message: 'Successfully deleted article (simulated).', success: true };
+    return { message: 'Failed to delete article.', success: false };
   }
 }

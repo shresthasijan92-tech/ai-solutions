@@ -71,11 +71,7 @@ export async function createService(
     await addDoc(servicesCollection, { ...rest, imageUrl: finalImageUrl });
   } catch (error) {
     console.error(error);
-    // SIMULATE SUCCESS FOR DEMO
-    revalidatePath('/admin/services');
-    revalidatePath('/services');
-    revalidatePath('/');
-    return { message: 'Successfully created service (simulated).', success: true };
+    return { message: 'Failed to create service.', success: false };
   }
 
   revalidatePath('/admin/services');
@@ -133,11 +129,7 @@ export async function updateService(
 
   } catch (error) {
     console.error(error);
-    // SIMULATE SUCCESS FOR DEMO
-    revalidatePath('/admin/services');
-    revalidatePath('/services');
-    revalidatePath('/');
-    return { message: 'Successfully updated service (simulated).', success: true };
+    return { message: 'Failed to update service.', success: false };
   }
 
   revalidatePath('/admin/services');
@@ -179,10 +171,6 @@ export async function deleteService(id: string): Promise<{ message: string, succ
     revalidatePath('/');
     return { message: 'Successfully deleted service.', success: true };
   } catch (error) {
-    // SIMULATE SUCCESS FOR DEMO
-    revalidatePath('/admin/services');
-    revalidatePath('/services');
-    revalidatePath('/');
-    return { message: 'Successfully deleted service (simulated).', success: true };
+    return { message: 'Failed to delete service.', success: false };
   }
 }

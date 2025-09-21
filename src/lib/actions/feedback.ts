@@ -47,11 +47,9 @@ export async function submitFeedback(
     };
   } catch (error) {
     console.error('Error submitting feedback:', error);
-    // SIMULATE SUCCESS FOR DEMO
-    revalidatePath('/feedback');
     return {
-      message: 'Thank you for your feedback! (simulated)',
-      success: true,
+      message: 'Failed to submit feedback.',
+      success: false,
     };
   }
 }
@@ -70,10 +68,6 @@ export async function updateTestimonialStatus(
     return { success: true, message: `Testimonial has been ${status}.` };
   } catch (error) {
     console.error(`Error updating testimonial ${id} to ${status}:`, error);
-    // This is a temporary workaround to simulate success and unblock UI development.
-    // The root cause is Firestore security rules that need to be configured in the Firebase console.
-    revalidatePath('/admin/feedback');
-    revalidatePath('/feedback');
-    return { success: true, message: `Testimonial status updated to ${status} (simulated).` };
+    return { success: false, message: `Failed to update testimonial status.` };
   }
 }

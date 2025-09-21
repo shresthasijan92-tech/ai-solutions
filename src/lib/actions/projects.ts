@@ -60,11 +60,7 @@ export async function createProject(
 
   } catch (error) {
     console.error(error);
-    // SIMULATE SUCCESS FOR DEMO
-    revalidatePath('/admin/projects');
-    revalidatePath('/projects');
-    revalidatePath('/');
-    return { message: 'Successfully created project (simulated).', success: true };
+    return { message: 'Failed to create project.', success: false };
   }
 
   revalidatePath('/admin/projects');
@@ -103,11 +99,7 @@ export async function updateProject(
 
   } catch (error) {
     console.error(error);
-    // SIMULATE SUCCESS FOR DEMO
-    revalidatePath('/admin/projects');
-    revalidatePath('/projects');
-    revalidatePath('/');
-    return { message: 'Successfully updated project (simulated).', success: true };
+    return { message: 'Failed to update project.', success: false };
   }
 
   revalidatePath('/admin/projects');
@@ -151,10 +143,6 @@ export async function deleteProject(id: string): Promise<{ message: string, succ
     return { message: 'Successfully deleted project.', success: true };
   } catch (error) {
     console.error('Delete Error:', error);
-    // SIMULATE SUCCESS FOR DEMO
-    revalidatePath('/admin/projects');
-    revalidatePath('/projects');
-    revalidatePath('/');
-    return { message: 'Successfully deleted project (simulated).', success: true };
+    return { message: 'Failed to delete project.', success: false };
   }
 }

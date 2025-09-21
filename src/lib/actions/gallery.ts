@@ -69,11 +69,7 @@ export async function createGalleryImage(
     await addDoc(galleryCollection, { ...rest, imageUrl: finalImageUrl });
   } catch (error) {
     console.error(error);
-    // SIMULATE SUCCESS FOR DEMO
-    revalidatePath('/admin/gallery');
-    revalidatePath('/gallery');
-    revalidatePath('/');
-    return { message: 'Successfully created gallery image (simulated).', success: true };
+    return { message: 'Failed to create gallery image.', success: false };
   }
 
   revalidatePath('/admin/gallery');
@@ -132,11 +128,7 @@ export async function updateGalleryImage(
 
   } catch (error) {
     console.error(error);
-    // SIMULATE SUCCESS FOR DEMO
-    revalidatePath('/admin/gallery');
-    revalidatePath('/gallery');
-    revalidatePath('/');
-    return { message: 'Successfully updated gallery image (simulated).', success: true };
+    return { message: 'Failed to update gallery image.', success: false };
   }
 
   revalidatePath('/admin/gallery');
@@ -180,10 +172,6 @@ export async function deleteGalleryImage(id: string): Promise<{ message: string,
     return { message: 'Successfully deleted gallery image.', success: true };
   } catch (error) {
     console.error('Delete Error:', error);
-    // SIMULATE SUCCESS FOR DEMO
-    revalidatePath('/admin/gallery');
-    revalidatePath('/gallery');
-    revalidatePath('/');
-    return { message: 'Successfully deleted gallery image (simulated).', success: true };
+    return { message: 'Failed to delete gallery image.', success: false };
   }
 }
