@@ -1,11 +1,21 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { ArrowRight } from 'lucide-react';
-import { galleryImages } from '@/lib/mock-data';
+import { getGalleryImages } from '@/lib/gallery';
+import { galleryImages as mockGalleryImages } from '@/lib/mock-data';
 import { Button } from '@/components/ui/button';
 
-export function FeaturedGallery() {
-  const featuredImages = galleryImages.filter((image) => image.featured).slice(0, 3);
+export async function FeaturedGallery() {
+  const allImages = await getGalleryImages();
+  const featuredImagesFromDb = allImages.filter((image) => image.featured);
+  
+  const imagesToDisplay = featuredImagesFromDb.length > 0 
+    ? featuredImagesFromDb.slice(0, 4) 
+    : mockGalleryImages.filter(i => ["Team Collaboration", "Office Environment", "AI Conference Talk", "Data Insights"].includes(i.title)).slice(0, 4);
+
+  if (imagesToDisplay.length === 0) {
+    return null;
+  }
 
   return (
     <section className="bg-secondary py-12 md:py-20">
@@ -14,14 +24,14 @@ export function FeaturedGallery() {
           <h2 className="text-3xl font-headline font-bold">Gallery</h2>
           <Button variant="ghost" asChild>
             <Link href="/gallery">
-              View Full Gallery <ArrowRight className="ml-2 h-4 w-4" />
+              View All <ArrowRight className="ml-2 h-4 w-4" />
             </Link>
           </Button>
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-          {featuredImages.map((galleryImage, index) => {
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {imagesToDisplay.map((galleryImage) => {
             return (
-              <div key={galleryImage.id} className="relative aspect-square overflow-hidden rounded-lg group">
+              <div key={galleryImage.id} className="relative aspect-[4/3] overflow-hidden rounded-lg group">
                 {galleryImage.imageUrl && (
                   <Image
                     src={galleryImage.imageUrl}
@@ -30,8 +40,8 @@ export function FeaturedGallery() {
                     className="object-cover transition-transform duration-300 group-hover:scale-105"
                   />
                 )}
-                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                    <p className="text-white font-headline text-lg">{galleryImage.title}</p>
+                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center p-4">
+                    <p className="text-white font-headline text-lg text-center">{galleryImage.title}</p>
                 </div>
               </div>
             );
