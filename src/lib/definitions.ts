@@ -71,3 +71,13 @@ export type Testimonial = {
   createdAt: string;
   status: 'pending' | 'approved' | 'rejected';
 };
+
+export type Contact = {
+  id: string;
+  fullName: string;
+  email: string;
+  companyName?: string;
+  contactNumber?: string;
+  projectDetails: string;
+  submittedAt: string;
+};
