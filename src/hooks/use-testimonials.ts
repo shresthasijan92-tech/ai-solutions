@@ -24,7 +24,8 @@ export function useTestimonials(approvedOnly = false) {
     const unsubscribe = onSnapshot(
       q,
       (querySnapshot) => {
-        if (querySnapshot.empty) {
+        if (querySnapshot.empty && mockTestimonials.length > 0) {
+            // If firestore is empty, but we have mock data, use it.
             setTestimonials(mockTestimonials.filter(t => !approvedOnly || t.status === 'approved'));
         } else {
             const testimonialsList: Testimonial[] = querySnapshot.docs.map((doc) => {
@@ -40,8 +41,9 @@ export function useTestimonials(approvedOnly = false) {
         setIsLoading(false);
       },
       (err) => {
-        console.error('Error fetching testimonials:', err);
-        setError('Failed to fetch testimonials. Using mock data as a fallback.');
+        console.error('Error fetching testimonials from Firestore:', err);
+        console.warn('Using mock data as a fallback.');
+        // Don't set an error message to display, just use the mock data.
         setTestimonials(mockTestimonials.filter(t => !approvedOnly || t.status === 'approved'));
         setIsLoading(false);
       }
