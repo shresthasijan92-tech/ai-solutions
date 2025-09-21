@@ -28,6 +28,7 @@ export function useTestimonials(approvedOnly = false) {
           return {
             id: doc.id,
             ...data,
+            createdAt: (data.createdAt as Timestamp).toDate().toISOString(),
           } as Testimonial;
         });
         setTestimonials(testimonialsList);
