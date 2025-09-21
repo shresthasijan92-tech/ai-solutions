@@ -1,5 +1,6 @@
 import { BrainCircuit, Bot, LineChart, Code, TestTube2, Layers3 } from 'lucide-react';
 import type { Service, Project, Article, GalleryImage, Event, Job, Testimonial } from './definitions';
+import { Timestamp } from 'firebase/firestore';
 
 export const services: Service[] = [
   { id: 's1', title: 'AI Strategy Consulting', description: 'Develop a roadmap for AI integration tailored to your business goals.', icon: 'BrainCircuit', imageUrl: 'https://picsum.photos/seed/s1/600/400', benefits: ['Competitive Advantage', 'ROI-focused plan', 'Risk Mitigation'], price: 'Starting at $5,000', featured: true },
@@ -19,8 +20,8 @@ export const projects: Project[] = [
 
 export const articles: Article[] = [
   { id: 'a1', title: 'The Generative AI Revolution: What It Means for Your Business', excerpt: 'Explore how generative AI is reshaping industries and how you can leverage it for a competitive edge.', imageUrl: 'https://picsum.photos/seed/ai-business/600/400', publishedAt: '2024-07-15', featured: true, fullArticleUrl: 'https://www.microsoft.com/en-us/microsoft-cloud/blog/2024/07/24/ai-powered-success-with-1000-stories-of-customer-transformation-and-innovation/' },
-  { id: 'a2', title: '5 Common Pitfalls to Avoid in Your Next Machine Learning Project', excerpt: 'Learn from common mistakes to ensure your ML projects are successful and deliver real value.', imageUrl: 'https://picsum.photos/seed/b2/600/400', publishedAt: '2024-06-28', featured: true, fullArticleUrl: 'https://howays.com/wp-content/uploads/2024/08/NTT_DATA_Google_Cloud_AI_partnership_digital_transformation_data_sovereignty-1024x683.png' },
-  { id: 'a3', title: 'An Introduction to Genkit and the Future of AI Development', excerpt: 'A deep dive into Google\'s new Genkit framework and how it simplifies building AI-powered applications.', imageUrl: 'https://cdn.sanity.io/images/0vv8moc6/medec/8022c91678b2731dffb6b564ec54ab428b93dc1e-5376x3584.jpg?fit=crop&auto=format', publishedAt: '2024-06-10', featured: true, fullArticleUrl: 'https://images.yourstory.com/cs/2/96eabe90392211eb93f18319e8c07a74/NucleusAIStudentstudyingwithAItutorachievinga94examsf5096b24-294c-4521-b257-9924a4bd07d4-1681899381357.png?mode=crop&crop=faces&ar=2%3A1&format=auto&w=1920&q=75' },
+  { id: 'a2', title: '5 Common Pitfalls to Avoid in Your Next Machine Learning Project', excerpt: 'Learn from common mistakes to ensure your ML projects are successful and deliver real value.', imageUrl: 'https://howays.com/wp-content/uploads/2024/08/NTT_DATA_Google_Cloud_AI_partnership_digital_transformation_data_sovereignty-1024x683.png', publishedAt: '2024-06-28', featured: true, fullArticleUrl: 'https://howays.com/wp-content/uploads/2024/08/NTT_DATA_Google_Cloud_AI_partnership_digital_transformation_data_sovereignty-1024x683.png' },
+  { id: 'a3', title: 'An Introduction to Genkit and the Future of AI Development', excerpt: "A deep dive into Google's new Genkit framework and how it simplifies building AI-powered applications.", imageUrl: 'https://cdn.sanity.io/images/0vv8moc6/medec/8022c91678b2731dffb6b564ec54ab428b93dc1e-5376x3584.jpg?fit=crop&auto=format', publishedAt: '2024-06-10', featured: true, fullArticleUrl: 'https://images.yourstory.com/cs/2/96eabe90392211eb93f18319e8c07a74/NucleusAIStudentstudyingwithAItutorachievinga94examsf5096b24-294c-4521-b257-9924a4bd07d4-1681899381357.png?mode=crop&crop=faces&ar=2%3A1&format=auto&w=1920&q=75' },
 ];
 
 export const galleryImages: GalleryImage[] = [
@@ -34,8 +35,8 @@ export const galleryImages: GalleryImage[] = [
 
 export const events: Event[] = [
   { id: 'e1', title: 'Webinar: AI for UK Businesses', date: '2025-10-15', location: 'Online', description: 'A free webinar covering practical AI applications for small and medium-sized businesses.', featured: true },
-  { id: 'e2', title: 'AI Innovation Summit', date: '2025-11-20', location: 'Manchester, UK', description: 'Join us at the premier event for AI professionals and enthusiasts. We\'ll be at booth #123.', featured: true },
-  { id: 'e3', title: 'Tech Meetup: The Future of NLP', date: '2025-12-05', location: 'Edinburgh, UK', description: 'Our lead data scientist will be giving a talk on the latest advancements in Natural Language Processing.', featured: false },
+  { id: 'e2', title: 'AI Innovation Summit', date: '2025-11-20', location: 'Manchester, UK', description: "Join us at the premier event for AI professionals and enthusiasts. We'll be at booth #123.", featured: true },
+  { id: 'e3', title: 'Tech Meetup: The Future of NLP', date: '2025-12-05', location: 'Edinburgh, UK', description: "Our lead data scientist will be giving a talk on the latest advancements in Natural Language Processing.", featured: false },
 ];
 
 export const jobs: Job[] = [
@@ -45,8 +46,8 @@ export const jobs: Job[] = [
 ];
 
 export const testimonials: Testimonial[] = [
-    { id: 't1', name: 'Jane Doe', company: 'Innovate Corp', feedback: 'AI Solutions transformed our operations. Their custom AI model was a game-changer for our business.', rating: 5, createdAt: '2024-05-20', status: 'approved' },
-    { id: 't2', name: 'John Smith', company: 'TechForward', feedback: 'The team was incredibly professional and knowledgeable. They delivered beyond our expectations.', rating: 5, createdAt: '2024-04-12', status: 'approved' },
-    { id: 't3', name: 'Emily White', company: 'DataDriven Inc.', feedback: 'Their data analytics services provided the clarity we needed to scale our marketing efforts effectively.', rating: 4, createdAt: '2024-03-01', status: 'approved' },
-    { id: 't4', name: 'Michael Brown', company: 'NextGen Solutions', feedback: 'Working with AI Solutions was a great experience. Highly recommend their strategy consulting.', rating: 5, createdAt: '2024-06-30', status: 'pending' },
+    { id: 't1', name: 'Jane Doe', company: 'Innovate Corp', feedback: 'AI Solutions transformed our operations. Their custom AI model was a game-changer for our business.', rating: 5, createdAt: Timestamp.fromDate(new Date('2024-05-20')), status: 'approved' },
+    { id: 't2', name: 'John Smith', company: 'TechForward', feedback: 'The team was incredibly professional and knowledgeable. They delivered beyond our expectations.', rating: 5, createdAt: Timestamp.fromDate(new Date('2024-04-12')), status: 'approved' },
+    { id: 't3', name: 'Emily White', company: 'DataDriven Inc.', feedback: 'Their data analytics services provided the clarity we needed to scale our marketing efforts effectively.', rating: 4, createdAt: Timestamp.fromDate(new Date('2024-03-01')), status: 'approved' },
+    { id: 't4', name: 'Michael Brown', company: 'NextGen Solutions', feedback: 'Working with AI Solutions was a great experience. Highly recommend their strategy consulting.', rating: 5, createdAt: Timestamp.fromDate(new Date('2024-06-30')), status: 'pending' },
 ];

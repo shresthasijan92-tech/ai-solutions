@@ -68,7 +68,7 @@ export type Testimonial = {
   company: string;
   feedback: string;
   rating: number;
-  createdAt: string;
+  createdAt: Timestamp | Date | string;
   status: 'pending' | 'approved' | 'rejected';
 };
 
