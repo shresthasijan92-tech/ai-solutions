@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Briefcase, FileText, Image as ImageIcon, Calendar, Users, MessageSquare, BriefcaseBusiness } from 'lucide-react';
+import { Home, Briefcase, FileText, Image as ImageIcon, Calendar, Users, MessageSquare, BriefcaseBusiness, ArrowUpLeft } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 import { Logo } from '@/components/logo';
@@ -48,6 +48,7 @@ export function AdminSidebar() {
             href="/"
             className="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
         >
+            <ArrowUpLeft className="h-4 w-4" />
             Back to Site
         </Link>
       </div>
