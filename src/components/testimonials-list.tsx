@@ -1,11 +1,13 @@
 'use client';
 
-import { useTestimonials } from '@/hooks/use-testimonials';
+import { useState, useEffect } from 'react';
+import { getTestimonials } from '@/lib/testimonials';
 import { Card, CardContent } from '@/components/ui/card';
 import { Star } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { testimonials as mockTestimonials } from '@/lib/mock-data';
+import type { Testimonial } from '@/lib/definitions';
 
 function StarRating({ rating }: { rating: number }) {
   return (
@@ -26,12 +28,29 @@ function StarRating({ rating }: { rating: number }) {
 }
 
 export function TestimonialsList() {
-  const { testimonials: testimonialsFromDb, isLoading, error } = useTestimonials(true);
+  const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+  
+  useEffect(() => {
+    async function loadTestimonials() {
+      try {
+        setIsLoading(true);
+        const approvedTestimonials = await getTestimonials(true);
+        if (approvedTestimonials.length > 0) {
+            setTestimonials(approvedTestimonials);
+        } else {
+            setTestimonials(mockTestimonials.filter((t) => t.status === 'approved'));
+        }
+      } catch (err: any) {
+        setError(err);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    loadTestimonials();
+  }, []);
 
-  const testimonials =
-    isLoading || !testimonialsFromDb || testimonialsFromDb.length === 0
-      ? mockTestimonials.filter((t) => t.status === 'approved')
-      : testimonialsFromDb;
 
   if (isLoading) {
     return (
@@ -44,7 +63,7 @@ export function TestimonialsList() {
   }
 
   if (error) {
-    return <p className="text-destructive">{error.message}</p>;
+    return <p className="text-destructive">Failed to load testimonials. Please try again later.</p>;
   }
 
   if (testimonials.length === 0) {
