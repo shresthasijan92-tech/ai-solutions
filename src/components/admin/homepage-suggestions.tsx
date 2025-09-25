@@ -52,15 +52,7 @@ export function HomepageSuggestions() {
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2 font-headline">
-            <Wand2 className="h-5 w-5" />
-            AI Homepage Suggestions
-        </CardTitle>
-        <CardDescription>
-          Select the content types you want to feature on the homepage, and our AI will suggest an optimal layout for user engagement.
-        </CardDescription>
-      </CardHeader>
+      
       <CardContent>
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-5">

@@ -28,7 +28,6 @@ export default function AdminDashboardPage() {
         ))}
       </div>
 
-      <HomepageSuggestions />
     </div>
   );
 }
