@@ -16,12 +16,12 @@ export default function AdminDashboardPage() {
   const { testimonials, isLoading: isLoadingTestimonials } = useTestimonials(!isAuthLoading);
 
   // Prevent calculation until auth state and data are ready
-  const pendingFeedbackCount = !isAuthLoading && testimonials ? testimonials.filter(t => t.status === 'pending').length : 0;
+  const pendingFeedbackCount = !isAuthLoading && testimonials ? testimonials.length : 0;
 
   const stats = [
     { title: 'Total Services', value: services?.length ?? 0, icon: Briefcase, isLoading: isLoadingServices },
     { title: 'Total Projects', value: projects?.length ?? 0, icon: FileText, isLoading: isLoadingProjects },
-    { title: 'Pending Feedback', value: pendingFeedbackCount, icon: MessageSquare, isLoading: isAuthLoading || isLoadingTestimonials },
+    { title: 'Total Feedback', value: pendingFeedbackCount, icon: MessageSquare, isLoading: isAuthLoading || isLoadingTestimonials },
   ];
 
   return (
