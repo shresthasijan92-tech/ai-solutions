@@ -35,12 +35,12 @@ import { cn } from '@/lib/utils';
 const ArticleFormSchema = z.object({
   title: z.string().min(1, 'Title is required'),
   excerpt: z.string().min(1, 'Excerpt is required'),
+  content: z.string().min(1, 'Full article content is required'),
   imageUrl: z.string().min(1, 'An image is required'),
   publishedAt: z.date({
     required_error: 'A date of publication is required.',
   }),
   featured: z.boolean(),
-  fullArticleUrl: z.string().url({ message: "Please enter a valid URL." }).optional().or(z.literal('')),
 });
 
 type ArticleFormValues = z.infer<typeof ArticleFormSchema>;
@@ -67,10 +67,10 @@ export function ArticleForm({ article, onSuccess }: ArticleFormProps) {
     defaultValues: {
       title: '',
       excerpt: '',
+      content: '',
       imageUrl: '',
       publishedAt: new Date(),
       featured: false,
-      fullArticleUrl: '',
     },
   });
   
@@ -79,19 +79,19 @@ export function ArticleForm({ article, onSuccess }: ArticleFormProps) {
       form.reset({
         title: article.title || '',
         excerpt: article.excerpt || '',
+        content: article.content || '',
         imageUrl: article.imageUrl || '',
         publishedAt: article.publishedAt ? toDate(article.publishedAt) : new Date(),
         featured: article.featured || false,
-        fullArticleUrl: article.fullArticleUrl || '',
       });
     } else {
        form.reset({
         title: '',
         excerpt: '',
+        content: '',
         imageUrl: '',
         publishedAt: new Date(),
         featured: false,
-        fullArticleUrl: '',
       });
     }
   }, [article, form]);
@@ -163,6 +163,26 @@ export function ArticleForm({ article, onSuccess }: ArticleFormProps) {
             </FormItem>
           )}
         />
+         <FormField
+          control={form.control}
+          name="content"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Full Content</FormLabel>
+              <FormControl>
+                <Textarea
+                  placeholder="The full content of the article."
+                  {...field}
+                  rows={10}
+                />
+              </FormControl>
+               <FormDescription>
+                This content will be displayed on the article page.
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
         <FormField
           control={form.control}
           name="publishedAt"
@@ -212,22 +232,6 @@ export function ArticleForm({ article, onSuccess }: ArticleFormProps) {
               </FormControl>
               <FormDescription>
                 Provide a full web link to an image for the article.
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="fullArticleUrl"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Full Article URL</FormLabel>
-              <FormControl>
-                <Input placeholder="https://example.com/full-article" {...field} value={field.value ?? ''} />
-              </FormControl>
-              <FormDescription>
-                Link to the complete article. Leave blank if not applicable.
               </FormDescription>
               <FormMessage />
             </FormItem>

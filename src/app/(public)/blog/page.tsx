@@ -26,11 +26,11 @@ export default async function BlogPage() {
       ) : (
         <div className="grid gap-8 md:grid-cols-1 lg:grid-cols-3">
           {articles.map((article) => {
-             const articleLink = article.fullArticleUrl || `/blog/${article.id}`;
+             const articleLink = `/blog/${article.id}`;
              return (
               <Card key={article.id} className="overflow-hidden group flex flex-col">
                 <CardHeader className="p-0">
-                  <Link href={articleLink} target={article.fullArticleUrl ? '_blank' : '_self'} rel="noopener noreferrer" className="block relative h-48 w-full overflow-hidden">
+                  <Link href={articleLink} className="block relative h-48 w-full overflow-hidden">
                     {article.imageUrl && (
                       <Image
                         src={article.imageUrl}
@@ -43,7 +43,7 @@ export default async function BlogPage() {
                 </CardHeader>
                 <CardContent className="p-6 flex flex-col flex-grow">
                   <h3 className="font-headline text-xl mb-2 font-semibold leading-tight">
-                    <Link href={articleLink} target={article.fullArticleUrl ? '_blank' : '_self'} rel="noopener noreferrer" className="hover:text-primary transition-colors">
+                    <Link href={articleLink} className="hover:text-primary transition-colors">
                       {article.title}
                     </Link>
                   </h3>
@@ -53,13 +53,11 @@ export default async function BlogPage() {
                         <CalendarIcon className="h-4 w-4 mr-2" />
                         <span>{toDate(article.publishedAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
                     </div>
-                    {article.fullArticleUrl && (
-                        <Button variant="link" className="p-0 h-auto self-start" asChild>
-                           <Link href={article.fullArticleUrl} target="_blank" rel="noopener noreferrer">
-                                Read Full Article <ArrowRight className="ml-2 h-4 w-4" />
-                            </Link>
-                        </Button>
-                    )}
+                    <Button variant="link" className="p-0 h-auto self-start" asChild>
+                        <Link href={articleLink}>
+                            Read Full Article <ArrowRight className="ml-2 h-4 w-4" />
+                        </Link>
+                    </Button>
                   </div>
                 </CardContent>
               </Card>

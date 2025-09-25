@@ -32,10 +32,10 @@ export type Article = {
   id:string;
   title: string;
   excerpt: string;
+  content: string;
   imageUrl: string;
   publishedAt: string | Timestamp | Date;
   featured: boolean;
-  fullArticleUrl?: string;
 };
 
 export type GalleryImage = {

@@ -1,6 +1,6 @@
 'use server';
 import { db } from './firebase';
-import { collection, getDocs, query, Timestamp } from 'firebase/firestore';
+import { collection, getDocs, query, Timestamp, doc, getDoc } from 'firebase/firestore';
 import type { Article } from './definitions';
 
 export async function getArticles(): Promise<Article[]> {
@@ -19,15 +19,44 @@ export async function getArticles(): Promise<Article[]> {
         id: doc.id,
         title: data.title,
         excerpt: data.excerpt,
+        content: data.content,
         imageUrl: data.imageUrl,
         publishedAt: publishedAt,
         featured: data.featured || false,
-        fullArticleUrl: data.fullArticleUrl,
       } as Article;
     });
     return articlesList;
   } catch (error) {
     console.error("Error fetching articles from Firestore:", error);
     return [];
+  }
+}
+
+export async function getArticle(id: string): Promise<Article | null> {
+  try {
+    const articleDocRef = doc(db, 'articles', id);
+    const docSnap = await getDoc(articleDocRef);
+
+    if (!docSnap.exists()) {
+      return null;
+    }
+
+    const data = docSnap.data();
+    const publishedAt = data.publishedAt instanceof Timestamp
+      ? data.publishedAt.toDate().toISOString()
+      : data.publishedAt;
+
+    return {
+      id: docSnap.id,
+      title: data.title,
+      excerpt: data.excerpt,
+      content: data.content,
+      imageUrl: data.imageUrl,
+      publishedAt: publishedAt,
+      featured: data.featured || false,
+    } as Article;
+  } catch (error) {
+    console.error(`Error fetching article ${id} from Firestore:`, error);
+    return null;
   }
 }

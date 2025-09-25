@@ -26,10 +26,10 @@ const storage = getStorage(app);
 const ArticleActionSchema = z.object({
   title: z.string().min(1, 'Title is required'),
   excerpt: z.string().min(1, 'Excerpt is required'),
+  content: z.string().min(1, 'Full article content is required.'),
   imageUrl: z.string().min(1, 'Image is required'),
   publishedAt: z.date(),
   featured: z.boolean(),
-  fullArticleUrl: z.string().url('Must be a valid URL').optional().or(z.literal('')),
 });
 
 export type ArticleFormState = {
@@ -139,6 +139,7 @@ export async function updateArticle(
 
     revalidatePath('/admin/articles');
     revalidatePath('/blog');
+    revalidatePath(`/blog/${id}`);
     revalidatePath('/');
     return { message: 'Successfully updated article.', success: true };
   } catch (error) {
@@ -177,6 +178,7 @@ export async function deleteArticle(id: string): Promise<{ message: string, succ
     await deleteDoc(articleDocRef);
     revalidatePath('/admin/articles');
     revalidatePath('/blog');
+    revalidatePath(`/blog/${id}`);
     revalidatePath('/');
     return { message: 'Successfully deleted article.', success: true };
   } catch (error) {
