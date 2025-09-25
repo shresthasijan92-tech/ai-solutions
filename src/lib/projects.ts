@@ -1,6 +1,6 @@
 'use server';
 import { db } from './firebase';
-import { collection, getDocs, query } from 'firebase/firestore';
+import { collection, getDocs, query, doc, getDoc } from 'firebase/firestore';
 import type { Project } from './definitions';
 
 export async function getProjects(): Promise<Project[]> {
@@ -18,6 +18,7 @@ export async function getProjects(): Promise<Project[]> {
         technologies: data.technologies || [],
         featured: data.featured || false,
         link: data.link || '',
+        caseStudy: data.caseStudy || '',
       } as Project;
     });
     return projectsList;
@@ -25,4 +26,24 @@ export async function getProjects(): Promise<Project[]> {
     console.error("Error fetching projects from Firestore:", error);
     return [];
   }
+}
+
+export async function getProject(id: string): Promise<Project | null> {
+    try {
+        const projectDocRef = doc(db, 'projects', id);
+        const docSnap = await getDoc(projectDocRef);
+
+        if (!docSnap.exists()) {
+            return null;
+        }
+
+        const data = docSnap.data();
+        return {
+            id: docSnap.id,
+            ...data,
+        } as Project;
+    } catch (error) {
+        console.error(`Error fetching project ${id} from Firestore:`, error);
+        return null;
+    }
 }

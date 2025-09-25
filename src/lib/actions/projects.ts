@@ -31,6 +31,7 @@ const ProjectSchema = z.object({
     .min(1, 'At least one technology is required'),
   link: z.string().url('Must be a valid URL'),
   featured: z.boolean(),
+  caseStudy: z.string().optional(),
 });
 
 export type ProjectFormState = {
@@ -138,6 +139,7 @@ export async function updateProject(
   revalidatePath('/admin/projects');
   revalidatePath('/projects');
   revalidatePath('/');
+  revalidatePath(`/projects/${id}`);
   return { message: 'Successfully updated project.', success: true };
 }
 
@@ -172,6 +174,7 @@ export async function deleteProject(id: string): Promise<{ message: string, succ
 
     revalidatePath('/admin/projects');
     revalidatePath('/projects');
+    revalidatePath(`/projects/${id}`);
     revalidatePath('/');
     return { message: 'Successfully deleted project.', success: true };
   } catch (error) {

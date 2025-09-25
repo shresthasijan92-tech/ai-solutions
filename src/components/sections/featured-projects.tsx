@@ -52,7 +52,7 @@ export async function FeaturedProjects() {
                     ))}
                   </div>
                   <Button variant="link" className="p-0 h-auto" asChild>
-                    <Link href={project.link}>View Case Study <ArrowRight className="ml-2 h-4 w-4" /></Link>
+                    <Link href={`/projects/${project.id}`}>View Case Study <ArrowRight className="ml-2 h-4 w-4" /></Link>
                   </Button>
                 </CardContent>
               </Card>

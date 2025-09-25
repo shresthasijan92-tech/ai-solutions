@@ -42,7 +42,7 @@ export default async function ProjectsPage() {
                     ))}
                   </div>
                   <Button variant="link" className="p-0 h-auto self-start" asChild>
-                    <Link href={project.link}>View Case Study <ArrowRight className="ml-2 h-4 w-4" /></Link>
+                    <Link href={`/projects/${project.id}`}>View Case Study <ArrowRight className="ml-2 h-4 w-4" /></Link>
                   </Button>
                 </CardContent>
               </Card>

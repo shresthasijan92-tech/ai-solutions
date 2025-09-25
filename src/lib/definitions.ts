@@ -26,6 +26,7 @@ export type Project = {
   technologies: string[];
   featured: boolean;
   link: string;
+  caseStudy?: string;
 };
 
 export type Article = {
