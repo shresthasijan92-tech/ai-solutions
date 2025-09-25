@@ -90,7 +90,7 @@ export function TestimonialsTable({ testimonials }: TestimonialsTableProps) {
   }
 
   return (
-    <>
+    <AlertDialog>
       <div className="rounded-lg border">
         <Table>
           <TableHeader>
@@ -125,25 +125,25 @@ export function TestimonialsTable({ testimonials }: TestimonialsTableProps) {
           </TableBody>
         </Table>
       </div>
-      <AlertDialog open={!!testimonialToDelete} onOpenChange={(open) => !open && setTestimonialToDelete(null)}>
+      {testimonialToDelete && (
         <AlertDialogContent>
-          <AlertDialogHeader>
+            <AlertDialogHeader>
             <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the testimonial from &quot;{testimonialToDelete?.name}&quot;.
+                This action cannot be undone. This will permanently delete the testimonial from &quot;{testimonialToDelete?.name}&quot;.
             </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setTestimonialToDelete(null)}>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              onClick={handleConfirmDelete}
-              className="bg-destructive hover:bg-destructive/90"
+                onClick={handleConfirmDelete}
+                className="bg-destructive hover:bg-destructive/90"
             >
-              Delete
+                Delete
             </AlertDialogAction>
-          </AlertDialogFooter>
+            </AlertDialogFooter>
         </AlertDialogContent>
-      </AlertDialog>
-    </>
+      )}
+    </AlertDialog>
   );
 }
