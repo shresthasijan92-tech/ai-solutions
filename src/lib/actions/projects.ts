@@ -29,7 +29,6 @@ const ProjectSchema = z.object({
   technologies: z
     .array(z.string())
     .min(1, 'At least one technology is required'),
-  link: z.string().url('Must be a valid URL'),
   featured: z.boolean(),
   caseStudy: z.string().optional(),
 });

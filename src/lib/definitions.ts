@@ -25,7 +25,6 @@ export type Project = {
   imageUrl: string;
   technologies: string[];
   featured: boolean;
-  link: string;
   caseStudy?: string;
 };
 

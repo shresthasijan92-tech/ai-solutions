@@ -17,7 +17,6 @@ export async function getProjects(): Promise<Project[]> {
         imageUrl: data.imageUrl,
         technologies: data.technologies || [],
         featured: data.featured || false,
-        link: data.link || '',
         caseStudy: data.caseStudy || '',
       } as Project;
     });

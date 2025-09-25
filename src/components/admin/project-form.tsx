@@ -31,7 +31,6 @@ const ProjectFormSchema = z.object({
   description: z.string().min(1, 'Description is required'),
   imageUrl: z.string().min(1, 'An image is required'),
   technologies: z.string().min(1, 'At least one technology is required'),
-  link: z.string().url('Must be a valid URL'),
   featured: z.boolean(),
   caseStudy: z.string().optional(),
 });
@@ -54,7 +53,6 @@ export function ProjectForm({ project, onSuccess }: ProjectFormProps) {
       description: '',
       imageUrl: '',
       technologies: '',
-      link: '',
       featured: false,
       caseStudy: '',
     },
@@ -67,7 +65,6 @@ export function ProjectForm({ project, onSuccess }: ProjectFormProps) {
         description: project.description || '',
         imageUrl: project.imageUrl || '',
         technologies: project.technologies.join(', ') || '',
-        link: project.link || '',
         featured: project.featured || false,
         caseStudy: project.caseStudy || '',
       });
@@ -77,7 +74,6 @@ export function ProjectForm({ project, onSuccess }: ProjectFormProps) {
         description: '',
         imageUrl: '',
         technologies: '',
-        link: '',
         featured: false,
         caseStudy: '',
       });
@@ -209,22 +205,6 @@ export function ProjectForm({ project, onSuccess }: ProjectFormProps) {
               </FormControl>
               <FormDescription>
                 Enter a comma-separated list of technologies.
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="link"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>External Link (Optional)</FormLabel>
-              <FormControl>
-                <Input placeholder="https://example.com/case-study" {...field} />
-              </FormControl>
-              <FormDescription>
-                An optional external link for the project. The primary link will be the internal case study page.
               </FormDescription>
               <FormMessage />
             </FormItem>

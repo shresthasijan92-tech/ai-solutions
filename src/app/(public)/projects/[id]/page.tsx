@@ -2,7 +2,7 @@ import { getProject, getProjects } from '@/lib/projects';
 import { projects as mockProjects } from '@/lib/mock-data';
 import { notFound } from 'next/navigation';
 import Image from 'next/image';
-import { ArrowLeft, ExternalLink } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import { ArticleRenderer } from '@/components/article-renderer';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
@@ -53,13 +53,6 @@ export default async function ProjectPage({ params }: { params: { id: string } }
                     <div className="sticky top-24 space-y-4">
                          <h3 className="font-headline font-semibold text-lg">Project Details</h3>
                          <p className="text-muted-foreground">{project.description}</p>
-                         {project.link && (
-                            <Button asChild className="w-full">
-                                <a href={project.link} target="_blank" rel="noopener noreferrer">
-                                    View External Link <ExternalLink className="ml-2 h-4 w-4" />
-                                </a>
-                            </Button>
-                         )}
                     </div>
                 </div>
             </div>
