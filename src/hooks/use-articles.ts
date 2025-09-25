@@ -1,42 +1,26 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { collection, onSnapshot, query, orderBy, Timestamp } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { useMemo } from 'react';
+import { collection, query, orderBy } from 'firebase/firestore';
+import { useCollection, useFirestore } from '@/firebase';
 import type { Article } from '@/lib/definitions';
 
 export function useArticles() {
-  const [articles, setArticles] = useState<Article[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const firestore = useFirestore();
+  const articlesCol = useMemo(
+    () => (firestore ? collection(firestore, 'articles') : null),
+    [firestore]
+  );
+  const articlesQuery = useMemo(
+    () => (articlesCol ? query(articlesCol, orderBy('publishedAt', 'desc')) : null),
+    [articlesCol]
+  );
 
-  useEffect(() => {
-    const articlesCol = collection(db, 'articles');
-    const q = query(articlesCol, orderBy('publishedAt', 'desc'));
-
-    const unsubscribe = onSnapshot(
-      q,
-      (querySnapshot) => {
-        const articlesList: Article[] = querySnapshot.docs.map((doc) => {
-          const data = doc.data();
-          return {
-            id: doc.id,
-            ...data,
-            publishedAt: data.publishedAt, // This can be a Timestamp
-          } as Article
-        });
-        setArticles(articlesList);
-        setIsLoading(false);
-      },
-      (err) => {
-        console.error('Error fetching articles:', err);
-        setError('Failed to fetch articles. Please try again later.');
-        setIsLoading(false);
-      }
-    );
-
-    return () => unsubscribe();
-  }, []);
+  const {
+    data: articles,
+    isLoading,
+    error,
+  } = useCollection<Article>(articlesQuery);
 
   return { articles, isLoading, error };
 }

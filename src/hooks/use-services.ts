@@ -1,39 +1,26 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { collection, onSnapshot, query } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { useMemo } from 'react';
+import { collection, query } from 'firebase/firestore';
+import { useCollection, useFirestore } from '@/firebase';
 import type { Service } from '@/lib/definitions';
 
 export function useServices() {
-  const [services, setServices] = useState<Service[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const firestore = useFirestore();
+  const servicesCol = useMemo(
+    () => (firestore ? collection(firestore, 'services') : null),
+    [firestore]
+  );
+  const servicesQuery = useMemo(
+    () => (servicesCol ? query(servicesCol) : null),
+    [servicesCol]
+  );
 
-  useEffect(() => {
-    const servicesCol = collection(db, 'services');
-    const q = query(servicesCol);
-
-    const unsubscribe = onSnapshot(
-      q,
-      (querySnapshot) => {
-        const servicesList: Service[] = querySnapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        } as Service));
-        setServices(servicesList);
-        setIsLoading(false);
-      },
-      (err) => {
-        console.error('Error fetching services:', err);
-        setError('Failed to fetch services. Please try again later.');
-        setIsLoading(false);
-      }
-    );
-
-    // Cleanup subscription on unmount
-    return () => unsubscribe();
-  }, []);
+  const {
+    data: services,
+    isLoading,
+    error,
+  } = useCollection<Service>(servicesQuery);
 
   return { services, isLoading, error };
 }

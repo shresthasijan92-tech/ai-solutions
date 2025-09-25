@@ -1,38 +1,25 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { collection, onSnapshot, query } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { useMemo } from 'react';
+import { collection, query } from 'firebase/firestore';
+import { useCollection, useFirestore } from '@/firebase';
 import type { GalleryImage } from '@/lib/definitions';
 
 export function useGalleryImages() {
-  const [galleryImages, setGalleryImages] = useState<GalleryImage[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const firestore = useFirestore();
+  const galleryCol = useMemo(
+    () => (firestore ? collection(firestore, 'gallery') : null),
+    [firestore]
+  );
+  const galleryQuery = useMemo(() => (galleryCol ? query(galleryCol) : null), [
+    galleryCol,
+  ]);
 
-  useEffect(() => {
-    const galleryCol = collection(db, 'gallery');
-    const q = query(galleryCol);
-
-    const unsubscribe = onSnapshot(
-      q,
-      (querySnapshot) => {
-        const imagesList: GalleryImage[] = querySnapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        } as GalleryImage));
-        setGalleryImages(imagesList);
-        setIsLoading(false);
-      },
-      (err) => {
-        console.error('Error fetching gallery images:', err);
-        setError('Failed to fetch gallery images. Please try again later.');
-        setIsLoading(false);
-      }
-    );
-
-    return () => unsubscribe();
-  }, []);
+  const {
+    data: galleryImages,
+    isLoading,
+    error,
+  } = useCollection<GalleryImage>(galleryQuery);
 
   return { galleryImages, isLoading, error };
 }

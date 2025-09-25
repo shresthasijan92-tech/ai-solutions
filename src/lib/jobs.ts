@@ -1,14 +1,14 @@
 'use server';
-import { db } from './firebase';
+import { firestore } from '@/firebase/server';
 import { collection, getDocs, query } from 'firebase/firestore';
 import type { Job } from './definitions';
 
 export async function getJobs(): Promise<Job[]> {
   try {
-    const jobsCol = collection(db, 'jobs');
+    const jobsCol = collection(firestore, 'jobs');
     const q = query(jobsCol);
     const jobsSnapshot = await getDocs(q);
-    const jobsList = jobsSnapshot.docs.map(doc => {
+    const jobsList = jobsSnapshot.docs.map((doc) => {
       const data = doc.data();
       return {
         id: doc.id,
@@ -20,7 +20,7 @@ export async function getJobs(): Promise<Job[]> {
     });
     return jobsList;
   } catch (error) {
-    console.error("Error fetching jobs from Firestore:", error);
+    console.error('Error fetching jobs from Firestore:', error);
     return [];
   }
 }

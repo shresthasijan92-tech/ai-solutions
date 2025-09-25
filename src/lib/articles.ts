@@ -1,20 +1,28 @@
 'use server';
-import { db } from './firebase';
-import { collection, getDocs, query, Timestamp, doc, getDoc } from 'firebase/firestore';
+import { firestore } from '@/firebase/server';
+import {
+  collection,
+  getDocs,
+  query,
+  Timestamp,
+  doc,
+  getDoc,
+} from 'firebase/firestore';
 import type { Article } from './definitions';
 
 export async function getArticles(): Promise<Article[]> {
   try {
-    const articlesCol = collection(db, 'articles');
+    const articlesCol = collection(firestore, 'articles');
     const q = query(articlesCol);
     const articlesSnapshot = await getDocs(q);
-    const articlesList = articlesSnapshot.docs.map(doc => {
+    const articlesList = articlesSnapshot.docs.map((doc) => {
       const data = doc.data();
       // Ensure publishedAt is converted to a serializable format (ISO string)
-      const publishedAt = data.publishedAt instanceof Timestamp 
-        ? data.publishedAt.toDate().toISOString() 
-        : data.publishedAt;
-        
+      const publishedAt =
+        data.publishedAt instanceof Timestamp
+          ? data.publishedAt.toDate().toISOString()
+          : data.publishedAt;
+
       return {
         id: doc.id,
         title: data.title,
@@ -27,14 +35,14 @@ export async function getArticles(): Promise<Article[]> {
     });
     return articlesList;
   } catch (error) {
-    console.error("Error fetching articles from Firestore:", error);
+    console.error('Error fetching articles from Firestore:', error);
     return [];
   }
 }
 
 export async function getArticle(id: string): Promise<Article | null> {
   try {
-    const articleDocRef = doc(db, 'articles', id);
+    const articleDocRef = doc(firestore, 'articles', id);
     const docSnap = await getDoc(articleDocRef);
 
     if (!docSnap.exists()) {
@@ -42,9 +50,10 @@ export async function getArticle(id: string): Promise<Article | null> {
     }
 
     const data = docSnap.data();
-    const publishedAt = data.publishedAt instanceof Timestamp
-      ? data.publishedAt.toDate().toISOString()
-      : data.publishedAt;
+    const publishedAt =
+      data.publishedAt instanceof Timestamp
+        ? data.publishedAt.toDate().toISOString()
+        : data.publishedAt;
 
     return {
       id: docSnap.id,

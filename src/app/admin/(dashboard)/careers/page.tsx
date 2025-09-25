@@ -22,7 +22,8 @@ export default function AdminCareersPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingJob, setEditingJob] = useState<Job | null>(null);
 
-  const jobs = isLoading || jobsFromDb.length > 0 ? jobsFromDb : mockJobs;
+  const jobs =
+    isLoading || !jobsFromDb || jobsFromDb.length === 0 ? mockJobs : jobsFromDb;
 
   const handleAddClick = () => {
     setEditingJob(null);
@@ -76,7 +77,7 @@ export default function AdminCareersPage() {
         </div>
       )}
 
-      {error && <p className="text-destructive">{error}</p>}
+      {error && <p className="text-destructive">{error.message}</p>}
 
       {!isLoading && !error && (
         <JobsTable jobs={jobs} onEdit={handleEditClick} />

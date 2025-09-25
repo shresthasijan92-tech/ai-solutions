@@ -1,4 +1,4 @@
-'use client'
+'use client';
 
 import { useTestimonials } from '@/hooks/use-testimonials';
 import { Card, CardContent } from '@/components/ui/card';
@@ -27,21 +27,24 @@ function StarRating({ rating }: { rating: number }) {
 
 export function TestimonialsList() {
   const { testimonials: testimonialsFromDb, isLoading, error } = useTestimonials(true);
-  
-  const testimonials = isLoading || testimonialsFromDb.length > 0 ? testimonialsFromDb : mockTestimonials.filter(t => t.status === 'approved');
+
+  const testimonials =
+    isLoading || !testimonialsFromDb || testimonialsFromDb.length === 0
+      ? mockTestimonials.filter((t) => t.status === 'approved')
+      : testimonialsFromDb;
 
   if (isLoading) {
     return (
-        <div className="space-y-4">
-            <Skeleton className="h-24 w-full" />
-            <Skeleton className="h-24 w-full" />
-            <Skeleton className="h-24 w-full" />
-        </div>
+      <div className="space-y-4">
+        <Skeleton className="h-24 w-full" />
+        <Skeleton className="h-24 w-full" />
+        <Skeleton className="h-24 w-full" />
+      </div>
     );
   }
 
   if (error) {
-    return <p className="text-destructive">{error}</p>;
+    return <p className="text-destructive">{error.message}</p>;
   }
 
   if (testimonials.length === 0) {
@@ -56,11 +59,15 @@ export function TestimonialsList() {
             <div className="flex items-center justify-between mb-4">
               <div>
                 <p className="font-semibold">{testimonial.name}</p>
-                <p className="text-sm text-muted-foreground">{testimonial.company}</p>
+                <p className="text-sm text-muted-foreground">
+                  {testimonial.company}
+                </p>
               </div>
               <StarRating rating={testimonial.rating} />
             </div>
-            <p className="text-muted-foreground italic">&quot;{testimonial.feedback}&quot;</p>
+            <p className="text-muted-foreground italic">
+              &quot;{testimonial.feedback}&quot;
+            </p>
           </CardContent>
         </Card>
       ))}

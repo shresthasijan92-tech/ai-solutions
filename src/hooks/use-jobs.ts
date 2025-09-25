@@ -1,38 +1,21 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { collection, onSnapshot, query } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { useMemo } from 'react';
+import { collection, query } from 'firebase/firestore';
+import { useCollection, useFirestore } from '@/firebase';
 import type { Job } from '@/lib/definitions';
 
 export function useJobs() {
-  const [jobs, setJobs] = useState<Job[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const firestore = useFirestore();
+  const jobsCol = useMemo(
+    () => (firestore ? collection(firestore, 'jobs') : null),
+    [firestore]
+  );
+  const jobsQuery = useMemo(() => (jobsCol ? query(jobsCol) : null), [
+    jobsCol,
+  ]);
 
-  useEffect(() => {
-    const jobsCol = collection(db, 'jobs');
-    const q = query(jobsCol);
-
-    const unsubscribe = onSnapshot(
-      q,
-      (querySnapshot) => {
-        const jobsList: Job[] = querySnapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        } as Job));
-        setJobs(jobsList);
-        setIsLoading(false);
-      },
-      (err) => {
-        console.error('Error fetching jobs:', err);
-        setError('Failed to fetch jobs. Please try again later.');
-        setIsLoading(false);
-      }
-    );
-
-    return () => unsubscribe();
-  }, []);
+  const { data: jobs, isLoading, error } = useCollection<Job>(jobsQuery);
 
   return { jobs, isLoading, error };
 }

@@ -22,7 +22,10 @@ export default function AdminArticlesPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingArticle, setEditingArticle] = useState<Article | null>(null);
 
-  const articles = isLoading || articlesFromDb.length > 0 ? articlesFromDb : mockArticles;
+  const articles =
+    isLoading || !articlesFromDb || articlesFromDb.length === 0
+      ? mockArticles
+      : articlesFromDb;
 
   const handleAddClick = () => {
     setEditingArticle(null);
@@ -76,7 +79,7 @@ export default function AdminArticlesPage() {
         </div>
       )}
 
-      {error && <p className="text-destructive">{error}</p>}
+      {error && <p className="text-destructive">{error.message}</p>}
 
       {!isLoading && !error && (
         <ArticlesTable articles={articles} onEdit={handleEditClick} />

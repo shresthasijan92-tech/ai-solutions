@@ -2,9 +2,8 @@
 
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
-import { db, app } from '@/lib/firebase';
+import { firestore, storage } from '@/firebase/server';
 import {
-  getStorage,
   ref,
   uploadString,
   getDownloadURL,
@@ -21,8 +20,6 @@ import {
   Timestamp,
 } from 'firebase/firestore';
 
-const storage = getStorage(app);
-
 const EventActionSchema = z.object({
   title: z.string().min(1, 'Title is required'),
   description: z.string().min(1, 'Description is required'),
@@ -34,7 +31,9 @@ const EventActionSchema = z.object({
 
 export type EventFormState = {
   message: string;
-  errors?: z.ZodError<z.infer<typeof EventActionSchema>>['formErrors']['fieldErrors'];
+  errors?: z.ZodError<
+    z.infer<typeof EventActionSchema>
+  >['formErrors']['fieldErrors'];
   success?: boolean;
 };
 
@@ -68,12 +67,12 @@ export async function createEvent(
     if (imageUrl && imageUrl.startsWith('data:image')) {
       finalImageUrl = await handleImageUpload(imageUrl, 'events');
     }
-    
-    const eventsCollection = collection(db, 'events');
-    await addDoc(eventsCollection, { 
-        ...rest, 
-        imageUrl: finalImageUrl,
-        date: Timestamp.fromDate(rest.date),
+
+    const eventsCollection = collection(firestore, 'events');
+    await addDoc(eventsCollection, {
+      ...rest,
+      imageUrl: finalImageUrl,
+      date: Timestamp.fromDate(rest.date),
     });
 
     revalidatePath('/admin/events');
@@ -90,7 +89,7 @@ export async function updateEvent(
   id: string,
   data: z.infer<typeof EventActionSchema>
 ): Promise<EventFormState> {
-    const validatedFields = EventActionSchema.safeParse(data);
+  const validatedFields = EventActionSchema.safeParse(data);
 
   if (!validatedFields.success) {
     return {
@@ -104,37 +103,43 @@ export async function updateEvent(
   let finalImageUrl = imageUrl;
 
   try {
-    const eventDocRef = doc(db, 'events', id);
+    const eventDocRef = doc(firestore, 'events', id);
     const existingDoc = await getDoc(eventDocRef);
 
     if (imageUrl && imageUrl.startsWith('data:image')) {
       finalImageUrl = await handleImageUpload(imageUrl, 'events');
-      
+
       if (existingDoc.exists()) {
         const existingData = existingDoc.data();
-        if (existingData?.imageUrl && existingData.imageUrl.includes('firebasestorage')) {
+        if (
+          existingData?.imageUrl &&
+          existingData.imageUrl.includes('firebasestorage')
+        ) {
           try {
-              const oldImageRef = ref(storage, existingData.imageUrl);
-              await deleteObject(oldImageRef);
+            const oldImageRef = ref(storage, existingData.imageUrl);
+            await deleteObject(oldImageRef);
           } catch (storageError: any) {
-              if (storageError.code !== 'storage/object-not-found') {
-                  console.warn('Could not delete old image, may not exist:', storageError);
-              }
+            if (storageError.code !== 'storage/object-not-found') {
+              console.warn(
+                'Could not delete old image, may not exist:',
+                storageError
+              );
+            }
           }
         }
       }
     }
-    
-    const eventData = { 
+
+    const eventData = {
       ...rest,
       imageUrl: finalImageUrl,
       date: Timestamp.fromDate(rest.date),
     };
-    
+
     if (existingDoc.exists()) {
-        await updateDoc(eventDocRef, eventData);
+      await updateDoc(eventDocRef, eventData);
     } else {
-        await setDoc(eventDocRef, eventData);
+      await setDoc(eventDocRef, eventData);
     }
 
     revalidatePath('/admin/events');
@@ -149,30 +154,32 @@ export async function updateEvent(
 }
 
 async function deleteImageFromStorage(imageUrl: string) {
-    if (imageUrl && imageUrl.includes('firebasestorage')) {
-        try {
-            const imageRef = ref(storage, imageUrl);
-            await deleteObject(imageRef);
-        } catch (error: any) {
-            if (error.code === 'storage/object-not-found') {
-                console.warn("Image to delete was not found in storage.");
-            } else {
-                throw error;
-            }
-        }
+  if (imageUrl && imageUrl.includes('firebasestorage')) {
+    try {
+      const imageRef = ref(storage, imageUrl);
+      await deleteObject(imageRef);
+    } catch (error: any) {
+      if (error.code === 'storage/object-not-found') {
+        console.warn('Image to delete was not found in storage.');
+      } else {
+        throw error;
+      }
     }
+  }
 }
 
-export async function deleteEvent(id: string): Promise<{ message: string, success: boolean }> {
+export async function deleteEvent(
+  id: string
+): Promise<{ message: string; success: boolean }> {
   try {
-    const eventDocRef = doc(db, 'events', id);
+    const eventDocRef = doc(firestore, 'events', id);
     const docSnap = await getDoc(eventDocRef);
 
     if (docSnap.exists()) {
-        const { imageUrl } = docSnap.data();
-        if (imageUrl) {
-            await deleteImageFromStorage(imageUrl);
-        }
+      const { imageUrl } = docSnap.data();
+      if (imageUrl) {
+        await deleteImageFromStorage(imageUrl);
+      }
     }
 
     await deleteDoc(eventDocRef);

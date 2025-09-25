@@ -22,7 +22,10 @@ export default function AdminGalleryPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingImage, setEditingImage] = useState<GalleryImage | null>(null);
 
-  const galleryImages = isLoading || imagesFromDb.length > 0 ? imagesFromDb : mockGalleryImages;
+  const galleryImages =
+    isLoading || !imagesFromDb || imagesFromDb.length === 0
+      ? mockGalleryImages
+      : imagesFromDb;
 
   const handleAddClick = () => {
     setEditingImage(null);
@@ -76,7 +79,7 @@ export default function AdminGalleryPage() {
         </div>
       )}
 
-      {error && <p className="text-destructive">{error}</p>}
+      {error && <p className="text-destructive">{error.message}</p>}
 
       {!isLoading && !error && (
         <GalleryTable galleryImages={galleryImages} onEdit={handleEditClick} />

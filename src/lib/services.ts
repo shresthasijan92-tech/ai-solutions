@@ -1,19 +1,19 @@
 'use server';
-import { db } from './firebase';
+import { firestore } from '@/firebase/server';
 import { collection, getDocs, query } from 'firebase/firestore';
 import type { Service } from './definitions';
 
 export async function getServices(): Promise<Service[]> {
   try {
-    const servicesCol = collection(db, 'services');
+    const servicesCol = collection(firestore, 'services');
     const q = query(servicesCol);
     const servicesSnapshot = await getDocs(q);
-    
+
     if (servicesSnapshot.empty) {
       return [];
     }
 
-    const servicesList = servicesSnapshot.docs.map(doc => {
+    const servicesList = servicesSnapshot.docs.map((doc) => {
       const data = doc.data();
       return {
         id: doc.id,
@@ -27,7 +27,7 @@ export async function getServices(): Promise<Service[]> {
     });
     return servicesList;
   } catch (error) {
-    console.error("Error fetching services from Firestore:", error);
+    console.error('Error fetching services from Firestore:', error);
     return [];
   }
 }

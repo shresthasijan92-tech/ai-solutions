@@ -22,7 +22,10 @@ export default function AdminProjectsPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
 
-  const projects = isLoading || projectsFromDb.length > 0 ? projectsFromDb : mockProjects;
+  const projects =
+    isLoading || !projectsFromDb || projectsFromDb.length === 0
+      ? mockProjects
+      : projectsFromDb;
 
   const handleAddClick = () => {
     setEditingProject(null);
@@ -76,7 +79,7 @@ export default function AdminProjectsPage() {
         </div>
       )}
 
-      {error && <p className="text-destructive">{error}</p>}
+      {error && <p className="text-destructive">{error.message}</p>}
 
       {!isLoading && !error && (
         <ProjectsTable projects={projects} onEdit={handleEditClick} />

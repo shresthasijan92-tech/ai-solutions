@@ -2,9 +2,8 @@
 
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
-import { db, app } from '@/lib/firebase';
+import { firestore, storage } from '@/firebase/server';
 import {
-  getStorage,
   ref,
   uploadString,
   getDownloadURL,
@@ -20,8 +19,6 @@ import {
   setDoc,
 } from 'firebase/firestore';
 
-const storage = getStorage(app);
-
 const ProjectSchema = z.object({
   title: z.string().min(1, 'Title is required'),
   description: z.string().min(1, 'Description is required'),
@@ -35,7 +32,9 @@ const ProjectSchema = z.object({
 
 export type ProjectFormState = {
   message: string;
-  errors?: z.ZodError<z.infer<typeof ProjectSchema>>['formErrors']['fieldErrors'];
+  errors?: z.ZodError<
+    z.infer<typeof ProjectSchema>
+  >['formErrors']['fieldErrors'];
   success?: boolean;
 };
 
@@ -61,7 +60,7 @@ export async function createProject(
       success: false,
     };
   }
-  
+
   const { imageUrl, ...rest } = validatedFields.data;
   let finalImageUrl = imageUrl;
 
@@ -69,10 +68,9 @@ export async function createProject(
     if (imageUrl.startsWith('data:image')) {
       finalImageUrl = await handleImageUpload(imageUrl, 'projects');
     }
-    
-    const projectsCollection = collection(db, 'projects');
-    await addDoc(projectsCollection, { ...rest, imageUrl: finalImageUrl });
 
+    const projectsCollection = collection(firestore, 'projects');
+    await addDoc(projectsCollection, { ...rest, imageUrl: finalImageUrl });
   } catch (error) {
     console.error(error);
     return { message: 'Failed to create project.', success: false };
@@ -102,34 +100,39 @@ export async function updateProject(
   let finalImageUrl = imageUrl;
 
   try {
-    const projectDocRef = doc(db, 'projects', id);
+    const projectDocRef = doc(firestore, 'projects', id);
     const existingDoc = await getDoc(projectDocRef);
-    
+
     if (imageUrl.startsWith('data:image')) {
       finalImageUrl = await handleImageUpload(imageUrl, 'projects');
       if (existingDoc.exists()) {
         const existingData = existingDoc.data();
-        if (existingData?.imageUrl && existingData.imageUrl.includes('firebasestorage')) {
+        if (
+          existingData?.imageUrl &&
+          existingData.imageUrl.includes('firebasestorage')
+        ) {
           try {
             const oldImageRef = ref(storage, existingData.imageUrl);
             await deleteObject(oldImageRef);
           } catch (storageError: any) {
             if (storageError.code !== 'storage/object-not-found') {
-              console.warn('Could not delete old image, may not exist:', storageError);
+              console.warn(
+                'Could not delete old image, may not exist:',
+                storageError
+              );
             }
           }
         }
       }
     }
-    
+
     const projectData = { ...rest, imageUrl: finalImageUrl };
 
     if (existingDoc.exists()) {
-        await updateDoc(projectDocRef, projectData);
+      await updateDoc(projectDocRef, projectData);
     } else {
-        await setDoc(projectDocRef, projectData);
+      await setDoc(projectDocRef, projectData);
     }
-
   } catch (error) {
     console.error(error);
     return { message: 'Failed to update project.', success: false };
@@ -143,30 +146,32 @@ export async function updateProject(
 }
 
 async function deleteImageFromStorage(imageUrl: string) {
-    if (imageUrl.includes('firebasestorage')) {
-        try {
-            const imageRef = ref(storage, imageUrl);
-            await deleteObject(imageRef);
-        } catch (error: any) {
-            if (error.code === 'storage/object-not-found') {
-                console.warn("Image to delete was not found in storage.");
-            } else {
-                throw error;
-            }
-        }
+  if (imageUrl.includes('firebasestorage')) {
+    try {
+      const imageRef = ref(storage, imageUrl);
+      await deleteObject(imageRef);
+    } catch (error: any) {
+      if (error.code === 'storage/object-not-found') {
+        console.warn('Image to delete was not found in storage.');
+      } else {
+        throw error;
+      }
     }
+  }
 }
 
-export async function deleteProject(id: string): Promise<{ message: string, success: boolean }> {
+export async function deleteProject(
+  id: string
+): Promise<{ message: string; success: boolean }> {
   try {
-    const projectDocRef = doc(db, 'projects', id);
+    const projectDocRef = doc(firestore, 'projects', id);
     const docSnap = await getDoc(projectDocRef);
 
     if (docSnap.exists()) {
-        const { imageUrl } = docSnap.data();
-        if (imageUrl) {
-            await deleteImageFromStorage(imageUrl);
-        }
+      const { imageUrl } = docSnap.data();
+      if (imageUrl) {
+        await deleteImageFromStorage(imageUrl);
+      }
     }
 
     await deleteDoc(projectDocRef);

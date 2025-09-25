@@ -1,39 +1,26 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { collection, onSnapshot, query } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { useMemo } from 'react';
+import { collection, query } from 'firebase/firestore';
+import { useCollection, useFirestore } from '@/firebase';
 import type { Project } from '@/lib/definitions';
 
 export function useProjects() {
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const firestore = useFirestore();
+  const projectsCol = useMemo(
+    () => (firestore ? collection(firestore, 'projects') : null),
+    [firestore]
+  );
+  const projectsQuery = useMemo(
+    () => (projectsCol ? query(projectsCol) : null),
+    [projectsCol]
+  );
 
-  useEffect(() => {
-    const projectsCol = collection(db, 'projects');
-    const q = query(projectsCol);
-
-    const unsubscribe = onSnapshot(
-      q,
-      (querySnapshot) => {
-        const projectsList: Project[] = querySnapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        } as Project));
-        setProjects(projectsList);
-        setIsLoading(false);
-      },
-      (err) => {
-        console.error('Error fetching projects:', err);
-        setError('Failed to fetch projects. Please try again later.');
-        setIsLoading(false);
-      }
-    );
-
-    // Cleanup subscription on unmount
-    return () => unsubscribe();
-  }, []);
+  const {
+    data: projects,
+    isLoading,
+    error,
+  } = useCollection<Project>(projectsQuery);
 
   return { projects, isLoading, error };
 }

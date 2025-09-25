@@ -22,7 +22,10 @@ export default function AdminServicesPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingService, setEditingService] = useState<Service | null>(null);
 
-  const services = isLoading || servicesFromDb.length > 0 ? servicesFromDb : mockServices;
+  const services =
+    isLoading || !servicesFromDb || servicesFromDb.length === 0
+      ? mockServices
+      : servicesFromDb;
 
   const handleAddClick = () => {
     setEditingService(null);
@@ -33,7 +36,7 @@ export default function AdminServicesPage() {
     setEditingService(service);
     setIsDialogOpen(true);
   };
-  
+
   const handleSuccess = () => {
     setIsDialogOpen(false);
     setEditingService(null);
@@ -70,14 +73,14 @@ export default function AdminServicesPage() {
 
       {isLoading && (
         <div className="space-y-2">
-            <Skeleton className="h-10 w-full" />
-            <Skeleton className="h-10 w-full" />
-            <Skeleton className="h-10 w-full" />
+          <Skeleton className="h-10 w-full" />
+          <Skeleton className="h-10 w-full" />
+          <Skeleton className="h-10 w-full" />
         </div>
       )}
 
-      {error && <p className="text-destructive">{error}</p>}
-      
+      {error && <p className="text-destructive">{error.message}</p>}
+
       {!isLoading && !error && (
         <ServicesTable services={services} onEdit={handleEditClick} />
       )}

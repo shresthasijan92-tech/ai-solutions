@@ -1,159 +1,139 @@
 /**
  * @file Firestore Security Rules
- * @core_philosophy This ruleset enforces a role-based access control model for administrative data and allows public read access for certain collections.
- * @data_structure The database contains several top-level collections: `services`, `projects`, `articles`, `gallery`, `events`, `careers`, `feedback`, `homepageSections`, and `roles_admin`.  Admin privileges are determined by the existence of a document in the `/roles_admin/{userId}` collection.
- * @key_security_decisions
- *  - Public read access is granted to the `services`, `projects`, `articles`, `gallery`, `events`, `careers` collections.
- *  - `feedback` is also publicly readable, writes are allowed for anyone, but approval is controlled by admins.
- *  - Listing of the `homepageSections` collection is allowed for anyone.
- *  - Only authenticated admins can create, update, or delete documents in `services`, `projects`, `articles`, `gallery`, `events`, `careers`, `feedback`, and `homepageSections`.
- *  - Only a user matching the `userId` can create a document in the `roles_admin` collection. This prevents unauthorized elevation of privileges. This is a self-creation pattern.
+ * @description This ruleset enforces a role-based access control model where administrative privileges are granted based on the existence of a document in the `/roles_admin/{userId}` collection.
+ *
+ * Data Structure:
+ * - Top-level collections: `/services`, `/projects`, `/articles`, `/gallery`, `/events`, `/careers`, `/feedback`, `/homepageSections`, `/roles_admin`.
+ * - Each document in these collections is identified by a unique ID.
+ *
+ * Key Security Decisions:
+ * - Admin Privileges: Users with a document in `/roles_admin/{userId}` are considered administrators and have full access to create, read, update, and delete operations on all collections.
+ * - Public Read Access: Read access is generally public for all collections to allow for easy data retrieval without authentication.
+ * - Restricted Writes: Write access is strictly controlled and limited to administrators only.
+ * - Feedback Approval: The 'approved' field in the `/feedback` collection is intended to control which feedback items are publicly displayed, but this is not enforced in the rules.
+ * - No User Listing: Listing of documents in `/roles_admin` is denied to prevent unauthorized discovery of admin users.
  */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * @description Allows public read access to service details. Only admins can create, update, or delete services.
+     * @description Grants admin access to services.
      * @path /services/{serviceId}
-     * @allow (get, list)
-     * @deny (create, update, delete)
-     * @principle Allows public read access but restricts write access to admins only.
+     * @allow (create) User with document in /roles_admin/{uid} creates a new service.
+     * @deny (create) User without document in /roles_admin/{uid} attempts to create a new service.
+     * @principle Enforces role-based access control.
      */
     match /services/{serviceId} {
       allow get, list: if true;
-      allow create: if isAdmin();
-      allow update: if isAdmin();
-      allow delete: if isAdmin();
+      allow create, update, delete: if isAdmin();
     }
 
     /**
-     * @description Allows public read access to project details. Only admins can create, update, or delete projects.
+     * @description Grants admin access to projects.
      * @path /projects/{projectId}
-     * @allow (get, list)
-     * @deny (create, update, delete)
-     * @principle Allows public read access but restricts write access to admins only.
+     * @allow (create) User with document in /roles_admin/{uid} creates a new project.
+     * @deny (create) User without document in /roles_admin/{uid} attempts to create a new project.
+     * @principle Enforces role-based access control.
      */
     match /projects/{projectId} {
       allow get, list: if true;
-      allow create: if isAdmin();
-      allow update: if isAdmin();
-      allow delete: if isAdmin();
+      allow create, update, delete: if isAdmin();
     }
 
     /**
-     * @description Allows public read access to article details. Only admins can create, update, or delete articles.
+     * @description Grants admin access to articles.
      * @path /articles/{articleId}
-     * @allow (get, list)
-     * @deny (create, update, delete)
-     * @principle Allows public read access but restricts write access to admins only.
+     * @allow (create) User with document in /roles_admin/{uid} creates a new article.
+     * @deny (create) User without document in /roles_admin/{uid} attempts to create a new article.
+     * @principle Enforces role-based access control.
      */
     match /articles/{articleId} {
       allow get, list: if true;
-      allow create: if isAdmin();
-      allow update: if isAdmin();
-      allow delete: if isAdmin();
+      allow create, update, delete: if isAdmin();
     }
 
     /**
-     * @description Allows public read access to gallery item details. Only admins can create, update, or delete gallery items.
+     * @description Grants admin access to gallery items.
      * @path /gallery/{galleryItemId}
-     * @allow (get, list)
-     * @deny (create, update, delete)
-     * @principle Allows public read access but restricts write access to admins only.
+     * @allow (create) User with document in /roles_admin/{uid} creates a new gallery item.
+     * @deny (create) User without document in /roles_admin/{uid} attempts to create a new gallery item.
+     * @principle Enforces role-based access control.
      */
     match /gallery/{galleryItemId} {
       allow get, list: if true;
-      allow create: if isAdmin();
-      allow update: if isAdmin();
-      allow delete: if isAdmin();
+      allow create, update, delete: if isAdmin();
     }
 
     /**
-     * @description Allows public read access to event details. Only admins can create, update, or delete events.
+     * @description Grants admin access to events.
      * @path /events/{eventId}
-     * @allow (get, list)
-     * @deny (create, update, delete)
-     * @principle Allows public read access but restricts write access to admins only.
+     * @allow (create) User with document in /roles_admin/{uid} creates a new event.
+     * @deny (create) User without document in /roles_admin/{uid} attempts to create a new event.
+     * @principle Enforces role-based access control.
      */
     match /events/{eventId} {
       allow get, list: if true;
-      allow create: if isAdmin();
-      allow update: if isAdmin();
-      allow delete: if isAdmin();
+      allow create, update, delete: if isAdmin();
     }
 
     /**
-     * @description Allows public read access to career details. Only admins can create, update, or delete careers.
+     * @description Grants admin access to careers.
      * @path /careers/{careerId}
-     * @allow (get, list)
-     * @deny (create, update, delete)
-     * @principle Allows public read access but restricts write access to admins only.
+     * @allow (create) User with document in /roles_admin/{uid} creates a new career.
+     * @deny (create) User without document in /roles_admin/{uid} attempts to create a new career.
+     * @principle Enforces role-based access control.
      */
     match /careers/{careerId} {
       allow get, list: if true;
-      allow create: if isAdmin();
-      allow update: if isAdmin();
-      allow delete: if isAdmin();
+      allow create, update, delete: if isAdmin();
     }
 
     /**
-     * @description Allows public read access to feedback details. Allows anyone to create feedback, but only admins can update or delete feedback.
+     * @description Grants admin access to feedback.
      * @path /feedback/{feedbackId}
-     * @allow (get, list, create)
-     * @deny (update, delete)
-     * @principle Allows public read access and public feedback creation, but restricts write access to admins only.
+     * @allow (create) User with document in /roles_admin/{uid} creates a new feedback.
+     * @deny (create) User without document in /roles_admin/{uid} attempts to create a new feedback.
+     * @principle Enforces role-based access control.
      */
     match /feedback/{feedbackId} {
       allow get, list: if true;
-      allow create: if isSignedIn();
-      allow update: if isAdmin();
-      allow delete: if isAdmin();
+      allow create, update, delete: if isAdmin();
     }
 
     /**
-     * @description Allows public read access to homepage section configurations. Only admins can create, update, or delete homepage sections.
+     * @description Grants admin access to homepage sections.
      * @path /homepageSections/{homepageSectionId}
-     * @allow (get, list)
-     * @deny (create, update, delete)
-     * @principle Allows public read access but restricts write access to admins only.
+     * @allow (create) User with document in /roles_admin/{uid} creates a new homepage section.
+     * @deny (create) User without document in /roles_admin/{uid} attempts to create a new homepage section.
+     * @principle Enforces role-based access control.
      */
     match /homepageSections/{homepageSectionId} {
       allow get, list: if true;
-      allow create: if isAdmin();
-      allow update: if isAdmin();
-      allow delete: if isAdmin();
+      allow create, update, delete: if isAdmin();
     }
 
     /**
-     * @description Allows a user to create their own admin role document. Only the specified user can create this document.
+     * @description Grants admin privileges based on the existence of this document.  No listing allowed.
      * @path /roles_admin/{userId}
-     * @allow create
-     * @deny (get, list, update, delete)
-     * @principle Enforces user-ownership for admin role creation.
+     * @allow (create) User's auth UID matches the userId.
+     * @deny (create) User's auth UID does not match the userId.
+     * @principle Enforces role-based access control.
      */
     match /roles_admin/{userId} {
-      allow get, list: if false;
-      allow create: if request.auth.uid == userId;
-      allow update: if false;
-      allow delete: if false;
+      allow get: if isAdmin();
+      allow list: if false;
+      allow create: if isSignedIn() && request.auth.uid == userId;
+      allow update: if isAdmin() && resource != null;
+      allow delete: if isAdmin() && resource != null;
     }
 
-      match /testimonials/{testimonialId} {
-      allow get, list: if true;
-      allow create: if false;
-      allow update: if false;
-      allow delete: if false;
+    function isSignedIn() {
+      return request.auth != null;
     }
-  }
 
-  // Helper function to determine if a user is an admin.
-  function isAdmin() {
-    return isSignedIn() && exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid));
-  }
-
-  // Helper function to determine if the request is from a signed-in user.
-  function isSignedIn() {
-    return request.auth != null;
+    function isAdmin() {
+      return exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid));
+    }
   }
 }

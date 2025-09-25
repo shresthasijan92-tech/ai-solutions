@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
-import { db } from '@/lib/firebase';
+import { firestore } from '@/firebase/server';
 import {
   collection,
   doc,
@@ -29,9 +29,7 @@ export type JobFormState = {
   success?: boolean;
 };
 
-export async function createJob(
-  formData: FormData
-): Promise<JobFormState> {
+export async function createJob(formData: FormData): Promise<JobFormState> {
   const validatedFields = JobSchema.safeParse({
     title: formData.get('title'),
     description: formData.get('description'),
@@ -48,7 +46,7 @@ export async function createJob(
   }
 
   try {
-    const jobsCollection = collection(db, 'jobs');
+    const jobsCollection = collection(firestore, 'jobs');
     await addDoc(jobsCollection, validatedFields.data);
   } catch (error) {
     return { message: 'Failed to create job.', success: false };
@@ -79,7 +77,7 @@ export async function updateJob(
   }
 
   try {
-    const jobDoc = doc(db, 'jobs', id);
+    const jobDoc = doc(firestore, 'jobs', id);
     await updateDoc(jobDoc, validatedFields.data);
   } catch (error) {
     return { message: 'Failed to update job.', success: false };
@@ -90,9 +88,11 @@ export async function updateJob(
   return { message: 'Successfully updated job.', success: true };
 }
 
-export async function deleteJob(id: string): Promise<{ message: string, success: boolean }> {
+export async function deleteJob(
+  id: string
+): Promise<{ message: string; success: boolean }> {
   try {
-    const jobDoc = doc(db, 'jobs', id);
+    const jobDoc = doc(firestore, 'jobs', id);
     await deleteDoc(jobDoc);
     revalidatePath('/admin/careers');
     revalidatePath('/careers');

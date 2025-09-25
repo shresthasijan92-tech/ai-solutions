@@ -1,19 +1,29 @@
 'use server';
-import { db } from './firebase';
-import { collection, getDocs, query, doc, getDoc, Timestamp } from 'firebase/firestore';
+import { firestore } from '@/firebase/server';
+import {
+  collection,
+  getDocs,
+  query,
+  doc,
+  getDoc,
+  Timestamp,
+} from 'firebase/firestore';
 import type { Event } from './definitions';
 
 export async function getEvents(): Promise<Event[]> {
   try {
-    const eventsCol = collection(db, 'events');
+    const eventsCol = collection(firestore, 'events');
     const q = query(eventsCol);
     const eventsSnapshot = await getDocs(q);
-    const eventsList = eventsSnapshot.docs.map(doc => {
+    const eventsList = eventsSnapshot.docs.map((doc) => {
       const data = doc.data();
       return {
         id: doc.id,
         title: data.title,
-        date: data.date instanceof Timestamp ? data.date.toDate().toISOString() : data.date,
+        date:
+          data.date instanceof Timestamp
+            ? data.date.toDate().toISOString()
+            : data.date,
         location: data.location,
         description: data.description,
         featured: data.featured || false,
@@ -22,14 +32,14 @@ export async function getEvents(): Promise<Event[]> {
     });
     return eventsList;
   } catch (error) {
-    console.error("Error fetching events from Firestore:", error);
+    console.error('Error fetching events from Firestore:', error);
     return [];
   }
 }
 
 export async function getEvent(id: string): Promise<Event | null> {
   try {
-    const eventDocRef = doc(db, 'events', id);
+    const eventDocRef = doc(firestore, 'events', id);
     const docSnap = await getDoc(eventDocRef);
 
     if (!docSnap.exists()) {
@@ -37,7 +47,10 @@ export async function getEvent(id: string): Promise<Event | null> {
     }
 
     const data = docSnap.data();
-    const eventDate = data.date instanceof Timestamp ? data.date.toDate().toISOString() : data.date;
+    const eventDate =
+      data.date instanceof Timestamp
+        ? data.date.toDate().toISOString()
+        : data.date;
 
     return {
       id: docSnap.id,

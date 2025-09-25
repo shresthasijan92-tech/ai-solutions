@@ -21,8 +21,11 @@ export default function AdminEventsPage() {
   const { events: eventsFromDb, isLoading, error } = useEvents();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingEvent, setEditingEvent] = useState<Event | null>(null);
-  
-  const events = isLoading || eventsFromDb.length > 0 ? eventsFromDb : mockEvents;
+
+  const events =
+    isLoading || !eventsFromDb || eventsFromDb.length === 0
+      ? mockEvents
+      : eventsFromDb;
 
   const handleAddClick = () => {
     setEditingEvent(null);
@@ -76,7 +79,7 @@ export default function AdminEventsPage() {
         </div>
       )}
 
-      {error && <p className="text-destructive">{error}</p>}
+      {error && <p className="text-destructive">{error.message}</p>}
 
       {!isLoading && !error && (
         <EventsTable events={events} onEdit={handleEditClick} />

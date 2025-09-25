@@ -1,14 +1,14 @@
 'use server';
-import { db } from './firebase';
+import { firestore } from '@/firebase/server';
 import { collection, getDocs, query, doc, getDoc } from 'firebase/firestore';
 import type { Project } from './definitions';
 
 export async function getProjects(): Promise<Project[]> {
   try {
-    const projectsCol = collection(db, 'projects');
+    const projectsCol = collection(firestore, 'projects');
     const q = query(projectsCol);
     const projectsSnapshot = await getDocs(q);
-    const projectsList = projectsSnapshot.docs.map(doc => {
+    const projectsList = projectsSnapshot.docs.map((doc) => {
       const data = doc.data();
       return {
         id: doc.id,
@@ -22,27 +22,27 @@ export async function getProjects(): Promise<Project[]> {
     });
     return projectsList;
   } catch (error) {
-    console.error("Error fetching projects from Firestore:", error);
+    console.error('Error fetching projects from Firestore:', error);
     return [];
   }
 }
 
 export async function getProject(id: string): Promise<Project | null> {
-    try {
-        const projectDocRef = doc(db, 'projects', id);
-        const docSnap = await getDoc(projectDocRef);
+  try {
+    const projectDocRef = doc(firestore, 'projects', id);
+    const docSnap = await getDoc(projectDocRef);
 
-        if (!docSnap.exists()) {
-            return null;
-        }
-
-        const data = docSnap.data();
-        return {
-            id: docSnap.id,
-            ...data,
-        } as Project;
-    } catch (error) {
-        console.error(`Error fetching project ${id} from Firestore:`, error);
-        return null;
+    if (!docSnap.exists()) {
+      return null;
     }
+
+    const data = docSnap.data();
+    return {
+      id: docSnap.id,
+      ...data,
+    } as Project;
+  } catch (error) {
+    console.error(`Error fetching project ${id} from Firestore:`, error);
+    return null;
+  }
 }

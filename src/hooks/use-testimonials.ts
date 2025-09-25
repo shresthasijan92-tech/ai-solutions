@@ -1,57 +1,34 @@
-
 'use client';
 
-import { useState, useEffect } from 'react';
-import { collection, onSnapshot, query, where, orderBy, Timestamp } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { useMemo } from 'react';
+import { collection, query, where, orderBy } from 'firebase/firestore';
+import { useCollection, useFirestore } from '@/firebase';
 import type { Testimonial } from '@/lib/definitions';
-import { errorEmitter } from '@/firebase/error-emitter';
-import { FirestorePermissionError } from '@/firebase/errors';
 
 export function useTestimonials(approvedOnly = false) {
-  const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const firestore = useFirestore();
+  const testimonialsCol = useMemo(
+    () => (firestore ? collection(firestore, 'testimonials') : null),
+    [firestore]
+  );
 
-  useEffect(() => {
-    const testimonialsCol = collection(db, 'testimonials');
-    
-    let q;
+  const testimonialsQuery = useMemo(() => {
+    if (!testimonialsCol) return null;
     if (approvedOnly) {
-        q = query(testimonialsCol, where('status', '==', 'approved'), orderBy('createdAt', 'desc'));
-    } else {
-        q = query(testimonialsCol, orderBy('createdAt', 'desc'));
+      return query(
+        testimonialsCol,
+        where('status', '==', 'approved'),
+        orderBy('createdAt', 'desc')
+      );
     }
-    
-    const unsubscribe = onSnapshot(
-      q,
-      (querySnapshot) => {
-        const testimonialsList: Testimonial[] = querySnapshot.docs.map((doc) => {
-          const data = doc.data();
-          return {
-            id: doc.id,
-            ...data,
-            createdAt: data.createdAt, // Pass timestamp directly
-          } as Testimonial;
-        });
-        setTestimonials(testimonialsList);
-        setIsLoading(false);
-      },
-      (err) => {
-        const permissionError = new FirestorePermissionError({
-          path: testimonialsCol.path,
-          operation: 'list',
-        });
-        errorEmitter.emit('permission-error', permissionError);
+    return query(testimonialsCol, orderBy('createdAt', 'desc'));
+  }, [testimonialsCol, approvedOnly]);
 
-        console.error('Error fetching testimonials from Firestore:', err);
-        setError('Failed to fetch testimonials. Please try again later.');
-        setIsLoading(false);
-      }
-    );
-
-    return () => unsubscribe();
-  }, [approvedOnly]);
+  const {
+    data: testimonials,
+    isLoading,
+    error,
+  } = useCollection<Testimonial>(testimonialsQuery);
 
   return { testimonials, isLoading, error };
 }
