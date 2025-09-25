@@ -55,7 +55,7 @@ export default function AdminArticlesPage() {
               Add Article
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-2xl">
+          <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>
                 {editingArticle ? 'Edit Article' : 'Add New Article'}
