@@ -2,17 +2,17 @@
 
 import { useMemo } from 'react';
 import { collection, query, where, orderBy } from 'firebase/firestore';
-import { useCollection, useFirestore } from '@/firebase';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import type { Testimonial } from '@/lib/definitions';
 
 export function useTestimonials(approvedOnly = false) {
   const firestore = useFirestore();
-  const testimonialsCol = useMemo(
+  const testimonialsCol = useMemoFirebase(
     () => (firestore ? collection(firestore, 'testimonials') : null),
     [firestore]
   );
 
-  const testimonialsQuery = useMemo(() => {
+  const testimonialsQuery = useMemoFirebase(() => {
     if (!testimonialsCol) return null;
     if (approvedOnly) {
       return query(

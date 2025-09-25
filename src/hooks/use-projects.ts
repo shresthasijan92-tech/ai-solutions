@@ -2,16 +2,16 @@
 
 import { useMemo } from 'react';
 import { collection, query } from 'firebase/firestore';
-import { useCollection, useFirestore } from '@/firebase';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import type { Project } from '@/lib/definitions';
 
 export function useProjects() {
   const firestore = useFirestore();
-  const projectsCol = useMemo(
+  const projectsCol = useMemoFirebase(
     () => (firestore ? collection(firestore, 'projects') : null),
     [firestore]
   );
-  const projectsQuery = useMemo(
+  const projectsQuery = useMemoFirebase(
     () => (projectsCol ? query(projectsCol) : null),
     [projectsCol]
   );

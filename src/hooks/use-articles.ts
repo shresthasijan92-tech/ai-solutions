@@ -2,16 +2,16 @@
 
 import { useMemo } from 'react';
 import { collection, query, orderBy } from 'firebase/firestore';
-import { useCollection, useFirestore } from '@/firebase';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import type { Article } from '@/lib/definitions';
 
 export function useArticles() {
   const firestore = useFirestore();
-  const articlesCol = useMemo(
+  const articlesCol = useMemoFirebase(
     () => (firestore ? collection(firestore, 'articles') : null),
     [firestore]
   );
-  const articlesQuery = useMemo(
+  const articlesQuery = useMemoFirebase(
     () => (articlesCol ? query(articlesCol, orderBy('publishedAt', 'desc')) : null),
     [articlesCol]
   );

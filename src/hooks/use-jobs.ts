@@ -2,16 +2,16 @@
 
 import { useMemo } from 'react';
 import { collection, query } from 'firebase/firestore';
-import { useCollection, useFirestore } from '@/firebase';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import type { Job } from '@/lib/definitions';
 
 export function useJobs() {
   const firestore = useFirestore();
-  const jobsCol = useMemo(
+  const jobsCol = useMemoFirebase(
     () => (firestore ? collection(firestore, 'jobs') : null),
     [firestore]
   );
-  const jobsQuery = useMemo(() => (jobsCol ? query(jobsCol) : null), [
+  const jobsQuery = useMemoFirebase(() => (jobsCol ? query(jobsCol) : null), [
     jobsCol,
   ]);
 

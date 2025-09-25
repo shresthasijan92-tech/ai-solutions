@@ -2,16 +2,16 @@
 
 import { useMemo } from 'react';
 import { collection, query } from 'firebase/firestore';
-import { useCollection, useFirestore } from '@/firebase';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import type { Service } from '@/lib/definitions';
 
 export function useServices() {
   const firestore = useFirestore();
-  const servicesCol = useMemo(
+  const servicesCol = useMemoFirebase(
     () => (firestore ? collection(firestore, 'services') : null),
     [firestore]
   );
-  const servicesQuery = useMemo(
+  const servicesQuery = useMemoFirebase(
     () => (servicesCol ? query(servicesCol) : null),
     [servicesCol]
   );

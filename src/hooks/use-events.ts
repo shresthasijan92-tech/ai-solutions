@@ -2,16 +2,16 @@
 
 import { useMemo } from 'react';
 import { collection, query, orderBy } from 'firebase/firestore';
-import { useCollection, useFirestore } from '@/firebase';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import type { Event } from '@/lib/definitions';
 
 export function useEvents() {
   const firestore = useFirestore();
-  const eventsCol = useMemo(
+  const eventsCol = useMemoFirebase(
     () => (firestore ? collection(firestore, 'events') : null),
     [firestore]
   );
-  const eventsQuery = useMemo(
+  const eventsQuery = useMemoFirebase(
     () => (eventsCol ? query(eventsCol, orderBy('date', 'desc')) : null),
     [eventsCol]
   );

@@ -2,16 +2,16 @@
 
 import { useMemo } from 'react';
 import { collection, query } from 'firebase/firestore';
-import { useCollection, useFirestore } from '@/firebase';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import type { GalleryImage } from '@/lib/definitions';
 
 export function useGalleryImages() {
   const firestore = useFirestore();
-  const galleryCol = useMemo(
+  const galleryCol = useMemoFirebase(
     () => (firestore ? collection(firestore, 'gallery') : null),
     [firestore]
   );
-  const galleryQuery = useMemo(() => (galleryCol ? query(galleryCol) : null), [
+  const galleryQuery = useMemoFirebase(() => (galleryCol ? query(galleryCol) : null), [
     galleryCol,
   ]);
 
