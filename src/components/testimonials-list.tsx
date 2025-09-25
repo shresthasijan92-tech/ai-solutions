@@ -1,11 +1,13 @@
 'use client';
 
-import { useTestimonials } from '@/hooks/use-testimonials';
+import { useState, useEffect } from 'react';
+import { getTestimonials } from '@/lib/testimonials';
 import { Card, CardContent } from '@/components/ui/card';
 import { Star } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Testimonial } from '@/lib/definitions';
 import { Skeleton } from '@/components/ui/skeleton';
+import { testimonials as mockTestimonials } from '@/lib/mock-data';
 
 function StarRating({ rating }: { rating: number }) {
   return (
@@ -26,8 +28,31 @@ function StarRating({ rating }: { rating: number }) {
 }
 
 export function TestimonialsList() {
-  // We now use the client-side hook, ensuring it only asks for approved testimonials.
-  const { testimonials, isLoading, error } = useTestimonials(true);
+  const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+
+  useEffect(() => {
+    async function loadTestimonials() {
+      setIsLoading(true);
+      try {
+        const approvedTestimonials = await getTestimonials(true);
+        if (approvedTestimonials.length > 0) {
+            setTestimonials(approvedTestimonials);
+        } else {
+            // Fallback to mock data if firestore is empty
+            setTestimonials(mockTestimonials.filter(t => t.status === 'approved'));
+        }
+      } catch (err: any) {
+        setError(err);
+        console.error("Could not load testimonials.", err);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    loadTestimonials();
+  }, []);
+
 
   if (isLoading) {
     return (
