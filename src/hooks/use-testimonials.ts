@@ -5,6 +5,8 @@ import { useState, useEffect } from 'react';
 import { collection, onSnapshot, query, where, orderBy, Timestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { Testimonial } from '@/lib/definitions';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
 
 export function useTestimonials(approvedOnly = false) {
   const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
@@ -36,6 +38,12 @@ export function useTestimonials(approvedOnly = false) {
         setIsLoading(false);
       },
       (err) => {
+        const permissionError = new FirestorePermissionError({
+          path: testimonialsCol.path,
+          operation: 'list',
+        });
+        errorEmitter.emit('permission-error', permissionError);
+
         console.error('Error fetching testimonials from Firestore:', err);
         setError('Failed to fetch testimonials. Please try again later.');
         setIsLoading(false);

@@ -4,6 +4,8 @@ import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { db } from '@/lib/firebase';
 import { collection, addDoc, doc, updateDoc, Timestamp } from 'firebase/firestore';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
 
 const FeedbackSchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -31,43 +33,52 @@ export async function submitFeedback(
     };
   }
 
-  try {
-    const testimonialsCollection = collection(db, 'testimonials');
-    await addDoc(testimonialsCollection, {
-      ...validatedFields.data,
-      createdAt: Timestamp.now(),
-      status: 'pending',
+  const testimonialsCollection = collection(db, 'testimonials');
+  const payload = {
+    ...validatedFields.data,
+    createdAt: Timestamp.now(),
+    status: 'pending',
+  };
+
+  addDoc(testimonialsCollection, payload).catch(async (serverError) => {
+    const permissionError = new FirestorePermissionError({
+      path: testimonialsCollection.path,
+      operation: 'create',
+      requestResourceData: payload,
     });
+    // This is a server action, so we can't emit to the client-side listener directly.
+    // In a real app, you would log this securely.
+    // For this demo, we'll just console.error on the server.
+    console.error(permissionError.toString());
+  });
 
-    revalidatePath('/feedback');
+  // We are optimistic here, revalidating and returning success immediately.
+  revalidatePath('/feedback');
 
-    return {
-      message: 'Thank you for your feedback!',
-      success: true,
-    };
-  } catch (error) {
-    console.error('Error submitting feedback:', error);
-    return {
-      message: 'Failed to submit feedback.',
-      success: false,
-    };
-  }
+  return {
+    message: 'Thank you for your feedback!',
+    success: true,
+  };
 }
 
 export async function updateTestimonialStatus(
   id: string,
   status: 'approved' | 'rejected'
 ): Promise<{ success: boolean; message?: string }> {
-  try {
     const testimonialDoc = doc(db, 'testimonials', id);
-    await updateDoc(testimonialDoc, { status });
+    const payload = { status };
+
+    updateDoc(testimonialDoc, payload).catch(async (serverError) => {
+        const permissionError = new FirestorePermissionError({
+            path: testimonialDoc.path,
+            operation: 'update',
+            requestResourceData: payload,
+        });
+        console.error(permissionError.toString());
+    });
 
     revalidatePath('/admin/feedback');
     revalidatePath('/feedback');
 
     return { success: true, message: `Testimonial has been ${status}.` };
-  } catch (error) {
-    console.error(`Error updating testimonial ${id} to ${status}:`, error);
-    return { success: false, message: `Failed to update testimonial status.` };
-  }
 }
