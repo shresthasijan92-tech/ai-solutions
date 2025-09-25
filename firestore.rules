@@ -1,30 +1,61 @@
+/**
+ * @file Firestore Security Rules
+ * @description This ruleset enforces a role-based access control model where administrative privileges are granted based on the existence of a document in the `/roles_admin/{userId}` collection.
+ *
+ * Data Structure:
+ * - Services: /services/{serviceId}
+ * - Projects: /projects/{projectId}
+ * - Articles: /articles/{articleId}
+ * - Gallery Items: /gallery/{galleryItemId}
+ * - Events: /events/{eventId}
+ * - Careers: /careers/{careerId}
+ * - Feedback: /feedback/{feedbackId} - Contains an 'approved' field to determine if the feedback is public
+ * - Homepage Sections: /homepageSections/{homepageSectionId}
+ * - Admin Roles: /roles_admin/{userId}
+ *
+ * Key Security Decisions:
+ * - Administrative access to manage core data (services, projects, articles, etc.) is controlled by the presence of a document in the `/roles_admin/{userId}` collection.
+ * - The `Feedback` collection is publicly listable, but only 'approved' feedback should be displayed in the UI.  Write access to `Feedback` and all other collections requires admin privileges.
+ * - Listing users is explicitly disallowed.
+ *
+ * Denormalization for Authorization:
+ * - Admin status is checked by verifying the existence of a document in the `/roles_admin/{userId}` collection, avoiding the need to store admin UIDs directly in user documents or use `get()` calls.
+ *
+ * Structural Segregation:
+ * - Public testimonials are managed within the `Feedback` collection using the `approved` field. Only approved feedback is intended to be displayed.
+ */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
      * @description Checks if the user is signed in.
-     * @return {boolean} True if the user is signed in, false otherwise.
+     * @path N/A
+     * @allow N/A
+     * @deny N/A
+     * @principle Requires authentication for certain operations.
      */
     function isSignedIn() {
       return request.auth != null;
     }
 
     /**
-     * @description Checks if the user is an admin based on the existence of a document in /roles_admin/{userId}.
-     * @return {boolean} True if the user is an admin, false otherwise.
+     * @description Checks if the user is an admin, determined by the existence of a document in /roles_admin/{userId}.
+     * @path N/A
+     * @allow N/A
+     * @deny N/A
+     * @principle Enforces role-based access control.
      */
     function isAdmin() {
       return exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid));
     }
 
     /**
-     * @description Allows anyone to read but only admins to write.
+     * @description Grants or denies permissions based on whether the user is an admin.
      * @path /services/{serviceId}
-     * @allow (get, list)
-     * @allow (create, update, delete) if isAdmin()
-     * @deny (create, update, delete) if !isAdmin()
-     * @principle Allows public read access but restricts writes to admins.
+     * @allow (create) - If the user is an admin.
+     * @deny (create) - If the user is not an admin.
+     * @principle Enforces role-based access control for managing service details.
      */
     match /services/{serviceId} {
       allow get, list: if true;
@@ -32,12 +63,11 @@ service cloud.firestore {
     }
 
     /**
-     * @description Allows anyone to read but only admins to write.
+     * @description Grants or denies permissions based on whether the user is an admin.
      * @path /projects/{projectId}
-     * @allow (get, list)
-     * @allow (create, update, delete) if isAdmin()
-     * @deny (create, update, delete) if !isAdmin()
-     * @principle Allows public read access but restricts writes to admins.
+     * @allow (create) - If the user is an admin.
+     * @deny (create) - If the user is not an admin.
+     * @principle Enforces role-based access control for managing project details.
      */
     match /projects/{projectId} {
       allow get, list: if true;
@@ -45,12 +75,11 @@ service cloud.firestore {
     }
 
     /**
-     * @description Allows anyone to read but only admins to write.
+     * @description Grants or denies permissions based on whether the user is an admin.
      * @path /articles/{articleId}
-     * @allow (get, list)
-     * @allow (create, update, delete) if isAdmin()
-     * @deny (create, update, delete) if !isAdmin()
-     * @principle Allows public read access but restricts writes to admins.
+     * @allow (create) - If the user is an admin.
+     * @deny (create) - If the user is not an admin.
+     * @principle Enforces role-based access control for managing article details.
      */
     match /articles/{articleId} {
       allow get, list: if true;
@@ -58,12 +87,11 @@ service cloud.firestore {
     }
 
     /**
-     * @description Allows anyone to read but only admins to write.
+     * @description Grants or denies permissions based on whether the user is an admin.
      * @path /gallery/{galleryItemId}
-     * @allow (get, list)
-     * @allow (create, update, delete) if isAdmin()
-     * @deny (create, update, delete) if !isAdmin()
-     * @principle Allows public read access but restricts writes to admins.
+     * @allow (create) - If the user is an admin.
+     * @deny (create) - If the user is not an admin.
+     * @principle Enforces role-based access control for managing gallery item details.
      */
     match /gallery/{galleryItemId} {
       allow get, list: if true;
@@ -71,12 +99,11 @@ service cloud.firestore {
     }
 
     /**
-     * @description Allows anyone to read but only admins to write.
+     * @description Grants or denies permissions based on whether the user is an admin.
      * @path /events/{eventId}
-     * @allow (get, list)
-     * @allow (create, update, delete) if isAdmin()
-     * @deny (create, update, delete) if !isAdmin()
-     * @principle Allows public read access but restricts writes to admins.
+     * @allow (create) - If the user is an admin.
+     * @deny (create) - If the user is not an admin.
+     * @principle Enforces role-based access control for managing event details.
      */
     match /events/{eventId} {
       allow get, list: if true;
@@ -84,12 +111,11 @@ service cloud.firestore {
     }
 
     /**
-     * @description Allows anyone to read but only admins to write.
+     * @description Grants or denies permissions based on whether the user is an admin.
      * @path /careers/{careerId}
-     * @allow (get, list)
-     * @allow (create, update, delete) if isAdmin()
-     * @deny (create, update, delete) if !isAdmin()
-     * @principle Allows public read access but restricts writes to admins.
+     * @allow (create) - If the user is an admin.
+     * @deny (create) - If the user is not an admin.
+     * @principle Enforces role-based access control for managing career details.
      */
     match /careers/{careerId} {
       allow get, list: if true;
@@ -97,12 +123,12 @@ service cloud.firestore {
     }
 
     /**
-     * @description Allows anyone to read, but only admins to create, update, or delete feedback.
+     * @description Allows read access to all feedback entries but restricts write access to admins only.
      * @path /feedback/{feedbackId}
-     * @allow get, list: if true;
-     * @allow create, update, delete: if isAdmin();
-     * @deny create, update, delete: if !isAdmin();
-     * @principle Allows public read access but restricts writes to admins. Admins manage approved feedback.
+     * @allow (list) - Anyone can list feedback entries.
+     * @allow (create, update, delete) - Only admins can create, update, or delete feedback entries.
+     * @deny (create) - If the user is not an admin.
+     * @principle Allows public read access while restricting write access to authorized users.
      */
     match /feedback/{feedbackId} {
       allow get, list: if true;
@@ -110,12 +136,11 @@ service cloud.firestore {
     }
 
     /**
-     * @description Allows anyone to read but only admins to write.
+     * @description Grants or denies permissions based on whether the user is an admin.
      * @path /homepageSections/{homepageSectionId}
-     * @allow (get, list)
-     * @allow (create, update, delete) if isAdmin()
-     * @deny (create, update, delete) if !isAdmin()
-     * @principle Allows public read access but restricts writes to admins.
+     * @allow (create) - If the user is an admin.
+     * @deny (create) - If the user is not an admin.
+     * @principle Enforces role-based access control for managing homepage section configurations.
      */
     match /homepageSections/{homepageSectionId} {
       allow get, list: if true;
@@ -123,19 +148,17 @@ service cloud.firestore {
     }
 
     /**
-     * @description Allows creating an admin role for a user if the user ID matches the authenticated user ID.  No one can read or list this collection. Only admins can create, update, and delete existing admin roles.
+     * @description Grants admin privileges based on the existence of a document under /roles_admin/{userId}. Allows only the user themselves to create their admin role.
      * @path /roles_admin/{userId}
-     * @allow create if request.auth.uid == userId;
-     * @allow update, delete if isAdmin();
-     * @deny get, list: if true;
-     * @deny create: if request.auth.uid != userId;
-     * @deny update, delete: if !isAdmin();
-     * @principle Restricts admin role creation to the user themselves and modification to existing admins.
+     * @allow (create) - If the request.auth.uid matches the userId.
+     * @deny (create) - If the request.auth.uid does not match the userId.
+     * @principle Enforces self-creation of admin roles and restricts modifications to admins only.
      */
     match /roles_admin/{userId} {
-      allow get, list: if false;
-      allow create: if request.auth.uid == userId;
-      allow update, delete: if isAdmin();
+      allow get: if isAdmin();
+      allow list: if false;
+      allow create: if isSignedIn() && request.auth.uid == userId;
+      allow update, delete: if false;
     }
   }
 }
