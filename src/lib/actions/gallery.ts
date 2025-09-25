@@ -25,6 +25,7 @@ const storage = getStorage(app);
 const GalleryImageSchema = z.object({
   title: z.string().min(1, 'Title is required'),
   imageUrl: z.string().min(1, 'An image is required'),
+  category: z.enum(['Events', 'Tech Solutions', 'Team Collaboration']),
   featured: z.boolean(),
 });
 

@@ -38,10 +38,13 @@ export type Article = {
   featured: boolean;
 };
 
+export type GalleryCategory = "Events" | "Tech Solutions" | "Team Collaboration" | "All";
+
 export type GalleryImage = {
   id: string;
   title: string;
   imageUrl: string;
+  category: Omit<GalleryCategory, "All">;
   featured: boolean;
 };
 

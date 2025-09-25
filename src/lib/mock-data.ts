@@ -25,12 +25,12 @@ export const articles: Article[] = [
 ];
 
 export const galleryImages: GalleryImage[] = [
-  { id: 'g1', title: 'Team Collaboration', imageUrl: 'https://picsum.photos/seed/teamwork/400/600', featured: true },
-  { id: 'g2', title: 'Office Environment', imageUrl: 'https://picsum.photos/seed/g2/600/400', featured: true },
-  { id: 'g3', title: 'AI Conference Talk', imageUrl: 'https://picsum.photos/seed/g3/600/400', featured: true },
-  { id: 'g4', title: 'Data Insights', imageUrl: 'https://picsum.photos/seed/g4/600/400', featured: false },
-  { id: 'g5', title: 'Robotics Lab', imageUrl: 'https://picsum.photos/seed/g5/400/600', featured: false },
-  { id: 'g6', title: 'Pair Programming', imageUrl: 'https://picsum.photos/seed/g6/600/400', featured: false },
+  { id: 'g1', title: 'Team Collaboration', imageUrl: 'https://picsum.photos/seed/teamwork/400/600', category: 'Team Collaboration', featured: true },
+  { id: 'g2', title: 'Office Environment', imageUrl: 'https://picsum.photos/seed/g2/600/400', category: 'Team Collaboration', featured: true },
+  { id: 'g3', title: 'AI Conference Talk', imageUrl: 'https://picsum.photos/seed/g3/600/400', category: 'Events', featured: true },
+  { id: 'g4', title: 'Data Insights', imageUrl: 'https://picsum.photos/seed/g4/600/400', category: 'Tech Solutions', featured: false },
+  { id: 'g5', title: 'Robotics Lab', imageUrl: 'https://picsum.photos/seed/g5/400/600', category: 'Tech Solutions', featured: false },
+  { id: 'g6', title: 'Pair Programming', imageUrl: 'https://picsum.photos/seed/g6/600/400', category: 'Team Collaboration', featured: false },
 ];
 
 export const events: Event[] = [

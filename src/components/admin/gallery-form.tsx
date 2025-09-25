@@ -24,10 +24,18 @@ import {
   createGalleryImage,
   updateGalleryImage,
 } from '@/lib/actions/gallery';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 const GalleryFormSchema = z.object({
   title: z.string().min(1, 'Title is required'),
   imageUrl: z.string().min(1, 'An image is required'),
+  category: z.enum(['Events', 'Tech Solutions', 'Team Collaboration']),
   featured: z.boolean(),
 });
 
@@ -47,6 +55,7 @@ export function GalleryForm({ image, onSuccess }: GalleryFormProps) {
     defaultValues: {
       title: '',
       imageUrl: '',
+      category: 'Tech Solutions',
       featured: false,
     },
   });
@@ -56,12 +65,14 @@ export function GalleryForm({ image, onSuccess }: GalleryFormProps) {
       form.reset({
         title: image.title || '',
         imageUrl: image.imageUrl || '',
+        category: image.category || 'Tech Solutions',
         featured: image.featured || false,
       });
     } else {
       form.reset({
         title: '',
         imageUrl: '',
+        category: 'Tech Solutions',
         featured: false,
       });
     }
@@ -130,6 +141,28 @@ export function GalleryForm({ image, onSuccess }: GalleryFormProps) {
               <FormControl>
                 <Input placeholder="Team Collaboration" {...field} />
               </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="category"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Category</FormLabel>
+              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a category" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="Events">Events</SelectItem>
+                  <SelectItem value="Tech Solutions">Tech Solutions</SelectItem>
+                  <SelectItem value="Team Collaboration">Team Collaboration</SelectItem>
+                </SelectContent>
+              </Select>
               <FormMessage />
             </FormItem>
           )}

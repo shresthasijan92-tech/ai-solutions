@@ -14,6 +14,7 @@ export async function getGalleryImages(): Promise<GalleryImage[]> {
         id: doc.id,
         title: data.title,
         imageUrl: data.imageUrl,
+        category: data.category,
         featured: data.featured || false,
       } as GalleryImage;
     });

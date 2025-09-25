@@ -20,6 +20,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { MoreHorizontal, Trash2, Edit, CheckCircle, XCircle } from 'lucide-react';
 import {
   DropdownMenu,
@@ -77,6 +78,7 @@ export function GalleryTable({ galleryImages, onEdit }: GalleryTableProps) {
             <TableRow>
               <TableHead>Image</TableHead>
               <TableHead>Title</TableHead>
+              <TableHead>Category</TableHead>
               <TableHead>Featured</TableHead>
               <TableHead className="w-[50px] text-right">Actions</TableHead>
             </TableRow>
@@ -97,6 +99,9 @@ export function GalleryTable({ galleryImages, onEdit }: GalleryTableProps) {
                         )}
                         </TableCell>
                         <TableCell className="font-medium">{galleryImage.title}</TableCell>
+                        <TableCell>
+                          <Badge variant="secondary">{galleryImage.category}</Badge>
+                        </TableCell>
                         <TableCell>
                         {galleryImage.featured ? (
                             <CheckCircle className="h-5 w-5 text-green-500" />
