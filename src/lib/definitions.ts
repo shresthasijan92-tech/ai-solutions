@@ -55,6 +55,7 @@ export type Event = {
   location: string;
   description: string;
   featured: boolean;
+  imageUrl?: string;
 };
 
 export type Job = {

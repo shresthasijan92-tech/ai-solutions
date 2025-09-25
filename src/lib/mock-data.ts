@@ -34,9 +34,9 @@ export const galleryImages: GalleryImage[] = [
 ];
 
 export const events: Event[] = [
-  { id: 'e1', title: 'Webinar: AI for UK Businesses', date: '2025-10-15', location: 'Online', description: 'A free webinar covering practical AI applications for small and medium-sized businesses.', featured: true },
-  { id: 'e2', title: 'AI Innovation Summit', date: '2025-11-20', location: 'Manchester, UK', description: "Join us at the premier event for AI professionals and enthusiasts. We'll be at booth #123.", featured: true },
-  { id: 'e3', title: 'Tech Meetup: The Future of NLP', date: '2025-12-05', location: 'Edinburgh, UK', description: "Our lead data scientist will be giving a talk on the latest advancements in Natural Language Processing.", featured: false },
+  { id: 'e1', title: 'Webinar: AI for UK Businesses', date: '2025-10-15', location: 'Online', description: 'A free webinar covering practical AI applications for small and medium-sized businesses.', featured: true, imageUrl: 'https://picsum.photos/seed/e1/600/400' },
+  { id: 'e2', title: 'AI Innovation Summit', date: '2025-11-20', location: 'Manchester, UK', description: "Join us at the premier event for AI professionals and enthusiasts. We'll be at booth #123.", featured: true, imageUrl: 'https://picsum.photos/seed/e2/600/400' },
+  { id: 'e3', title: 'Tech Meetup: The Future of NLP', date: '2025-12-05', location: 'Edinburgh, UK', description: "Our lead data scientist will be giving a talk on the latest advancements in Natural Language Processing.", featured: false, imageUrl: 'https://picsum.photos/seed/e3/600/400' },
 ];
 
 export const jobs: Job[] = [

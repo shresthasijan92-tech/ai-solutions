@@ -1,6 +1,6 @@
 'use client';
 
-import { useTransition } from 'react';
+import { useEffect, useTransition } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -41,6 +41,7 @@ const EventFormSchema = z.object({
   date: z.date({
     required_error: "A date for the event is required.",
   }),
+  imageUrl: z.string().optional(),
   featured: z.boolean(),
 });
 
@@ -58,32 +59,58 @@ export function EventForm({ event, onSuccess }: EventFormProps) {
   const form = useForm<EventFormValues>({
     resolver: zodResolver(EventFormSchema),
     defaultValues: {
-      title: event?.title || '',
-      description: event?.description || '',
-      location: event?.location || '',
-      date: event?.date ? new Date(event.date) : new Date(),
-      featured: event?.featured || false,
+      title: '',
+      description: '',
+      location: '',
+      date: new Date(),
+      imageUrl: '',
+      featured: false,
     },
   });
 
+  useEffect(() => {
+    if (event) {
+        form.reset({
+            title: event.title || '',
+            description: event.description || '',
+            location: event.location || '',
+            date: event.date ? new Date(event.date) : new Date(),
+            imageUrl: event.imageUrl || '',
+            featured: event.featured || false,
+        });
+    } else {
+        form.reset({
+            title: '',
+            description: '',
+            location: '',
+            date: new Date(),
+            imageUrl: '',
+            featured: false,
+        });
+    }
+  }, [event, form]);
+
+  const handleFileChange = (
+    e: React.ChangeEvent<HTMLInputElement>,
+    fieldChange: (value: string) => void
+  ) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        fieldChange(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const onSubmit = (data: EventFormValues) => {
     startTransition(async () => {
-      const formData = new FormData();
-      Object.entries(data).forEach(([key, value]) => {
-        if (key === 'date' && value instanceof Date) {
-            formData.append(key, value.toISOString());
-        } else if (typeof value === 'boolean') {
-            formData.append(key, value.toString());
-        } else {
-            formData.append(key, value);
-        }
-      });
-
-      const action = event
+      const action = event?.id
         ? updateEvent.bind(null, event.id)
         : createEvent;
         
-      const result = await action(formData);
+      const result = await action(data);
 
       if (result.success) {
         toast({
@@ -200,6 +227,35 @@ export function EventForm({ event, onSuccess }: EventFormProps) {
             </FormItem>
           )}
         />
+        <FormField
+          control={form.control}
+          name="imageUrl"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Image URL</FormLabel>
+              <FormControl>
+                <Input placeholder="https://example.com/image.jpg" {...field} value={field.value ?? ''} />
+              </FormControl>
+              <FormDescription>
+                Provide a full web link to an image for the event.
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+         <FormItem>
+          <FormLabel>Or Upload Image</FormLabel>
+          <FormControl>
+            <Input
+              type="file"
+              accept="image/*"
+              onChange={(e) => handleFileChange(e, (value) => form.setValue('imageUrl', value))}
+            />
+          </FormControl>
+          <FormDescription>
+            Upload an image from your device. This will override the Image URL field.
+          </FormDescription>
+        </FormItem>
         <FormField
           control={form.control}
           name="featured"

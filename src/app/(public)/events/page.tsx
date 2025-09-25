@@ -1,8 +1,9 @@
 import { getEvents } from '@/lib/events';
-import { Card, CardContent, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardTitle, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { MapPin } from 'lucide-react';
+import Image from 'next/image';
+import { MapPin, Calendar, ArrowRight } from 'lucide-react';
 import { events as mockEvents } from '@/lib/mock-data';
 
 export default async function EventsPage() {
@@ -15,32 +16,48 @@ export default async function EventsPage() {
        {events.length === 0 ? (
         <p>No events found. The database might be empty. You can add events in the admin panel.</p>
       ) : (
-        <div className="space-y-6">
+        <div className="grid gap-8 md:grid-cols-1 lg:grid-cols-3">
           {events.map((event) => (
-            <Card key={event.id} className="hover:shadow-md transition-shadow">
-              <CardContent className="p-6 md:flex md:items-center md:justify-between">
-                <div className="md:w-1/4 mb-4 md:mb-0 text-center md:text-left">
-                  <div className="text-sm text-muted-foreground">
-                    {new Date(event.date).toLocaleDateString('en-US', { month: 'short' })}
-                  </div>
-                  <div className="text-3xl font-bold text-primary">
-                    {new Date(event.date).getDate()}
-                  </div>
-                  <div className="text-sm text-muted-foreground">
-                    {new Date(event.date).getFullYear()}
-                  </div>
+            <Card key={event.id} className="overflow-hidden group flex flex-col">
+              <CardHeader className="p-0">
+                <Link href={`/events/${event.id}`} className="block relative h-48 w-full overflow-hidden">
+                  {event.imageUrl ? (
+                    <Image
+                      src={event.imageUrl}
+                      alt={event.title}
+                      fill
+                      className="object-cover transition-transform duration-300 group-hover:scale-105"
+                    />
+                  ) : (
+                    <div className="bg-secondary h-full flex items-center justify-center">
+                      <Calendar className="w-12 h-12 text-muted-foreground" />
+                    </div>
+                  )}
+                </Link>
+              </CardHeader>
+              <CardContent className="p-6 flex flex-col flex-grow">
+                <h3 className="font-headline text-xl mb-2 font-semibold leading-tight">
+                  <Link href={`/events/${event.id}`} className="hover:text-primary transition-colors">
+                    {event.title}
+                  </Link>
+                </h3>
+                <div className="flex items-center text-sm text-muted-foreground mb-2">
+                    <Calendar className="h-4 w-4 mr-2" />
+                    {new Date(event.date).toLocaleDateString('en-US', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                    })}
                 </div>
-                <div className="md:w-2/4">
-                  <CardTitle className="font-headline text-xl mb-2">{event.title}</CardTitle>
-                  <div className="flex items-center text-sm text-muted-foreground">
-                      <MapPin className="h-4 w-4 mr-2" /> {event.location}
-                  </div>
+                <div className="flex items-center text-sm text-muted-foreground mb-4">
+                    <MapPin className="h-4 w-4 mr-2" /> {event.location}
                 </div>
-                <div className="md:w-1/4 mt-4 md:mt-0 md:text-right">
-                  <Button asChild>
-                    <Link href={`/events/${event.id}`}>View Details</Link>
-                  </Button>
-                </div>
+                <p className="text-muted-foreground flex-grow mb-4">{event.description}</p>
+                 <Button variant="link" className="p-0 h-auto self-start mt-auto" asChild>
+                    <Link href={`/events/${event.id}`}>
+                        View Details <ArrowRight className="ml-2 h-4 w-4" />
+                    </Link>
+                </Button>
               </CardContent>
             </Card>
           ))}

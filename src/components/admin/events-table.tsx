@@ -30,11 +30,20 @@ import {
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { deleteEvent } from '@/lib/actions/events';
+import Image from 'next/image';
+import { Timestamp } from 'firebase/firestore';
 
 type EventsTableProps = {
   events: EventDef[];
   onEdit: (event: EventDef) => void;
 };
+
+const toDate = (timestamp: string | Timestamp | Date): Date => {
+  if (timestamp instanceof Timestamp) {
+    return timestamp.toDate();
+  }
+  return new Date(timestamp);
+}
 
 export function EventsTable({ events, onEdit }: EventsTableProps) {
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -74,6 +83,7 @@ export function EventsTable({ events, onEdit }: EventsTableProps) {
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead className="w-[100px]">Image</TableHead>
               <TableHead>Title</TableHead>
               <TableHead>Location</TableHead>
               <TableHead>Date</TableHead>
@@ -84,10 +94,21 @@ export function EventsTable({ events, onEdit }: EventsTableProps) {
           <TableBody>
             {events.map((event) => (
                 <TableRow key={event.id}>
+                    <TableCell>
+                      {event.imageUrl && (
+                        <Image
+                          src={event.imageUrl}
+                          alt={event.title}
+                          width={80}
+                          height={60}
+                          className="rounded-md object-cover"
+                        />
+                      )}
+                    </TableCell>
                     <TableCell className="font-medium">{event.title}</TableCell>
                     <TableCell>{event.location}</TableCell>
                     <TableCell>
-                        {new Date(event.date).toLocaleDateString('en-US', {
+                        {toDate(event.date).toLocaleDateString('en-US', {
                             year: 'numeric',
                             month: 'long',
                             day: 'numeric',
