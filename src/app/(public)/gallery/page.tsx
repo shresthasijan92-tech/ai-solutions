@@ -8,6 +8,8 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import type { GalleryImage, GalleryCategory } from '@/lib/definitions';
 import { Skeleton } from '@/components/ui/skeleton';
+import Link from 'next/link';
+import { ArrowLeft } from 'lucide-react';
 
 const categories: GalleryCategory[] = ["All", "Events", "Tech Solutions", "Team Collaboration"];
 
@@ -33,6 +35,12 @@ export default function GalleryPage() {
 
   return (
     <div className="container py-12">
+      <Button variant="ghost" asChild className="mb-8">
+        <Link href="/">
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Back to Home
+        </Link>
+      </Button>
       <h1 className="text-4xl font-headline font-bold mb-4">Gallery</h1>
       <p className="text-muted-foreground mb-8">
         A visual journey through our projects, team culture, and events.
