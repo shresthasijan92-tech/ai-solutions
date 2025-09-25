@@ -39,6 +39,16 @@ export type ProjectFormState = {
   success?: boolean;
 };
 
+async function handleImageUpload(
+  dataUri: string,
+  folder: string
+): Promise<string> {
+  const fileName = `${folder}/${Date.now()}`;
+  const storageRef = ref(storage, fileName);
+  const uploadResult = await uploadString(storageRef, dataUri, 'data_url');
+  return getDownloadURL(uploadResult.ref);
+}
+
 export async function createProject(
   data: z.infer<typeof ProjectSchema>
 ): Promise<ProjectFormState> {
@@ -52,11 +62,16 @@ export async function createProject(
     };
   }
   
-  const { ...rest } = validatedFields.data;
+  const { imageUrl, ...rest } = validatedFields.data;
+  let finalImageUrl = imageUrl;
 
   try {
+    if (imageUrl.startsWith('data:image')) {
+      finalImageUrl = await handleImageUpload(imageUrl, 'projects');
+    }
+    
     const projectsCollection = collection(db, 'projects');
-    await addDoc(projectsCollection, { ...rest });
+    await addDoc(projectsCollection, { ...rest, imageUrl: finalImageUrl });
 
   } catch (error) {
     console.error(error);
@@ -83,13 +98,31 @@ export async function updateProject(
     };
   }
 
-  const { ...rest } = validatedFields.data;
+  const { imageUrl, ...rest } = validatedFields.data;
+  let finalImageUrl = imageUrl;
 
   try {
     const projectDocRef = doc(db, 'projects', id);
     const existingDoc = await getDoc(projectDocRef);
     
-    const projectData = { ...rest };
+    if (imageUrl.startsWith('data:image')) {
+      finalImageUrl = await handleImageUpload(imageUrl, 'projects');
+      if (existingDoc.exists()) {
+        const existingData = existingDoc.data();
+        if (existingData?.imageUrl && existingData.imageUrl.includes('firebasestorage')) {
+          try {
+            const oldImageRef = ref(storage, existingData.imageUrl);
+            await deleteObject(oldImageRef);
+          } catch (storageError: any) {
+            if (storageError.code !== 'storage/object-not-found') {
+              console.warn('Could not delete old image, may not exist:', storageError);
+            }
+          }
+        }
+      }
+    }
+    
+    const projectData = { ...rest, imageUrl: finalImageUrl };
 
     if (existingDoc.exists()) {
         await updateDoc(projectDocRef, projectData);
