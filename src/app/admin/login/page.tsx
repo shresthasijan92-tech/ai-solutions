@@ -23,7 +23,8 @@ export default function LoginPage() {
     setTimeout(() => {
       if (username === 'sijan' && password === 'sijan') {
         // In a real app, you would set a session cookie here.
-        // For this demo, we'll just redirect.
+        // For this demo, we'll just use localStorage.
+        localStorage.setItem('isAdminAuthenticated', 'true');
         window.location.href = '/admin';
       } else {
         setError('Invalid username or password.');
