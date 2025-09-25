@@ -1,12 +1,10 @@
-'use client';
+'use server';
 
-import { useState, useEffect } from 'react';
 import { getTestimonials } from '@/lib/testimonials';
 import { Card, CardContent } from '@/components/ui/card';
 import { Star } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Testimonial } from '@/lib/definitions';
-import { Skeleton } from '@/components/ui/skeleton';
 import { testimonials as mockTestimonials } from '@/lib/mock-data';
 
 function StarRating({ rating }: { rating: number }) {
@@ -27,46 +25,9 @@ function StarRating({ rating }: { rating: number }) {
   );
 }
 
-export function TestimonialsList() {
-  const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
-
-  useEffect(() => {
-    async function loadTestimonials() {
-      setIsLoading(true);
-      try {
-        const approvedTestimonials = await getTestimonials(true);
-        if (approvedTestimonials.length > 0) {
-            setTestimonials(approvedTestimonials);
-        } else {
-            // Fallback to mock data if firestore is empty
-            setTestimonials(mockTestimonials.filter(t => t.status === 'approved'));
-        }
-      } catch (err: any) {
-        setError(err);
-        console.error("Could not load testimonials.", err);
-      } finally {
-        setIsLoading(false);
-      }
-    }
-    loadTestimonials();
-  }, []);
-
-
-  if (isLoading) {
-    return (
-        <div className="space-y-6">
-            <Skeleton className="h-24 w-full" />
-            <Skeleton className="h-24 w-full" />
-            <Skeleton className="h-24 w-full" />
-        </div>
-    )
-  }
-
-  if (error) {
-    return <p className="text-destructive">Could not load testimonials. {error.message}</p>;
-  }
+export async function TestimonialsList() {
+  const approvedTestimonials = await getTestimonials(true);
+  const testimonials = approvedTestimonials.length > 0 ? approvedTestimonials : mockTestimonials.filter(t => t.status === 'approved');
 
   if (!testimonials || testimonials.length === 0) {
     return <p>No testimonials have been approved yet. Check back soon!</p>;
