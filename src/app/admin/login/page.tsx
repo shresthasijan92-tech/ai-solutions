@@ -21,7 +21,7 @@ export default function LoginPage() {
     // This is a mock login. In a real app, this would be a server action
     // that validates credentials and sets a secure, http-only cookie.
     setTimeout(() => {
-      if (username === 'admin' && password === 'admin') {
+      if (username === 'sijan' && password === 'sijan') {
         // In a real app, you would set a session cookie here.
         // For this demo, we'll just redirect.
         window.location.href = '/admin';
@@ -49,7 +49,7 @@ export default function LoginPage() {
               <Input
                 id="username"
                 type="text"
-                placeholder="admin"
+                placeholder="sijan"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 required
@@ -60,7 +60,7 @@ export default function LoginPage() {
               <Input
                 id="password"
                 type="password"
-                placeholder="admin"
+                placeholder="sijan"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
