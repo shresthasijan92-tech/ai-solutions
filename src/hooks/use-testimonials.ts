@@ -14,7 +14,6 @@ export function useTestimonials(enabled = true) {
 
   const testimonialsQuery = useMemoFirebase(() => {
     if (!testimonialsCol || !enabled) return null;
-    
     // For admin pages, fetch all testimonials, sorted by date.
     // The `enabled` flag ensures this only runs when called from an authenticated context.
     return query(testimonialsCol, orderBy('createdAt', 'desc'));

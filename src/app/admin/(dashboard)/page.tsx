@@ -12,7 +12,7 @@ export default function AdminDashboardPage() {
   const { isUserLoading: isAuthLoading } = useUser();
   const { services, isLoading: isLoadingServices } = useServices();
   const { projects, isLoading: isLoadingProjects } = useProjects();
-  // Only fetch testimonials if the user is not loading (i.e., auth state is determined)
+  // Only enable the testimonials hook once we know the auth state is ready.
   const { testimonials, isLoading: isLoadingTestimonials } = useTestimonials(!isAuthLoading);
 
   // Prevent calculation until auth state and data are ready
