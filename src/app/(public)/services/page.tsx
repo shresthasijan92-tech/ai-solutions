@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { getServices } from '@/lib/services';
 import { Card, CardDescription, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
-import * as Lucide from 'lucide-react';
 import { services as mockServices } from '@/lib/mock-data';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
@@ -39,7 +38,6 @@ export default function ServicesPage() {
         ) : (
           <div className="grid gap-6 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
             {services.map((service) => {
-              const Icon = (Lucide as any)[service.icon as any] as Lucide.LucideIcon;
               return (
                 <Card key={service.id} className="group flex flex-col overflow-hidden transition-all duration-300 hover:border-primary hover:shadow-lg">
                   <CardHeader className="p-0">
@@ -55,12 +53,7 @@ export default function ServicesPage() {
                     )}
                   </CardHeader>
                   <CardContent className="p-6 flex flex-col flex-grow">
-                    <div className="mb-4 flex items-center gap-4">
-                      <div className="rounded-lg bg-primary/10 p-3 text-primary transition-colors duration-300 group-hover:bg-primary group-hover:text-primary-foreground">
-                        {Icon && <Icon className="h-6 w-6" />}
-                      </div>
-                      <CardTitle className="font-headline text-xl">{service.title}</CardTitle>
-                    </div>
+                    <CardTitle className="font-headline text-xl mb-4">{service.title}</CardTitle>
                     <CardDescription className="text-balance flex-grow">
                       {service.description}
                     </CardDescription>

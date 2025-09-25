@@ -29,7 +29,6 @@ import {
 const ServiceFormSchema = z.object({
   title: z.string().min(1, 'Title is required'),
   description: z.string().min(1, 'Description is required'),
-  icon: z.string().min(1, 'Icon name from lucide-react is required'),
   imageUrl: z.string().optional(),
   benefits: z.string().optional(),
   price: z.string().optional(),
@@ -53,7 +52,6 @@ export function ServiceForm({ service, onSuccess }: ServiceFormProps) {
     defaultValues: {
       title: '',
       description: '',
-      icon: '',
       imageUrl: '',
       benefits: '',
       price: '',
@@ -67,7 +65,6 @@ export function ServiceForm({ service, onSuccess }: ServiceFormProps) {
       form.reset({
         title: service.title || '',
         description: service.description || '',
-        icon: service.icon || '',
         imageUrl: service.imageUrl || '',
         benefits: service.benefits?.join(', ') || '',
         price: service.price || '',
@@ -78,7 +75,6 @@ export function ServiceForm({ service, onSuccess }: ServiceFormProps) {
       form.reset({
         title: '',
         description: '',
-        icon: '',
         imageUrl: '',
         benefits: '',
         price: '',
@@ -187,31 +183,6 @@ export function ServiceForm({ service, onSuccess }: ServiceFormProps) {
               </FormControl>
               <FormDescription>
                 This will be shown in the "Learn More" dialog.
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="icon"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Icon</FormLabel>
-              <FormControl>
-                <Input placeholder="BrainCircuit" {...field} />
-              </FormControl>
-              <FormDescription>
-                Enter a valid icon name from{' '}
-                <a
-                  href="https://lucide.dev/icons/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-primary hover:underline"
-                >
-                  lucide-react
-                </a>
-                .
               </FormDescription>
               <FormMessage />
             </FormItem>

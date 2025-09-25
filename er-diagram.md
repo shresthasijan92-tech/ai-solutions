@@ -9,7 +9,6 @@ erDiagram
         string id PK
         string title
         string description
-        string icon
         string imageUrl "Optional"
         string-array benefits "Optional"
         string price "Optional"

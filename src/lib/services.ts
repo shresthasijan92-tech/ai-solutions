@@ -19,7 +19,6 @@ export async function getServices(): Promise<Service[]> {
         id: doc.id,
         title: data.title,
         description: data.description,
-        icon: data.icon,
         imageUrl: data.imageUrl,
         benefits: data.benefits || [],
         price: data.price || '',
