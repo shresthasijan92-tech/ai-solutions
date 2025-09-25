@@ -6,6 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Loader2, Calendar as CalendarIcon } from 'lucide-react';
 import { format } from 'date-fns';
+import { Timestamp } from 'firebase/firestore';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -52,6 +53,18 @@ type EventFormProps = {
   onSuccess: () => void;
 };
 
+// Helper to convert Firestore Timestamp or string to Date
+const toDate = (timestamp: string | Timestamp | Date | undefined | null): Date => {
+  if (!timestamp) {
+    return new Date();
+  }
+  if (timestamp instanceof Timestamp) {
+    return timestamp.toDate();
+  }
+  return new Date(timestamp);
+};
+
+
 export function EventForm({ event, onSuccess }: EventFormProps) {
   const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
@@ -74,7 +87,7 @@ export function EventForm({ event, onSuccess }: EventFormProps) {
             title: event.title || '',
             description: event.description || '',
             location: event.location || '',
-            date: event.date ? new Date(event.date) : new Date(),
+            date: toDate(event.date),
             imageUrl: event.imageUrl || '',
             featured: event.featured || false,
         });
@@ -206,7 +219,7 @@ export function EventForm({ event, onSuccess }: EventFormProps) {
                       )}
                     >
                       {field.value ? (
-                        format(field.value, "PPP")
+                        format(toDate(field.value), "PPP")
                       ) : (
                         <span>Pick a date</span>
                       )}
