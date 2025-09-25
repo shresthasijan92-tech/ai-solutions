@@ -6,18 +6,22 @@ import { useServices } from '@/hooks/use-services';
 import { useProjects } from '@/hooks/use-projects';
 import { useTestimonials } from '@/hooks/use-testimonials';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useUser } from '@/firebase';
 
 export default function AdminDashboardPage() {
+  const { isUserLoading: isAuthLoading } = useUser();
   const { services, isLoading: isLoadingServices } = useServices();
   const { projects, isLoading: isLoadingProjects } = useProjects();
-  const { testimonials, isLoading: isLoadingTestimonials } = useTestimonials();
+  // Only fetch testimonials if the user is not loading (i.e., auth state is determined)
+  const { testimonials, isLoading: isLoadingTestimonials } = useTestimonials(false);
 
-  const pendingFeedbackCount = testimonials?.filter(t => t.status === 'pending').length ?? 0;
+  // Prevent calculation until auth state and data are ready
+  const pendingFeedbackCount = !isAuthLoading && testimonials ? testimonials.filter(t => t.status === 'pending').length : 0;
 
   const stats = [
     { title: 'Total Services', value: services?.length ?? 0, icon: Briefcase, isLoading: isLoadingServices },
     { title: 'Total Projects', value: projects?.length ?? 0, icon: FileText, isLoading: isLoadingProjects },
-    { title: 'Pending Feedback', value: pendingFeedbackCount, icon: MessageSquare, isLoading: isLoadingTestimonials },
+    { title: 'Pending Feedback', value: pendingFeedbackCount, icon: MessageSquare, isLoading: isAuthLoading || isLoadingTestimonials },
   ];
 
   return (
