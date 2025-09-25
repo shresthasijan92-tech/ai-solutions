@@ -43,7 +43,9 @@ export default function ServicesPage() {
           <div className="grid gap-6 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
             {Array.from({ length: 3 }).map((_, i) => (
               <Card key={i}>
-                <Skeleton className="h-48 w-full" />
+                <CardHeader className="p-0">
+                  <Skeleton className="h-48 w-full" />
+                </CardHeader>
                 <CardContent className="p-6">
                   <Skeleton className="h-6 w-1/2 mb-4" />
                   <Skeleton className="h-4 w-full" />

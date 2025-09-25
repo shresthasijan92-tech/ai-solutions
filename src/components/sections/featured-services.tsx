@@ -32,6 +32,10 @@ export function FeaturedServices() {
     setIsDialogOpen(true);
   };
 
+  if (servicesToDisplay.length === 0) {
+    return null;
+  }
+
   return (
     <>
       <section className="py-12 md:py-20">

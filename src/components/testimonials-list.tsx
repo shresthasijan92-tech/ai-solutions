@@ -31,16 +31,17 @@ export function TestimonialsList() {
   const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
-  
+
   useEffect(() => {
     async function loadTestimonials() {
       try {
         setIsLoading(true);
         const approvedTestimonials = await getTestimonials(true);
         if (approvedTestimonials.length > 0) {
-            setTestimonials(approvedTestimonials);
+          setTestimonials(approvedTestimonials);
         } else {
-            setTestimonials(mockTestimonials.filter((t) => t.status === 'approved'));
+          // Fallback to mock data if the database is empty or returns no approved testimonials
+          setTestimonials(mockTestimonials.filter((t) => t.status === 'approved'));
         }
       } catch (err: any) {
         setError(err);
@@ -50,7 +51,6 @@ export function TestimonialsList() {
     }
     loadTestimonials();
   }, []);
-
 
   if (isLoading) {
     return (
