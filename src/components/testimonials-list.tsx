@@ -1,9 +1,11 @@
-import { getTestimonials } from '@/lib/testimonials';
+'use client';
+
+import { useTestimonials } from '@/hooks/use-testimonials';
 import { Card, CardContent } from '@/components/ui/card';
 import { Star } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { testimonials as mockTestimonials } from '@/lib/mock-data';
 import type { Testimonial } from '@/lib/definitions';
+import { Skeleton } from '@/components/ui/skeleton';
 
 function StarRating({ rating }: { rating: number }) {
   return (
@@ -23,14 +25,25 @@ function StarRating({ rating }: { rating: number }) {
   );
 }
 
-export async function TestimonialsList() {
-  const approvedTestimonials = await getTestimonials(true);
-  
-  const testimonials = approvedTestimonials.length > 0
-    ? approvedTestimonials
-    : mockTestimonials.filter((t) => t.status === 'approved');
+export function TestimonialsList() {
+  // We now use the client-side hook, ensuring it only asks for approved testimonials.
+  const { testimonials, isLoading, error } = useTestimonials(true);
 
-  if (testimonials.length === 0) {
+  if (isLoading) {
+    return (
+        <div className="space-y-6">
+            <Skeleton className="h-24 w-full" />
+            <Skeleton className="h-24 w-full" />
+            <Skeleton className="h-24 w-full" />
+        </div>
+    )
+  }
+
+  if (error) {
+    return <p className="text-destructive">Could not load testimonials. {error.message}</p>;
+  }
+
+  if (!testimonials || testimonials.length === 0) {
     return <p>No testimonials have been approved yet. Check back soon!</p>;
   }
 
