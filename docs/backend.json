@@ -1,0 +1,475 @@
+{
+  "entities": {
+    "Service": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Service",
+      "type": "object",
+      "description": "Represents a service offered by AISolutions Hub.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the service."
+        },
+        "title": {
+          "type": "string",
+          "description": "Title of the service."
+        },
+        "description": {
+          "type": "string",
+          "description": "Detailed description of the service."
+        },
+        "icon": {
+          "type": "string",
+          "description": "Icon associated with the service."
+        },
+        "keyBenefits": {
+          "type": "array",
+          "description": "Key benefits of the service.",
+          "items": {
+            "type": "string"
+          }
+        },
+        "startingPrice": {
+          "type": "number",
+          "description": "Starting price of the service."
+        }
+      },
+      "required": [
+        "id",
+        "title",
+        "description",
+        "icon",
+        "keyBenefits",
+        "startingPrice"
+      ]
+    },
+    "Project": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Project",
+      "type": "object",
+      "description": "Represents a project in the AISolutions Hub portfolio.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the project."
+        },
+        "title": {
+          "type": "string",
+          "description": "Title of the project."
+        },
+        "description": {
+          "type": "string",
+          "description": "Detailed description of the project."
+        },
+        "image": {
+          "type": "string",
+          "description": "URL of the project image."
+        },
+        "technologies": {
+          "type": "array",
+          "description": "Technologies used in the project.",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "id",
+        "title",
+        "description",
+        "image",
+        "technologies"
+      ]
+    },
+    "Article": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Article",
+      "type": "object",
+      "description": "Represents a blog article.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the article."
+        },
+        "title": {
+          "type": "string",
+          "description": "Title of the article."
+        },
+        "excerpt": {
+          "type": "string",
+          "description": "Brief excerpt or summary of the article."
+        },
+        "image": {
+          "type": "string",
+          "description": "URL of the article image."
+        },
+        "publicationDate": {
+          "type": "string",
+          "description": "Date when the article was published.",
+          "format": "date-time"
+        },
+        "content": {
+          "type": "string",
+          "description": "Full content of the article."
+        }
+      },
+      "required": [
+        "id",
+        "title",
+        "excerpt",
+        "image",
+        "publicationDate",
+        "content"
+      ]
+    },
+    "GalleryItem": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "GalleryItem",
+      "type": "object",
+      "description": "Represents an image in the gallery.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the gallery item."
+        },
+        "imageUrl": {
+          "type": "string",
+          "description": "URL of the image."
+        },
+        "description": {
+          "type": "string",
+          "description": "Description of the image."
+        }
+      },
+      "required": [
+        "id",
+        "imageUrl",
+        "description"
+      ]
+    },
+    "Event": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Event",
+      "type": "object",
+      "description": "Represents a company event.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the event."
+        },
+        "date": {
+          "type": "string",
+          "description": "Date and time of the event.",
+          "format": "date-time"
+        },
+        "location": {
+          "type": "string",
+          "description": "Location of the event."
+        },
+        "description": {
+          "type": "string",
+          "description": "Description of the event."
+        }
+      },
+      "required": [
+        "id",
+        "date",
+        "location",
+        "description"
+      ]
+    },
+    "Career": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Career",
+      "type": "object",
+      "description": "Represents an open job position.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the career."
+        },
+        "title": {
+          "type": "string",
+          "description": "Title of the job position."
+        },
+        "description": {
+          "type": "string",
+          "description": "Description of the job responsibilities and requirements."
+        }
+      },
+      "required": [
+        "id",
+        "title",
+        "description"
+      ]
+    },
+    "Feedback": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Feedback",
+      "type": "object",
+      "description": "Represents user feedback and ratings.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the feedback."
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the user submitting the feedback."
+        },
+        "email": {
+          "type": "string",
+          "description": "Email address of the user submitting the feedback.",
+          "format": "email"
+        },
+        "rating": {
+          "type": "number",
+          "description": "Rating provided by the user."
+        },
+        "comment": {
+          "type": "string",
+          "description": "Comment provided by the user."
+        },
+        "approved": {
+          "type": "boolean",
+          "description": "Indicates whether the feedback has been approved for display."
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "email",
+        "rating",
+        "comment",
+        "approved"
+      ]
+    },
+    "HomepageSection": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "HomepageSection",
+      "type": "object",
+      "description": "Configuration for a section displayed on the homepage.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the homepage section."
+        },
+        "sectionType": {
+          "type": "string",
+          "description": "Type of section (e.g., 'services', 'projects', 'blog', 'gallery', 'events')."
+        },
+        "featuredItemIds": {
+          "type": "array",
+          "description": "Array of IDs for featured items in this section, referencing other entities.",
+          "items": {
+            "type": "string"
+          }
+        },
+        "title": {
+          "type": "string",
+          "description": "Title of the homepage section."
+        },
+        "order": {
+          "type": "number",
+          "description": "The order in which the section is displayed on the homepage."
+        }
+      },
+      "required": [
+        "id",
+        "sectionType",
+        "featuredItemIds",
+        "title",
+        "order"
+      ]
+    },
+    "AdminUser": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "AdminUser",
+      "type": "object",
+      "description": "Represents an admin user with access to the administration dashboard.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the admin user."
+        },
+        "username": {
+          "type": "string",
+          "description": "Username of the admin user."
+        },
+        "email": {
+          "type": "string",
+          "description": "Email address of the admin user.",
+          "format": "email"
+        },
+        "roles": {
+          "type": "array",
+          "description": "Roles of the admin user (e.g., 'administrator', 'editor').",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "id",
+        "username",
+        "email",
+        "roles"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/services/{serviceId}",
+        "definition": {
+          "entityName": "Service",
+          "schema": {
+            "$ref": "#/backend/entities/Service"
+          },
+          "description": "Stores service details.  Admin access controlled via /roles_admin/{uid}.",
+          "params": [
+            {
+              "name": "serviceId",
+              "description": "Unique identifier for the service."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/projects/{projectId}",
+        "definition": {
+          "entityName": "Project",
+          "schema": {
+            "$ref": "#/backend/entities/Project"
+          },
+          "description": "Stores project details. Admin access controlled via /roles_admin/{uid}.",
+          "params": [
+            {
+              "name": "projectId",
+              "description": "Unique identifier for the project."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/articles/{articleId}",
+        "definition": {
+          "entityName": "Article",
+          "schema": {
+            "$ref": "#/backend/entities/Article"
+          },
+          "description": "Stores blog article details. Admin access controlled via /roles_admin/{uid}.",
+          "params": [
+            {
+              "name": "articleId",
+              "description": "Unique identifier for the article."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/gallery/{galleryItemId}",
+        "definition": {
+          "entityName": "GalleryItem",
+          "schema": {
+            "$ref": "#/backend/entities/GalleryItem"
+          },
+          "description": "Stores gallery item details.  Admin access controlled via /roles_admin/{uid}.",
+          "params": [
+            {
+              "name": "galleryItemId",
+              "description": "Unique identifier for the gallery item."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/events/{eventId}",
+        "definition": {
+          "entityName": "Event",
+          "schema": {
+            "$ref": "#/backend/entities/Event"
+          },
+          "description": "Stores event details. Admin access controlled via /roles_admin/{uid}.",
+          "params": [
+            {
+              "name": "eventId",
+              "description": "Unique identifier for the event."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/careers/{careerId}",
+        "definition": {
+          "entityName": "Career",
+          "schema": {
+            "$ref": "#/backend/entities/Career"
+          },
+          "description": "Stores career details. Admin access controlled via /roles_admin/{uid}.",
+          "params": [
+            {
+              "name": "careerId",
+              "description": "Unique identifier for the career."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/feedback/{feedbackId}",
+        "definition": {
+          "entityName": "Feedback",
+          "schema": {
+            "$ref": "#/backend/entities/Feedback"
+          },
+          "description": "Stores user feedback. Includes 'approved' field. Admin access controlled via /roles_admin/{uid}.",
+          "params": [
+            {
+              "name": "feedbackId",
+              "description": "Unique identifier for the feedback."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/homepageSections/{homepageSectionId}",
+        "definition": {
+          "entityName": "HomepageSection",
+          "schema": {
+            "$ref": "#/backend/entities/HomepageSection"
+          },
+          "description": "Stores configuration for homepage sections. Admin access controlled via /roles_admin/{uid}.",
+          "params": [
+            {
+              "name": "homepageSectionId",
+              "description": "Unique identifier for the homepage section."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/roles_admin/{userId}",
+        "definition": {
+          "entityName": "AdminUser",
+          "schema": {
+            "$ref": "#/backend/entities/AdminUser"
+          },
+          "description": "Marks a user as an admin. Existence of document grants admin privileges.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "User ID of the admin."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The Firestore structure is designed to ensure security, scalability, and ease of debugging, following the principles of Authorization Independence, Clarity of Intent, DBAC (Database-Based Access Control), and QAPs (Rules are not Filters). Authorization Independence is achieved through denormalization, where necessary, copying relevant authorization data to subcollections to avoid `get()` calls in security rules. Structural Segregation ensures that each collection has a homogeneous security posture. Access Modeling standardizes authorization patterns. The structure uses path-based ownership for private user data and membership maps for collaborative data.\n\nSpecifically, to address the 'list' permission error on the 'testimonials' path, all paths are designed to enable secure `list` operations by segregating data based on access requirements and utilizing membership maps where applicable. The Feedback collection includes an `approved` field to control which testimonials are displayed publicly.  Admin users are managed via a dedicated collection `/roles_admin/{uid}` to manage admin privileges.\n\nQAPs are supported through structural segregation. Publicly accessible data, like approved testimonials, reside in `/feedback` with the `approved` flag and can be listed securely. Admin-controlled data, like services and projects, can be listed with appropriate authorization checks on `/roles_admin/{uid}`."
+  }
+}

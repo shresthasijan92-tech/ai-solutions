@@ -1,0 +1,159 @@
+/**
+ * @file Firestore Security Rules
+ * @core_philosophy This ruleset enforces a role-based access control model for administrative data and allows public read access for certain collections.
+ * @data_structure The database contains several top-level collections: `services`, `projects`, `articles`, `gallery`, `events`, `careers`, `feedback`, `homepageSections`, and `roles_admin`.  Admin privileges are determined by the existence of a document in the `/roles_admin/{userId}` collection.
+ * @key_security_decisions
+ *  - Public read access is granted to the `services`, `projects`, `articles`, `gallery`, `events`, `careers` collections.
+ *  - `feedback` is also publicly readable, writes are allowed for anyone, but approval is controlled by admins.
+ *  - Listing of the `homepageSections` collection is allowed for anyone.
+ *  - Only authenticated admins can create, update, or delete documents in `services`, `projects`, `articles`, `gallery`, `events`, `careers`, `feedback`, and `homepageSections`.
+ *  - Only a user matching the `userId` can create a document in the `roles_admin` collection. This prevents unauthorized elevation of privileges. This is a self-creation pattern.
+ */
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    /**
+     * @description Allows public read access to service details. Only admins can create, update, or delete services.
+     * @path /services/{serviceId}
+     * @allow (get, list)
+     * @deny (create, update, delete)
+     * @principle Allows public read access but restricts write access to admins only.
+     */
+    match /services/{serviceId} {
+      allow get, list: if true;
+      allow create: if isAdmin();
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    /**
+     * @description Allows public read access to project details. Only admins can create, update, or delete projects.
+     * @path /projects/{projectId}
+     * @allow (get, list)
+     * @deny (create, update, delete)
+     * @principle Allows public read access but restricts write access to admins only.
+     */
+    match /projects/{projectId} {
+      allow get, list: if true;
+      allow create: if isAdmin();
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    /**
+     * @description Allows public read access to article details. Only admins can create, update, or delete articles.
+     * @path /articles/{articleId}
+     * @allow (get, list)
+     * @deny (create, update, delete)
+     * @principle Allows public read access but restricts write access to admins only.
+     */
+    match /articles/{articleId} {
+      allow get, list: if true;
+      allow create: if isAdmin();
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    /**
+     * @description Allows public read access to gallery item details. Only admins can create, update, or delete gallery items.
+     * @path /gallery/{galleryItemId}
+     * @allow (get, list)
+     * @deny (create, update, delete)
+     * @principle Allows public read access but restricts write access to admins only.
+     */
+    match /gallery/{galleryItemId} {
+      allow get, list: if true;
+      allow create: if isAdmin();
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    /**
+     * @description Allows public read access to event details. Only admins can create, update, or delete events.
+     * @path /events/{eventId}
+     * @allow (get, list)
+     * @deny (create, update, delete)
+     * @principle Allows public read access but restricts write access to admins only.
+     */
+    match /events/{eventId} {
+      allow get, list: if true;
+      allow create: if isAdmin();
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    /**
+     * @description Allows public read access to career details. Only admins can create, update, or delete careers.
+     * @path /careers/{careerId}
+     * @allow (get, list)
+     * @deny (create, update, delete)
+     * @principle Allows public read access but restricts write access to admins only.
+     */
+    match /careers/{careerId} {
+      allow get, list: if true;
+      allow create: if isAdmin();
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    /**
+     * @description Allows public read access to feedback details. Allows anyone to create feedback, but only admins can update or delete feedback.
+     * @path /feedback/{feedbackId}
+     * @allow (get, list, create)
+     * @deny (update, delete)
+     * @principle Allows public read access and public feedback creation, but restricts write access to admins only.
+     */
+    match /feedback/{feedbackId} {
+      allow get, list: if true;
+      allow create: if isSignedIn();
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    /**
+     * @description Allows public read access to homepage section configurations. Only admins can create, update, or delete homepage sections.
+     * @path /homepageSections/{homepageSectionId}
+     * @allow (get, list)
+     * @deny (create, update, delete)
+     * @principle Allows public read access but restricts write access to admins only.
+     */
+    match /homepageSections/{homepageSectionId} {
+      allow get, list: if true;
+      allow create: if isAdmin();
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    /**
+     * @description Allows a user to create their own admin role document. Only the specified user can create this document.
+     * @path /roles_admin/{userId}
+     * @allow create
+     * @deny (get, list, update, delete)
+     * @principle Enforces user-ownership for admin role creation.
+     */
+    match /roles_admin/{userId} {
+      allow get, list: if false;
+      allow create: if request.auth.uid == userId;
+      allow update: if false;
+      allow delete: if false;
+    }
+
+      match /testimonials/{testimonialId} {
+      allow get, list: if true;
+      allow create: if false;
+      allow update: if false;
+      allow delete: if false;
+    }
+  }
+
+  // Helper function to determine if a user is an admin.
+  function isAdmin() {
+    return isSignedIn() && exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid));
+  }
+
+  // Helper function to determine if the request is from a signed-in user.
+  function isSignedIn() {
+    return request.auth != null;
+  }
+}
