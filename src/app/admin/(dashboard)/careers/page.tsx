@@ -16,9 +16,11 @@ import { useJobs } from '@/hooks/use-jobs';
 import { type Job } from '@/lib/definitions';
 import { Skeleton } from '@/components/ui/skeleton';
 import { jobs as mockJobs } from '@/lib/mock-data';
+import { useUser } from '@/firebase';
 
 export default function AdminCareersPage() {
-  const { jobs: jobsFromDb, isLoading, error } = useJobs();
+  const { isUserLoading } = useUser();
+  const { jobs: jobsFromDb, isLoading, error } = useJobs(!isUserLoading);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingJob, setEditingJob] = useState<Job | null>(null);
 
@@ -39,6 +41,8 @@ export default function AdminCareersPage() {
     setIsDialogOpen(false);
     setEditingJob(null);
   };
+
+  const showLoading = isLoading || isUserLoading;
 
   return (
     <div className="space-y-8">
@@ -69,7 +73,7 @@ export default function AdminCareersPage() {
         </Dialog>
       </div>
 
-      {isLoading && (
+      {showLoading && (
         <div className="space-y-2">
           <Skeleton className="h-10 w-full" />
           <Skeleton className="h-10 w-full" />
@@ -79,7 +83,7 @@ export default function AdminCareersPage() {
 
       {error && <p className="text-destructive">{error.message}</p>}
 
-      {!isLoading && !error && (
+      {!showLoading && !error && (
         <JobsTable jobs={jobs} onEdit={handleEditClick} />
       )}
     </div>
