@@ -27,7 +27,7 @@ export function ServiceDetailsDialog({
 }: ServiceDetailsDialogProps) {
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           {service.imageUrl && (
             <div className="relative h-64 w-full mb-4 rounded-lg overflow-hidden">

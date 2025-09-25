@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { getServices } from '@/lib/services';
 import { Card, CardDescription, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
 import { services as mockServices } from '@/lib/mock-data';
@@ -8,21 +8,27 @@ import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { ServiceDetailsDialog } from '@/components/service-details-dialog';
 import type { Service } from '@/lib/definitions';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function ServicesPage() {
-  const [services, setServices] = useState<Service[]>(mockServices);
+  const [services, setServices] = useState<Service[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [selectedService, setSelectedService] = useState<Service | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-  useState(() => {
+  useEffect(() => {
     async function loadServices() {
+      setIsLoading(true);
       const servicesFromDb = await getServices();
       if (servicesFromDb.length > 0) {
         setServices(servicesFromDb);
+      } else {
+        setServices(mockServices);
       }
+      setIsLoading(false);
     }
     loadServices();
-  });
+  }, []);
 
   const handleOpenDialog = (service: Service) => {
     setSelectedService(service);
@@ -33,7 +39,23 @@ export default function ServicesPage() {
     <>
       <div className="container py-12">
         <h1 className="text-4xl font-headline font-bold mb-8">Our Services</h1>
-        {services.length === 0 ? (
+        {isLoading ? (
+          <div className="grid gap-6 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <Card key={i}>
+                <Skeleton className="h-48 w-full" />
+                <CardContent className="p-6">
+                  <Skeleton className="h-6 w-1/2 mb-4" />
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-full mt-2" />
+                </CardContent>
+                <CardFooter>
+                  <Skeleton className="h-10 w-full" />
+                </CardFooter>
+              </Card>
+            ))}
+          </div>
+        ) : services.length === 0 ? (
           <p>No services found. The database might be empty. You can add services in the admin panel.</p>
         ) : (
           <div className="grid gap-6 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
