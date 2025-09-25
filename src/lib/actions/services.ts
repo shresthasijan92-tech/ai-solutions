@@ -27,6 +27,9 @@ const ServiceSchema = z.object({
   description: z.string().min(1, 'Description is required'),
   icon: z.string().min(1, 'Icon is required'),
   imageUrl: z.string().optional(),
+  benefits: z.string().optional(),
+  price: z.string().optional(),
+  details: z.string().optional(),
   featured: z.boolean(),
 });
 
@@ -59,7 +62,7 @@ export async function createService(
     };
   }
 
-  const { imageUrl, ...rest } = validatedFields.data;
+  const { imageUrl, benefits, ...rest } = validatedFields.data;
   let finalImageUrl = imageUrl;
 
   try {
@@ -68,7 +71,11 @@ export async function createService(
     }
     
     const servicesCollection = collection(db, 'services');
-    await addDoc(servicesCollection, { ...rest, imageUrl: finalImageUrl });
+    await addDoc(servicesCollection, { 
+        ...rest, 
+        imageUrl: finalImageUrl,
+        benefits: benefits ? benefits.split(',').map(b => b.trim()) : [],
+    });
   } catch (error) {
     console.error(error);
     return { message: 'Failed to create service.', success: false };
@@ -94,7 +101,7 @@ export async function updateService(
     };
   }
 
-  const { imageUrl, ...rest } = validatedFields.data;
+  const { imageUrl, benefits, ...rest } = validatedFields.data;
   let finalImageUrl = imageUrl;
 
   try {
@@ -119,7 +126,11 @@ export async function updateService(
       }
     }
     
-    const serviceData = { ...rest, imageUrl: finalImageUrl };
+    const serviceData = { 
+        ...rest, 
+        imageUrl: finalImageUrl,
+        benefits: benefits ? benefits.split(',').map(b => b.trim()) : [],
+    };
     
     if (existingDoc.exists()) {
         await updateDoc(serviceDocRef, serviceData);

@@ -15,6 +15,7 @@ export type Service = {
   imageUrl?: string;
   benefits?: string[];
   price?: string;
+  details?: string;
   featured: boolean;
 };
 

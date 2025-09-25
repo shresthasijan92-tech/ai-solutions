@@ -31,6 +31,9 @@ const ServiceFormSchema = z.object({
   description: z.string().min(1, 'Description is required'),
   icon: z.string().min(1, 'Icon name from lucide-react is required'),
   imageUrl: z.string().optional(),
+  benefits: z.string().optional(),
+  price: z.string().optional(),
+  details: z.string().optional(),
   featured: z.boolean(),
 });
 
@@ -52,6 +55,9 @@ export function ServiceForm({ service, onSuccess }: ServiceFormProps) {
       description: '',
       icon: '',
       imageUrl: '',
+      benefits: '',
+      price: '',
+      details: '',
       featured: false,
     },
   });
@@ -63,6 +69,9 @@ export function ServiceForm({ service, onSuccess }: ServiceFormProps) {
         description: service.description || '',
         icon: service.icon || '',
         imageUrl: service.imageUrl || '',
+        benefits: service.benefits?.join(', ') || '',
+        price: service.price || '',
+        details: service.details || '',
         featured: service.featured || false,
       });
     } else {
@@ -71,6 +80,9 @@ export function ServiceForm({ service, onSuccess }: ServiceFormProps) {
         description: '',
         icon: '',
         imageUrl: '',
+        benefits: '',
+        price: '',
+        details: '',
         featured: false,
       });
     }
@@ -160,6 +172,26 @@ export function ServiceForm({ service, onSuccess }: ServiceFormProps) {
             </FormItem>
           )}
         />
+         <FormField
+          control={form.control}
+          name="details"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Details</FormLabel>
+              <FormControl>
+                <Textarea
+                  placeholder="A more detailed description of the service"
+                  {...field}
+                  rows={5}
+                />
+              </FormControl>
+              <FormDescription>
+                This will be shown in the "Learn More" dialog.
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
         <FormField
           control={form.control}
           name="icon"
@@ -181,6 +213,35 @@ export function ServiceForm({ service, onSuccess }: ServiceFormProps) {
                 </a>
                 .
               </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+         <FormField
+          control={form.control}
+          name="benefits"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Key Benefits</FormLabel>
+              <FormControl>
+                <Input placeholder="Benefit 1, Benefit 2, Benefit 3" {...field} />
+              </FormControl>
+               <FormDescription>
+                Enter a comma-separated list of key benefits.
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+         <FormField
+          control={form.control}
+          name="price"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Price</FormLabel>
+              <FormControl>
+                <Input placeholder="Starting at $5,000" {...field} />
+              </FormControl>
               <FormMessage />
             </FormItem>
           )}
