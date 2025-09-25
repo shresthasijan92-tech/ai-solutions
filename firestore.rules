@@ -4,110 +4,138 @@ service cloud.firestore {
 
     /**
      * @description Checks if the user is signed in.
-     * @path N/A
+     * @return {boolean} True if the user is signed in, false otherwise.
      */
     function isSignedIn() {
       return request.auth != null;
     }
 
     /**
-     * @description Checks if the user is an admin by verifying the existence of a document in /roles_admin/{userId}.
-     * @path N/A
+     * @description Checks if the user is an admin based on the existence of a document in /roles_admin/{userId}.
+     * @return {boolean} True if the user is an admin, false otherwise.
      */
     function isAdmin() {
       return exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid));
     }
 
     /**
-     * @description Allows anyone to read, but only admins to write.
+     * @description Allows anyone to read but only admins to write.
      * @path /services/{serviceId}
+     * @allow (get, list)
+     * @allow (create, update, delete) if isAdmin()
+     * @deny (create, update, delete) if !isAdmin()
+     * @principle Allows public read access but restricts writes to admins.
      */
     match /services/{serviceId} {
-      allow read: if true;
-      allow write: if isAdmin();
+      allow get, list: if true;
+      allow create, update, delete: if isAdmin();
     }
 
     /**
-     * @description Allows anyone to read, but only admins to write.
+     * @description Allows anyone to read but only admins to write.
      * @path /projects/{projectId}
+     * @allow (get, list)
+     * @allow (create, update, delete) if isAdmin()
+     * @deny (create, update, delete) if !isAdmin()
+     * @principle Allows public read access but restricts writes to admins.
      */
     match /projects/{projectId} {
-      allow read: if true;
-      allow write: if isAdmin();
+      allow get, list: if true;
+      allow create, update, delete: if isAdmin();
     }
 
     /**
-     * @description Allows anyone to read, but only admins to write.
+     * @description Allows anyone to read but only admins to write.
      * @path /articles/{articleId}
+     * @allow (get, list)
+     * @allow (create, update, delete) if isAdmin()
+     * @deny (create, update, delete) if !isAdmin()
+     * @principle Allows public read access but restricts writes to admins.
      */
     match /articles/{articleId} {
-      allow read: if true;
-      allow write: if isAdmin();
+      allow get, list: if true;
+      allow create, update, delete: if isAdmin();
     }
 
     /**
-     * @description Allows anyone to read, but only admins to write.
+     * @description Allows anyone to read but only admins to write.
      * @path /gallery/{galleryItemId}
+     * @allow (get, list)
+     * @allow (create, update, delete) if isAdmin()
+     * @deny (create, update, delete) if !isAdmin()
+     * @principle Allows public read access but restricts writes to admins.
      */
     match /gallery/{galleryItemId} {
-      allow read: if true;
-      allow write: if isAdmin();
+      allow get, list: if true;
+      allow create, update, delete: if isAdmin();
     }
 
     /**
-     * @description Allows anyone to read, but only admins to write.
+     * @description Allows anyone to read but only admins to write.
      * @path /events/{eventId}
+     * @allow (get, list)
+     * @allow (create, update, delete) if isAdmin()
+     * @deny (create, update, delete) if !isAdmin()
+     * @principle Allows public read access but restricts writes to admins.
      */
     match /events/{eventId} {
-      allow read: if true;
-      allow write: if isAdmin();
+      allow get, list: if true;
+      allow create, update, delete: if isAdmin();
     }
 
     /**
-     * @description Allows anyone to read, but only admins to write.
+     * @description Allows anyone to read but only admins to write.
      * @path /careers/{careerId}
+     * @allow (get, list)
+     * @allow (create, update, delete) if isAdmin()
+     * @deny (create, update, delete) if !isAdmin()
+     * @principle Allows public read access but restricts writes to admins.
      */
     match /careers/{careerId} {
-      allow read: if true;
-      allow write: if isAdmin();
+      allow get, list: if true;
+      allow create, update, delete: if isAdmin();
     }
 
     /**
-     * @description Allows anyone to read the list of testimonials. Admins can create, update, and delete them.
+     * @description Allows anyone to read, but only admins to create, update, or delete feedback.
      * @path /feedback/{feedbackId}
+     * @allow get, list: if true;
+     * @allow create, update, delete: if isAdmin();
+     * @deny create, update, delete: if !isAdmin();
+     * @principle Allows public read access but restricts writes to admins. Admins manage approved feedback.
      */
     match /feedback/{feedbackId} {
-      allow read: if true;
-      allow write: if isAdmin();
+      allow get, list: if true;
+      allow create, update, delete: if isAdmin();
     }
 
     /**
-     * @description Allows anyone to read, but only admins to write.
+     * @description Allows anyone to read but only admins to write.
      * @path /homepageSections/{homepageSectionId}
+     * @allow (get, list)
+     * @allow (create, update, delete) if isAdmin()
+     * @deny (create, update, delete) if !isAdmin()
+     * @principle Allows public read access but restricts writes to admins.
      */
     match /homepageSections/{homepageSectionId} {
-      allow read: if true;
-      allow write: if isAdmin();
+      allow get, list: if true;
+      allow create, update, delete: if isAdmin();
     }
 
     /**
-     * @description Restricts access to the /roles_admin collection to only authenticated users. Grants full access if a user is an admin.
+     * @description Allows creating an admin role for a user if the user ID matches the authenticated user ID.  No one can read or list this collection. Only admins can create, update, and delete existing admin roles.
      * @path /roles_admin/{userId}
+     * @allow create if request.auth.uid == userId;
+     * @allow update, delete if isAdmin();
+     * @deny get, list: if true;
+     * @deny create: if request.auth.uid != userId;
+     * @deny update, delete: if !isAdmin();
+     * @principle Restricts admin role creation to the user themselves and modification to existing admins.
      */
     match /roles_admin/{userId} {
-      allow get: if isAdmin();
-      allow list: if isAdmin();
+      allow get, list: if false;
       allow create: if request.auth.uid == userId;
-      allow update: if false;
-      allow delete: if request.auth.uid == userId;
-    }
-    /**
-     * @description Allows anyone to read the list of testimonials. Admins can create, update, and delete them.
-     * @path /testimonials
-     */
-     match /testimonials/{document} {
-      allow read: if true;
-      allow write: if isAdmin();
+      allow update, delete: if isAdmin();
     }
   }
 }
