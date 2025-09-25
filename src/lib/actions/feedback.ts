@@ -7,7 +7,7 @@ import {
   collection,
   addDoc,
   doc,
-  updateDoc,
+  deleteDoc,
   Timestamp,
 } from 'firebase/firestore';
 
@@ -45,7 +45,6 @@ export async function submitFeedback(
   const payload = {
     ...validatedFields.data,
     createdAt: Timestamp.now(),
-    status: 'pending',
   };
 
   try {
@@ -65,23 +64,21 @@ export async function submitFeedback(
   }
 }
 
-export async function updateTestimonialStatus(
-  id: string,
-  status: 'approved' | 'rejected'
+export async function deleteTestimonial(
+  id: string
 ): Promise<{ success: boolean; message?: string }> {
   const testimonialDoc = doc(firestore, 'testimonials', id);
-  const payload = { status };
 
   try {
-    await updateDoc(testimonialDoc, payload);
+    await deleteDoc(testimonialDoc);
     revalidatePath('/admin/feedback');
     revalidatePath('/feedback');
-    return { success: true, message: `Testimonial has been ${status}.` };
+    return { success: true, message: `Testimonial has been deleted.` };
   } catch (error: any) {
-    console.error('Error updating testimonial status:', error);
+    console.error('Error deleting testimonial:', error);
     return {
       success: false,
-      message: `Failed to update testimonial status due to a server error.`,
+      message: `Failed to delete testimonial due to a server error.`,
     };
   }
 }

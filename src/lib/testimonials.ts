@@ -4,29 +4,16 @@ import {
   collection,
   getDocs,
   query,
-  where,
   orderBy,
   Timestamp,
 } from 'firebase/firestore';
 import type { Testimonial } from './definitions';
 
-export async function getTestimonials(
-  approvedOnly = false
-): Promise<Testimonial[]> {
+export async function getTestimonials(): Promise<Testimonial[]> {
   try {
     const testimonialsCol = collection(firestore, 'testimonials');
-    let q;
-
-    if (approvedOnly) {
-      q = query(
-        testimonialsCol,
-        where('status', '==', 'approved'),
-        orderBy('createdAt', 'desc')
-      );
-    } else {
-      q = query(testimonialsCol, orderBy('createdAt', 'desc'));
-    }
-
+    const q = query(testimonialsCol, orderBy('createdAt', 'desc'));
+    
     const testimonialsSnapshot = await getDocs(q);
     const testimonialsList = testimonialsSnapshot.docs.map((doc) => {
       const data = doc.data();
@@ -40,7 +27,6 @@ export async function getTestimonials(
           data.createdAt instanceof Timestamp
             ? data.createdAt.toDate().toISOString()
             : data.createdAt,
-        status: data.status,
       } as Testimonial;
     });
     return testimonialsList;

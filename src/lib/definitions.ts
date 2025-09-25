@@ -74,7 +74,6 @@ export type Testimonial = {
   feedback: string;
   rating: number;
   createdAt: Timestamp | Date | string;
-  status: 'pending' | 'approved' | 'rejected';
 };
 
 export type Contact = {

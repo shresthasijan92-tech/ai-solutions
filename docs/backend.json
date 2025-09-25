@@ -217,31 +217,31 @@
           "type": "string",
           "description": "Name of the user submitting the feedback."
         },
-        "email": {
+        "company": {
           "type": "string",
-          "description": "Email address of the user submitting the feedback.",
-          "format": "email"
+          "description": "Company of the user submitting the feedback."
         },
         "rating": {
           "type": "number",
           "description": "Rating provided by the user."
         },
-        "comment": {
+        "feedback": {
           "type": "string",
           "description": "Comment provided by the user."
         },
-        "approved": {
-          "type": "boolean",
-          "description": "Indicates whether the feedback has been approved for display."
+         "createdAt": {
+          "type": "string",
+          "description": "Timestamp when the feedback was submitted.",
+          "format": "date-time"
         }
       },
       "required": [
         "id",
         "name",
-        "email",
+        "company",
         "rating",
-        "comment",
-        "approved"
+        "feedback",
+        "createdAt"
       ]
     },
     "HomepageSection": {
@@ -422,16 +422,16 @@
         }
       },
       {
-        "path": "/feedback/{feedbackId}",
+        "path": "/testimonials/{testimonialId}",
         "definition": {
           "entityName": "Feedback",
           "schema": {
             "$ref": "#/backend/entities/Feedback"
           },
-          "description": "Stores user feedback. Includes 'approved' field. Admin access controlled via /roles_admin/{uid}.",
+          "description": "Stores user testimonials. Admin access controlled via /roles_admin/{uid}.",
           "params": [
             {
-              "name": "feedbackId",
+              "name": "testimonialId",
               "description": "Unique identifier for the feedback."
             }
           ]
@@ -470,6 +470,6 @@
         }
       }
     ],
-    "reasoning": "The Firestore structure is designed to ensure security, scalability, and ease of debugging, following the principles of Authorization Independence, Clarity of Intent, DBAC (Database-Based Access Control), and QAPs (Rules are not Filters). Authorization Independence is achieved through denormalization, where necessary, copying relevant authorization data to subcollections to avoid `get()` calls in security rules. Structural Segregation ensures that each collection has a homogeneous security posture. Access Modeling standardizes authorization patterns. The structure uses path-based ownership for private user data and membership maps for collaborative data.\n\nSpecifically, to address the 'list' permission error on the 'testimonials' path, all paths are designed to enable secure `list` operations by segregating data based on access requirements and utilizing membership maps where applicable. The Feedback collection includes an `approved` field to control which testimonials are displayed publicly.  Admin users are managed via a dedicated collection `/roles_admin/{uid}` to manage admin privileges.\n\nQAPs are supported through structural segregation. Publicly accessible data, like approved testimonials, reside in `/feedback` with the `approved` flag and can be listed securely. Admin-controlled data, like services and projects, can be listed with appropriate authorization checks on `/roles_admin/{uid}`."
+    "reasoning": "The Firestore structure is designed to ensure security, scalability, and ease of debugging. All top-level collections are intended for public read access, with write access restricted to administrators. The `/testimonials` collection allows any user to create a document (submit feedback), but only admins can modify or delete documents. Admin privileges are managed through the existence of a document in the `/roles_admin/{uid}` collection."
   }
 }

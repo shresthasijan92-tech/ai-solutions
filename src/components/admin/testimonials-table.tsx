@@ -11,24 +11,27 @@ import {
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import {
-  CheckCircle,
-  XCircle,
-  MoreHorizontal,
-  ThumbsUp,
-  ThumbsDown,
+  Trash2,
   Star,
 } from 'lucide-react';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import { useToast } from '@/hooks/use-toast';
-import { updateTestimonialStatus } from '@/lib/actions/feedback';
+import { deleteTestimonial } from '@/lib/actions/feedback';
 import { type Testimonial } from '@/lib/definitions';
 import { Timestamp } from 'firebase/firestore';
 import { cn } from '@/lib/utils';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
+import { useState } from 'react';
+
 
 type TestimonialsTableProps = {
   testimonials: Testimonial[];
@@ -62,13 +65,15 @@ function StarRating({ rating }: { rating: number }) {
 
 export function TestimonialsTable({ testimonials }: TestimonialsTableProps) {
   const { toast } = useToast();
+  const [testimonialToDelete, setTestimonialToDelete] = useState<Testimonial | null>(null);
 
-  const handleUpdateStatus = async (id: string, status: 'approved' | 'rejected') => {
-    const result = await updateTestimonialStatus(id, status);
+  const handleConfirmDelete = async () => {
+    if (!testimonialToDelete) return;
+    const result = await deleteTestimonial(testimonialToDelete.id);
     if (result.success) {
       toast({
         title: 'Success',
-        description: `Testimonial has been ${status}.`,
+        description: result.message,
       });
     } else {
       toast({
@@ -77,73 +82,68 @@ export function TestimonialsTable({ testimonials }: TestimonialsTableProps) {
         description: result.message,
       });
     }
+    setTestimonialToDelete(null);
   };
 
   if (testimonials.length === 0) {
-    return <p>No testimonials in this category.</p>;
+    return <p>No testimonials have been submitted yet.</p>;
   }
 
   return (
-    <div className="rounded-lg border">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Name</TableHead>
-            <TableHead>Company</TableHead>
-            <TableHead>Feedback</TableHead>
-            <TableHead>Rating</TableHead>
-            <TableHead>Submitted</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead className="w-[50px] text-right">Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {testimonials.map((testimonial) => (
-            <TableRow key={testimonial.id}>
-              <TableCell className="font-medium">{testimonial.name}</TableCell>
-              <TableCell>{testimonial.company}</TableCell>
-              <TableCell className="max-w-xs truncate">{testimonial.feedback}</TableCell>
-              <TableCell>
-                <StarRating rating={testimonial.rating} />
-              </TableCell>
-              <TableCell>{toDate(testimonial.createdAt).toLocaleDateString()}</TableCell>
-              <TableCell>
-                <span
-                  className={cn(
-                    'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium',
-                    testimonial.status === 'approved' && 'bg-green-100 text-green-800',
-                    testimonial.status === 'rejected' && 'bg-red-100 text-red-800',
-                    testimonial.status === 'pending' && 'bg-yellow-100 text-yellow-800'
-                  )}
-                >
-                  {testimonial.status}
-                </span>
-              </TableCell>
-              <TableCell className="text-right">
-                {testimonial.status === 'pending' && (
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon">
-                        <MoreHorizontal />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent>
-                      <DropdownMenuItem onSelect={() => handleUpdateStatus(testimonial.id, 'approved')}>
-                        <ThumbsUp className="mr-2 h-4 w-4" />
-                        Approve
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onSelect={() => handleUpdateStatus(testimonial.id, 'rejected')} className="text-destructive">
-                        <ThumbsDown className="mr-2 h-4 w-4" />
-                        Reject
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                )}
-              </TableCell>
+    <>
+      <div className="rounded-lg border">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Name</TableHead>
+              <TableHead>Company</TableHead>
+              <TableHead>Feedback</TableHead>
+              <TableHead>Rating</TableHead>
+              <TableHead>Submitted</TableHead>
+              <TableHead className="w-[50px] text-right">Actions</TableHead>
             </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </div>
+          </TableHeader>
+          <TableBody>
+            {testimonials.map((testimonial) => (
+              <TableRow key={testimonial.id}>
+                <TableCell className="font-medium">{testimonial.name}</TableCell>
+                <TableCell>{testimonial.company}</TableCell>
+                <TableCell className="max-w-xs truncate">{testimonial.feedback}</TableCell>
+                <TableCell>
+                  <StarRating rating={testimonial.rating} />
+                </TableCell>
+                <TableCell>{toDate(testimonial.createdAt).toLocaleDateString()}</TableCell>
+                <TableCell className="text-right">
+                   <AlertDialogTrigger asChild>
+                    <Button variant="ghost" size="icon" onClick={() => setTestimonialToDelete(testimonial)}>
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
+                  </AlertDialogTrigger>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+      <AlertDialog open={!!testimonialToDelete} onOpenChange={(open) => !open && setTestimonialToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the testimonial from &quot;{testimonialToDelete?.name}&quot;.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmDelete}
+              className="bg-destructive hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }
