@@ -15,8 +15,8 @@ export function useTestimonials(approvedOnly = false) {
   const testimonialsQuery = useMemoFirebase(() => {
     if (!testimonialsCol) return null;
     
-    // For public pages, we enforce filtering by approved status.
     if (approvedOnly) {
+      // Secure query for public pages: only fetch approved testimonials.
       return query(
         testimonialsCol,
         where('status', '==', 'approved'),
@@ -24,7 +24,8 @@ export function useTestimonials(approvedOnly = false) {
       );
     }
     
-    // For the admin panel, we fetch all testimonials, sorted by date.
+    // For admin pages, fetch all testimonials, sorted by date.
+    // This will only be called within authenticated admin components.
     return query(testimonialsCol, orderBy('createdAt', 'desc'));
   }, [testimonialsCol, approvedOnly]);
 
