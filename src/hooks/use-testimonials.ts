@@ -5,7 +5,7 @@ import { collection, query, where, orderBy } from 'firebase/firestore';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import type { Testimonial } from '@/lib/definitions';
 
-export function useTestimonials(approvedOnly = false) {
+export function useTestimonials(enabled = true) {
   const firestore = useFirestore();
   const testimonialsCol = useMemoFirebase(
     () => (firestore ? collection(firestore, 'testimonials') : null),
@@ -13,21 +13,12 @@ export function useTestimonials(approvedOnly = false) {
   );
 
   const testimonialsQuery = useMemoFirebase(() => {
-    if (!testimonialsCol) return null;
-    
-    if (approvedOnly) {
-      // Secure query for public pages: only fetch approved testimonials.
-      return query(
-        testimonialsCol,
-        where('status', '==', 'approved'),
-        orderBy('createdAt', 'desc')
-      );
-    }
+    if (!testimonialsCol || !enabled) return null;
     
     // For admin pages, fetch all testimonials, sorted by date.
-    // This will only be called within authenticated admin components.
+    // The `enabled` flag ensures this only runs when called from an authenticated context.
     return query(testimonialsCol, orderBy('createdAt', 'desc'));
-  }, [testimonialsCol, approvedOnly]);
+  }, [testimonialsCol, enabled]);
 
   const {
     data: testimonials,

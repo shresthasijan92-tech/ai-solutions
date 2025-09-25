@@ -13,7 +13,7 @@ export default function AdminDashboardPage() {
   const { services, isLoading: isLoadingServices } = useServices();
   const { projects, isLoading: isLoadingProjects } = useProjects();
   // Only fetch testimonials if the user is not loading (i.e., auth state is determined)
-  const { testimonials, isLoading: isLoadingTestimonials } = useTestimonials(false);
+  const { testimonials, isLoading: isLoadingTestimonials } = useTestimonials(!isAuthLoading);
 
   // Prevent calculation until auth state and data are ready
   const pendingFeedbackCount = !isAuthLoading && testimonials ? testimonials.filter(t => t.status === 'pending').length : 0;
