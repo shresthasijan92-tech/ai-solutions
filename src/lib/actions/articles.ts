@@ -121,7 +121,7 @@ export async function createArticle(
     };
   }
 
-  const { imageFile, ...rest } = validatedFields.data;
+  const { imageFile, publishedAt, ...rest } = validatedFields.data;
 
   try {
     const imageUrl = await uploadImage(imageFile);
@@ -130,7 +130,7 @@ export async function createArticle(
     await addDoc(articlesCollection, {
         ...rest,
         imageUrl: imageUrl,
-        publishedAt: Timestamp.fromDate(rest.publishedAt),
+        publishedAt: Timestamp.fromDate(publishedAt),
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
     });
@@ -165,13 +165,7 @@ export async function updateArticle(
 
     const rawData = parseFormData(formData);
     
-    // Merge existing data with form data to prepare for validation
-    const mergedData = {
-      ...existingData,
-      ...rawData,
-    };
-    
-    const validatedFields = ArticleUpdateSchema.safeParse(mergedData);
+    const validatedFields = ArticleUpdateSchema.safeParse(rawData);
 
     if (!validatedFields.success) {
       return {
@@ -181,24 +175,19 @@ export async function updateArticle(
       };
     }
 
-    const { imageFile, ...rest } = validatedFields.data;
+    const { imageFile, publishedAt, ...rest } = validatedFields.data;
     
-    // Create the final payload for Firestore
-    const payload: Omit<Partial<Article>, 'id' | 'publishedAt'> & { publishedAt?: Timestamp; updatedAt: any } = {
-        title: rest.title,
-        excerpt: rest.excerpt,
-        content: rest.content,
-        featured: rest.featured,
-        publishedAt: Timestamp.fromDate(rest.publishedAt),
+    const payload: Omit<Partial<Article>, 'id'> & { updatedAt: any, publishedAt: Timestamp } = {
+        ...rest,
+        publishedAt: Timestamp.fromDate(publishedAt),
         updatedAt: serverTimestamp(),
     };
     
-    // Handle image upload and deletion
     if (imageFile) {
       payload.imageUrl = await uploadImage(imageFile);
       await deleteImageFromStorage(existingData.imageUrl);
     } else {
-        payload.imageUrl = existingData.imageUrl; // Preserve existing image
+        payload.imageUrl = existingData.imageUrl;
     }
 
     await updateDoc(articleDocRef, payload);
