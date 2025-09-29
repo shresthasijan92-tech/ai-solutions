@@ -29,7 +29,6 @@ const ACCEPTED_IMAGE_TYPES = [
   'image/webp',
 ];
 
-// --- Zod Schemas ---
 const ArticleBaseSchema = z.object({
   title: z.string().min(1, 'Title is required'),
   excerpt: z.string().min(1, 'Excerpt is required'),
@@ -97,7 +96,6 @@ function parseFormData(formData: FormData) {
     excerpt: formData.get('excerpt'),
     content: formData.get('content'),
     publishedAt: formData.get('publishedAt'),
-    // This is the key fix: correctly handle the checkbox value
     featured: formData.get('featured') === 'on',
     imageFile: imageFile instanceof File && imageFile.size > 0 ? imageFile : undefined,
   };
