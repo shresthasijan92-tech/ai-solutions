@@ -123,9 +123,9 @@ export function ProjectForm({ project, onSuccess }: ProjectFormProps) {
             ? 'Upload a new image to replace the existing one.'
             : 'An image is required for a new project.'}
         </p>
-        {state.errors?.image && (
+        {state.errors?.imageFile && (
           <p className="text-sm text-destructive">
-            {state.errors.image.join(', ')}
+            {state.errors.imageFile.join(', ')}
           </p>
         )}
       </div>

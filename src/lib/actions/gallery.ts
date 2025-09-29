@@ -156,7 +156,6 @@ export async function updateGalleryImage(
 
   const { imageFile, ...rest } = validatedFields.data;
   const galleryDocRef = doc(firestore, 'gallery', id);
-  const payload: Partial<GalleryImage> & { updatedAt: any } = { ...rest, updatedAt: serverTimestamp() };
 
   try {
     const docSnap = await getDoc(galleryDocRef);
@@ -165,9 +164,13 @@ export async function updateGalleryImage(
     }
     const existingData = docSnap.data();
 
+    const payload: Partial<GalleryImage> & { updatedAt: any } = { ...rest, updatedAt: serverTimestamp() };
+
     if (imageFile) {
-        await deleteImageFromStorage(existingData.imageUrl);
         payload.imageUrl = await uploadImage(imageFile);
+        await deleteImageFromStorage(existingData.imageUrl);
+    } else {
+        payload.imageUrl = existingData.imageUrl;
     }
 
     await updateDoc(galleryDocRef, payload);
@@ -189,6 +192,9 @@ export async function updateGalleryImage(
 export async function deleteGalleryImage(
   id: string
 ): Promise<{ message: string; success: boolean }> {
+  if (!id) {
+    return { message: 'Failed to delete gallery image: Missing ID.', success: false };
+  }
   try {
     const galleryDocRef = doc(firestore, 'gallery', id);
     const docSnap = await getDoc(galleryDocRef);

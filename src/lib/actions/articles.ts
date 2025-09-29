@@ -29,7 +29,8 @@ const ACCEPTED_IMAGE_TYPES = [
   'image/webp',
 ];
 
-const ArticleBaseSchema = z.object({
+// Schema for validation
+const ArticleSchema = z.object({
   title: z.string().min(1, 'Title is required'),
   excerpt: z.string().min(1, 'Excerpt is required'),
   content: z.string().min(1, 'Full article content is required.'),
@@ -49,19 +50,19 @@ const ArticleBaseSchema = z.object({
     ),
 });
 
-const ArticleCreateSchema = ArticleBaseSchema.extend({
-  imageFile: ArticleBaseSchema.shape.imageFile.refine(
+const ArticleCreateSchema = ArticleSchema.extend({
+  imageFile: ArticleSchema.shape.imageFile.refine(
     (file) => file && file.size > 0,
     'An image file is required.'
   ),
 });
 
-const ArticleUpdateSchema = ArticleBaseSchema;
+const ArticleUpdateSchema = ArticleSchema;
 
 
 export type ArticleFormState = {
   message: string;
-  errors?: Partial<Record<keyof z.infer<typeof ArticleBaseSchema>, string[]>>;
+  errors?: Partial<Record<keyof z.infer<typeof ArticleSchema>, string[]>>;
   success: boolean;
 };
 
@@ -89,27 +90,21 @@ async function deleteImageFromStorage(imageUrl: string | undefined) {
   }
 }
 
-function parseFormData(formData: FormData) {
-  const imageFile = formData.get('imageFile');
-  return {
-    title: formData.get('title'),
-    excerpt: formData.get('excerpt'),
-    content: formData.get('content'),
-    publishedAt: formData.get('publishedAt'),
-    featured: formData.get('featured') === 'on',
-    imageFile: imageFile instanceof File && imageFile.size > 0 ? imageFile : undefined,
-  };
-}
-
-
 // --- Server Actions ---
 
 export async function createArticle(
   prevState: ArticleFormState,
   formData: FormData
 ): Promise<ArticleFormState> {
-  const rawData = parseFormData(formData);
-  const validatedFields = ArticleCreateSchema.safeParse(rawData);
+  const imageFile = formData.get('imageFile');
+  const validatedFields = ArticleCreateSchema.safeParse({
+    title: formData.get('title'),
+    excerpt: formData.get('excerpt'),
+    content: formData.get('content'),
+    publishedAt: formData.get('publishedAt'),
+    featured: formData.get('featured') === 'on',
+    imageFile: imageFile instanceof File && imageFile.size > 0 ? imageFile : undefined,
+  });
 
   if (!validatedFields.success) {
     return {
@@ -119,15 +114,15 @@ export async function createArticle(
     };
   }
 
-  const { imageFile, publishedAt, ...rest } = validatedFields.data;
+  const { imageFile: file, publishedAt, ...rest } = validatedFields.data;
 
   try {
-    const imageUrl = await uploadImage(imageFile);
+    const imageUrl = await uploadImage(file);
     
     const articlesCollection = collection(firestore, 'articles');
     await addDoc(articlesCollection, {
         ...rest,
-        imageUrl: imageUrl,
+        imageUrl,
         publishedAt: Timestamp.fromDate(publishedAt),
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
@@ -161,9 +156,15 @@ export async function updateArticle(
     }
     const existingData = docSnap.data() as Article;
 
-    const rawData = parseFormData(formData);
-    
-    const validatedFields = ArticleUpdateSchema.safeParse(rawData);
+    const imageFile = formData.get('imageFile');
+    const validatedFields = ArticleUpdateSchema.safeParse({
+        title: formData.get('title'),
+        excerpt: formData.get('excerpt'),
+        content: formData.get('content'),
+        publishedAt: formData.get('publishedAt'),
+        featured: formData.get('featured') === 'on',
+        imageFile: imageFile instanceof File && imageFile.size > 0 ? imageFile : undefined,
+    });
 
     if (!validatedFields.success) {
       return {
@@ -173,7 +174,7 @@ export async function updateArticle(
       };
     }
 
-    const { imageFile, publishedAt, ...rest } = validatedFields.data;
+    const { imageFile: file, publishedAt, ...rest } = validatedFields.data;
     
     const payload: Omit<Partial<Article>, 'id'> & { updatedAt: any, publishedAt: Timestamp } = {
         ...rest,
@@ -181,8 +182,8 @@ export async function updateArticle(
         updatedAt: serverTimestamp(),
     };
     
-    if (imageFile) {
-      payload.imageUrl = await uploadImage(imageFile);
+    if (file) {
+      payload.imageUrl = await uploadImage(file);
       await deleteImageFromStorage(existingData.imageUrl);
     } else {
         payload.imageUrl = existingData.imageUrl;

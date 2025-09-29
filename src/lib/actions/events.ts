@@ -109,14 +109,16 @@ export async function createEvent(
   }
 
   const { imageFile, date, ...rest } = validatedFields.data;
-  const payload: Omit<Event, 'id' | 'createdAt' | 'updatedAt' | 'date'> & { date: any, createdAt: any, updatedAt: any } = {
-    ...rest,
-    date: Timestamp.fromDate(date),
-    createdAt: serverTimestamp(),
-    updatedAt: serverTimestamp(),
-  };
+  
 
   try {
+    const payload: Omit<Event, 'id' | 'createdAt' | 'updatedAt' | 'date'> & { date: any, createdAt: any, updatedAt: any } = {
+        ...rest,
+        date: Timestamp.fromDate(date),
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+    };
+
     if (imageFile) {
       payload.imageUrl = await uploadImage(imageFile);
     }
@@ -155,11 +157,6 @@ export async function updateEvent(
 
   const { imageFile, date, ...rest } = validatedFields.data;
   const eventDocRef = doc(firestore, 'events', id);
-  const payload: Partial<Event> & { date: any, updatedAt: any } = {
-    ...rest,
-    date: Timestamp.fromDate(date),
-    updatedAt: serverTimestamp(),
-  };
 
   try {
     const docSnap = await getDoc(eventDocRef);
@@ -167,10 +164,18 @@ export async function updateEvent(
         return { message: 'Event not found.', success: false };
     }
     const existingData = docSnap.data();
+
+    const payload: Partial<Event> & { date: any, updatedAt: any } = {
+        ...rest,
+        date: Timestamp.fromDate(date),
+        updatedAt: serverTimestamp(),
+    };
     
     if (imageFile) {
-        await deleteImageFromStorage(existingData.imageUrl);
         payload.imageUrl = await uploadImage(imageFile);
+        await deleteImageFromStorage(existingData.imageUrl);
+    } else {
+        payload.imageUrl = existingData.imageUrl;
     }
 
     await updateDoc(eventDocRef, payload);
@@ -189,6 +194,9 @@ export async function updateEvent(
 export async function deleteEvent(
   id: string
 ): Promise<{ message: string; success: boolean }> {
+  if (!id) {
+    return { message: 'Failed to delete event: Missing ID.', success: false };
+  }
   try {
     const eventDocRef = doc(firestore, 'events', id);
     const docSnap = await getDoc(eventDocRef);

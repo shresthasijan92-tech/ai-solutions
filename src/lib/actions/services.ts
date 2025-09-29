@@ -114,14 +114,13 @@ export async function createService(
   }
 
   const { imageFile, ...rest } = validatedFields.data;
-  const payload: Partial<Service> & {createdAt: any, updatedAt: any} = { ...rest, updatedAt: serverTimestamp() };
+  const payload: Partial<Service> & {createdAt: any, updatedAt: any} = { ...rest, createdAt: serverTimestamp(), updatedAt: serverTimestamp() };
 
   try {
     if (imageFile) {
       payload.imageUrl = await uploadImage(imageFile);
     }
 
-    payload.createdAt = serverTimestamp();
     const servicesCollection = collection(firestore, 'services');
     await addDoc(servicesCollection, payload);
 
@@ -160,7 +159,7 @@ export async function updateService(
 
   const { imageFile, ...rest } = validatedFields.data;
   const serviceDocRef = doc(firestore, 'services', id);
-  const payload: Partial<Service> & {updatedAt: any} = { ...rest, updatedAt: serverTimestamp() };
+  
 
   try {
     const docSnap = await getDoc(serviceDocRef);
@@ -169,9 +168,13 @@ export async function updateService(
     }
     const existingData = docSnap.data();
 
+    const payload: Partial<Service> & {updatedAt: any} = { ...rest, updatedAt: serverTimestamp() };
+
     if (imageFile) {
-        await deleteImageFromStorage(existingData.imageUrl);
-        payload.imageUrl = await uploadImage(imageFile);
+      payload.imageUrl = await uploadImage(imageFile);
+      await deleteImageFromStorage(existingData.imageUrl);
+    } else {
+        payload.imageUrl = existingData.imageUrl;
     }
 
     await updateDoc(serviceDocRef, payload);
@@ -193,6 +196,9 @@ export async function updateService(
 export async function deleteService(
   id: string
 ): Promise<{ message: string; success: boolean }> {
+  if (!id) {
+    return { message: 'Failed to delete service: Missing ID.', success: false };
+  }
   try {
     const serviceDocRef = doc(firestore, 'services', id);
     const docSnap = await getDoc(serviceDocRef);

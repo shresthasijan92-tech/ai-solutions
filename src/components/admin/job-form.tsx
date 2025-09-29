@@ -51,6 +51,8 @@ export function JobForm({ job, onSuccess }: JobFormProps) {
   const { toast } = useToast();
   
   const action = job?.id ? updateJob.bind(null, job.id) : createJob;
+  // useActionState is great, but for client-side validation with react-hook-form,
+  // we manually call the action after RHF's validation.
   const [state, formAction] = useActionState<JobFormState, JobFormValues>(
     action, 
     { message: '', success: false, errors: {} }
@@ -88,6 +90,7 @@ export function JobForm({ job, onSuccess }: JobFormProps) {
 
 
   return (
+    // We pass RHF's handleSubmit a function that will call our server action.
     <form action={handleSubmit(data => formAction(data))} className="space-y-6">
         <div className="space-y-2">
             <Label htmlFor="title">Title</Label>
@@ -96,6 +99,7 @@ export function JobForm({ job, onSuccess }: JobFormProps) {
                 control={control}
                 render={({ field }) => <Input id="title" placeholder="Senior AI Engineer" {...field} />}
             />
+            {/* Show client-side error first, then server-side */}
             {(errors.title || state.errors?.title) && <p className="text-sm text-destructive">{errors.title?.message || state.errors?.title?.[0]}</p>}
         </div>
 

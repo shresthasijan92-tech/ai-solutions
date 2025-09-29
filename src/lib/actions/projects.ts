@@ -36,7 +36,7 @@ const BaseProjectSchema = z.object({
     .min(1, 'At least one technology is required'),
   featured: z.boolean(),
   caseStudy: z.string().optional(),
-  image: z
+  imageFile: z
     .instanceof(File)
     .optional()
     .refine(
@@ -51,7 +51,7 @@ const BaseProjectSchema = z.object({
 });
 
 const CreateProjectSchema = BaseProjectSchema.extend({
-    image: BaseProjectSchema.shape.image.refine((file) => file && file.size > 0, "An image is required for new projects."),
+    imageFile: BaseProjectSchema.shape.imageFile.refine((file) => file && file.size > 0, "An image is required for new projects."),
 });
 
 export type ProjectFormState = {
@@ -95,7 +95,7 @@ function parseFormData(formData: FormData) {
       .filter(Boolean) ?? [],
     featured: formData.get('featured') === 'on',
     caseStudy: (formData.get('caseStudy') as string) || undefined,
-    image: imageFile instanceof File && imageFile.size > 0 ? imageFile : undefined,
+    imageFile: imageFile instanceof File && imageFile.size > 0 ? imageFile : undefined,
   };
 }
 
@@ -114,10 +114,10 @@ export async function createProject(
     };
   }
 
-  const { image, ...rest } = validatedFields.data;
+  const { imageFile, ...rest } = validatedFields.data;
   
   try {
-    const imageUrl = await uploadImage(image!);
+    const imageUrl = await uploadImage(imageFile!);
     const projectsCollection = collection(firestore, 'projects');
     await addDoc(projectsCollection, {
       ...rest,
@@ -159,7 +159,7 @@ export async function updateProject(
     };
   }
 
-  const { image, ...rest } = validatedFields.data;
+  const { imageFile, ...rest } = validatedFields.data;
   const projectDocRef = doc(firestore, 'projects', id);
 
   try {
@@ -171,9 +171,11 @@ export async function updateProject(
 
     const payload: Partial<Project> & { updatedAt: any } = { ...rest, updatedAt: serverTimestamp() };
 
-    if (image) {
+    if (imageFile) {
+      payload.imageUrl = await uploadImage(imageFile);
       await deleteImageFromStorage(existingData.imageUrl);
-      payload.imageUrl = await uploadImage(image);
+    } else {
+        payload.imageUrl = existingData.imageUrl;
     }
 
     await updateDoc(projectDocRef, payload);
@@ -193,6 +195,9 @@ export async function updateProject(
 }
 
 export async function deleteProject(id: string): Promise<{ message: string; success: boolean }> {
+  if (!id) {
+    return { message: 'Failed to delete project: Missing ID.', success: false };
+  }
   try {
     const projectDocRef = doc(firestore, 'projects', id);
     const docSnap = await getDoc(projectDocRef);

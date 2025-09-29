@@ -26,6 +26,8 @@ export type JobFormState = {
   success: boolean;
 };
 
+// This action is now designed to work with useActionState and react-hook-form
+// It receives validated data directly, not a FormData object
 export async function createJob(
   prevState: JobFormState,
   data: z.infer<typeof JobSchema>
@@ -34,7 +36,7 @@ export async function createJob(
 
   if (!validatedFields.success) {
     return {
-      message: 'Failed to create job.',
+      message: 'Failed to create job. Invalid data.',
       errors: validatedFields.error.flatten().fieldErrors,
       success: false,
     };
@@ -52,10 +54,12 @@ export async function createJob(
     revalidatePath('/careers');
     return { message: 'Successfully created job.', success: true };
   } catch (error) {
-    return { message: 'Failed to create job.', success: false };
+    console.error("Create Job Error: ", error);
+    return { message: 'Failed to create job on the server.', success: false };
   }
 }
 
+// This action is now designed to work with useActionState and react-hook-form
 export async function updateJob(
   id: string,
   prevState: JobFormState,
@@ -68,7 +72,7 @@ export async function updateJob(
 
   if (!validatedFields.success) {
     return {
-      message: 'Failed to update job.',
+      message: 'Failed to update job. Invalid data.',
       errors: validatedFields.error.flatten().fieldErrors,
       success: false,
     };
@@ -82,7 +86,8 @@ export async function updateJob(
     revalidatePath('/careers');
     return { message: 'Successfully updated job.', success: true };
   } catch (error) {
-    return { message: 'Failed to update job.', success: false };
+    console.error("Update Job Error: ", error);
+    return { message: 'Failed to update job on the server.', success: false };
   }
 }
 
@@ -99,6 +104,7 @@ export async function deleteJob(
     revalidatePath('/careers');
     return { message: 'Successfully deleted job.', success: true };
   } catch (error) {
+    console.error("Delete Job Error: ", error);
     return { message: 'Failed to delete job.', success: false };
   }
 }
