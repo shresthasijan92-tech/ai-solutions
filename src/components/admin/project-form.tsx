@@ -64,16 +64,7 @@ export function ProjectForm({ project, onSuccess }: ProjectFormProps) {
 
   return (
     <form action={formAction} className="space-y-6">
-      {project?.id && (
-        <>
-          <input type="hidden" name="id" value={project.id} />
-          <input
-            type="hidden"
-            name="prevImageUrl"
-            value={project.imageUrl ?? ''}
-          />
-        </>
-      )}
+      {project?.id && <input type="hidden" name="id" value={project.id} />}
 
       <div className="space-y-2">
         <Label htmlFor="title">Title</Label>
@@ -128,7 +119,7 @@ export function ProjectForm({ project, onSuccess }: ProjectFormProps) {
         <Input id="image" name="image" type="file" accept="image/*" />
         <p className="text-sm text-muted-foreground">
           {project?.id
-            ? 'Upload a new image to replace the existing one. Leave blank to keep the current image.'
+            ? 'Upload a new image to replace the existing one.'
             : 'An image is required for a new project.'}
         </p>
         {state.errors?.image && (

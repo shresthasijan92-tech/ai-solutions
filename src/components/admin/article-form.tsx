@@ -1,7 +1,8 @@
 'use client';
 
 import { useActionState, useEffect, useState } from 'react';
-import { Calendar as CalendarIcon } from 'lucide-react';
+import { useFormStatus } from 'react-dom';
+import { Calendar as CalendarIcon, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { Timestamp } from 'firebase/firestore';
 
@@ -41,11 +42,22 @@ const toDate = (
   return new Date(timestamp);
 };
 
+function SubmitButton({ isEditing }: { isEditing: boolean }) {
+  const { pending } = useFormStatus();
+
+  return (
+    <Button type="submit" disabled={pending} className="w-full sm:w-auto">
+      {pending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+      {isEditing ? 'Save Changes' : 'Create Article'}
+    </Button>
+  );
+}
+
 export function ArticleForm({ article, onSuccess }: ArticleFormProps) {
   const { toast } = useToast();
   const action = article?.id ? updateArticle : createArticle;
 
-  const [state, formAction] = useActionState(action, {
+  const [state, formAction] = useActionState<ArticleFormState, FormData>(action, {
     message: '',
     success: false,
     errors: {},
@@ -81,16 +93,7 @@ export function ArticleForm({ article, onSuccess }: ArticleFormProps) {
 
   return (
     <form action={formAction} className="space-y-6">
-      {article?.id && (
-        <>
-          <input type="hidden" name="id" value={article.id} />
-          <input
-            type="hidden"
-            name="prevImageUrl"
-            value={article.imageUrl ?? ''}
-          />
-        </>
-      )}
+      {article?.id && <input type="hidden" name="id" value={article.id} />}
 
       <div className="space-y-2">
         <Label htmlFor="title">Title</Label>
@@ -179,28 +182,13 @@ export function ArticleForm({ article, onSuccess }: ArticleFormProps) {
           </p>
         )}
       </div>
-
+      
       <div className="space-y-2">
-        <Label htmlFor="imageUrl">Image URL</Label>
-        <Input
-          id="imageUrl"
-          name="imageUrl"
-          placeholder="https://example.com/image.jpg"
-          defaultValue={article?.imageUrl}
-        />
-        <p className="text-sm text-muted-foreground">
-          Provide a link, or upload an image below. Upload will take precedence.
-        </p>
-        {state.errors?.imageUrl && (
-          <p className="text-sm text-destructive">
-            {state.errors.imageUrl.join(', ')}
-          </p>
-        )}
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="imageFile">Or Upload Image</Label>
+        <Label htmlFor="imageFile">Article Image</Label>
         <Input id="imageFile" name="imageFile" type="file" accept="image/*" />
+        <p className="text-sm text-muted-foreground">
+          {article?.id ? "Upload a new image to replace the current one." : "An image is required."}
+        </p>
         {state.errors?.imageFile && (
           <p className="text-sm text-destructive">
             {state.errors.imageFile.join(', ')}
@@ -219,9 +207,7 @@ export function ArticleForm({ article, onSuccess }: ArticleFormProps) {
         </Label>
       </div>
 
-      <Button type="submit" className="w-full sm:w-auto">
-        {article?.id ? 'Save Changes' : 'Create Article'}
-      </Button>
+      <SubmitButton isEditing={!!article?.id} />
     </form>
   );
 }

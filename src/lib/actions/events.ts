@@ -33,12 +33,11 @@ const EventActionSchema = z.object({
   description: z.string().min(1, 'Description is required'),
   location: z.string().min(1, 'Location is required'),
   date: z.date({ coerce: true }),
-  imageUrl: z.string().url().optional().or(z.literal('')),
   imageFile: z
     .instanceof(File)
     .optional()
     .refine(
-      (file) => !file || file.size <= MAX_FILE_SIZE,
+      (file) => !file || file.size === 0 || file.size <= MAX_FILE_SIZE,
       `Max image size is 5MB.`
     )
     .refine(
@@ -47,7 +46,6 @@ const EventActionSchema = z.object({
       'Only .jpg, .jpeg, .png and .webp formats are supported.'
     ),
   featured: z.boolean(),
-  prevImageUrl: z.string().url().optional().or(z.literal('')),
 });
 
 export type EventFormState = {
@@ -88,11 +86,9 @@ function parseEventFormData(formData: FormData) {
     description: formData.get('description'),
     location: formData.get('location'),
     date: formData.get('date'),
-    imageUrl: formData.get('imageUrl'),
     imageFile:
       imageFile instanceof File && imageFile.size > 0 ? imageFile : undefined,
     featured: formData.get('featured') === 'on',
-    prevImageUrl: formData.get('prevImageUrl') as string,
   };
 }
 
@@ -111,7 +107,7 @@ export async function createEvent(
     };
   }
 
-  const { imageFile, imageUrl, ...rest } = validatedFields.data;
+  const { imageFile, ...rest } = validatedFields.data;
   const payload: Record<string, any> = {
     ...rest,
     date: Timestamp.fromDate(rest.date),
@@ -122,8 +118,6 @@ export async function createEvent(
   try {
     if (imageFile) {
       payload.imageUrl = await uploadImage(imageFile);
-    } else if (imageUrl) {
-      payload.imageUrl = imageUrl;
     }
 
     const eventsCollection = collection(firestore, 'events');
@@ -158,7 +152,7 @@ export async function updateEvent(
     };
   }
 
-  const { imageFile, imageUrl, prevImageUrl, ...rest } = validatedFields.data;
+  const { imageFile, ...rest } = validatedFields.data;
   const eventDocRef = doc(firestore, 'events', id);
   const payload: Record<string, any> = {
     ...rest,
@@ -167,24 +161,13 @@ export async function updateEvent(
   };
 
   try {
-    let finalImageUrl = prevImageUrl;
-
     if (imageFile) {
-      if (prevImageUrl) {
-        await deleteImageFromStorage(prevImageUrl);
-      }
-      finalImageUrl = await uploadImage(imageFile);
-    } else if (imageUrl && imageUrl !== prevImageUrl) {
-      if (prevImageUrl) {
-        await deleteImageFromStorage(prevImageUrl);
-      }
-      finalImageUrl = imageUrl;
-    } else if (!imageUrl && !imageFile && prevImageUrl) {
-      await deleteImageFromStorage(prevImageUrl);
-      finalImageUrl = '';
+        const docSnap = await getDoc(eventDocRef);
+        if (docSnap.exists() && docSnap.data().imageUrl) {
+            await deleteImageFromStorage(docSnap.data().imageUrl);
+        }
+        payload.imageUrl = await uploadImage(imageFile);
     }
-
-    payload.imageUrl = finalImageUrl;
 
     await updateDoc(eventDocRef, payload);
 

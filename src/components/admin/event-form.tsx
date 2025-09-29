@@ -1,7 +1,8 @@
 'use client';
 
 import { useActionState, useEffect, useState } from 'react';
-import { Calendar as CalendarIcon } from 'lucide-react';
+import { useFormStatus } from 'react-dom';
+import { Calendar as CalendarIcon, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { Timestamp } from 'firebase/firestore';
 
@@ -29,6 +30,16 @@ type EventFormProps = {
   event?: Event | null;
   onSuccess: () => void;
 };
+
+function SubmitButton({ isEditing }: { isEditing: boolean }) {
+  const { pending } = useFormStatus();
+  return (
+     <Button type="submit" disabled={pending}>
+      {pending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+      {isEditing ? 'Save Changes' : 'Create Event'}
+    </Button>
+  );
+}
 
 const toDate = (
   timestamp: string | Timestamp | Date | undefined | null
@@ -85,16 +96,8 @@ export function EventForm({ event, onSuccess }: EventFormProps) {
 
   return (
     <form action={formAction} className="space-y-6">
-      {event?.id && (
-        <>
-          <input type="hidden" name="id" value={event.id} />
-          <input
-            type="hidden"
-            name="prevImageUrl"
-            value={event.imageUrl ?? ''}
-          />
-        </>
-      )}
+      {event?.id && <input type="hidden" name="id" value={event.id} />}
+
       <div className="space-y-2">
         <Label htmlFor="title">Title</Label>
         <Input
@@ -172,28 +175,10 @@ export function EventForm({ event, onSuccess }: EventFormProps) {
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="imageUrl">Image URL</Label>
-        <Input
-          id="imageUrl"
-          name="imageUrl"
-          placeholder="https://example.com/image.jpg"
-          defaultValue={event?.imageUrl ?? ''}
-        />
-        <p className="text-sm text-muted-foreground">
-          Provide a link to an image, or upload a file below.
-        </p>
-        {state.errors?.imageUrl && (
-          <p className="text-sm text-destructive">
-            {state.errors.imageUrl.join(', ')}
-          </p>
-        )}
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="imageFile">Or Upload Image</Label>
+        <Label htmlFor="imageFile">Event Image</Label>
         <Input id="imageFile" name="imageFile" type="file" accept="image/*" />
         <p className="text-sm text-muted-foreground">
-          This will override the Image URL if both are provided.
+          {event?.id ? "Upload a new image to replace the current one." : "Image is optional."}
         </p>
         {state.errors?.imageFile && (
           <p className="text-sm text-destructive">
@@ -213,9 +198,7 @@ export function EventForm({ event, onSuccess }: EventFormProps) {
         </Label>
       </div>
 
-      <Button type="submit">
-        {event?.id ? 'Save Changes' : 'Create Event'}
-      </Button>
+      <SubmitButton isEditing={!!event?.id} />
     </form>
   );
 }

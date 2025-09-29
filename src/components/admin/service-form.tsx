@@ -1,7 +1,8 @@
 'use client';
 
 import { useActionState, useEffect } from 'react';
-
+import { useFormStatus } from 'react-dom';
+import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -20,9 +21,18 @@ type ServiceFormProps = {
   onSuccess: () => void;
 };
 
+function SubmitButton({ isEditing }: { isEditing: boolean }) {
+  const { pending } = useFormStatus();
+  return (
+    <Button type="submit" disabled={pending} className="w-full sm:w-auto">
+      {pending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+      {isEditing ? 'Save Changes' : 'Create Service'}
+    </Button>
+  );
+}
+
 export function ServiceForm({ service, onSuccess }: ServiceFormProps) {
   const { toast } = useToast();
-
   const action = service?.id ? updateService : createService;
 
   const [state, formAction] = useActionState<ServiceFormState, FormData>(
@@ -54,16 +64,8 @@ export function ServiceForm({ service, onSuccess }: ServiceFormProps) {
 
   return (
     <form action={formAction} className="space-y-6">
-      {service?.id && (
-        <>
-          <input type="hidden" name="id" value={service.id} />
-          <input
-            type="hidden"
-            name="prevImageUrl"
-            value={service.imageUrl ?? ''}
-          />
-        </>
-      )}
+      {service?.id && <input type="hidden" name="id" value={service.id} />}
+
       <div className="space-y-2">
         <Label htmlFor="title">Title</Label>
         <Input
@@ -145,29 +147,10 @@ export function ServiceForm({ service, onSuccess }: ServiceFormProps) {
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="imageUrl">Image URL</Label>
-        <Input
-          id="imageUrl"
-          name="imageUrl"
-          placeholder="https://example.com/image.jpg"
-          defaultValue={service?.imageUrl}
-        />
-        <p className="text-sm text-muted-foreground">
-          Provide a full web link to an image for the service, or upload a file
-          below.
-        </p>
-        {state.errors?.imageUrl && (
-          <p className="text-sm text-destructive">
-            {state.errors.imageUrl.join(', ')}
-          </p>
-        )}
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="imageFile">Or Upload Image</Label>
+        <Label htmlFor="imageFile">Service Image</Label>
         <Input id="imageFile" name="imageFile" type="file" accept="image/*" />
         <p className="text-sm text-muted-foreground">
-          This will override the Image URL if both are provided.
+          {service?.id ? "Upload a new image to replace the current one." : "Image is optional."}
         </p>
         {state.errors?.imageFile && (
           <p className="text-sm text-destructive">
@@ -187,9 +170,7 @@ export function ServiceForm({ service, onSuccess }: ServiceFormProps) {
         </Label>
       </div>
 
-      <Button type="submit" className="w-full sm:w-auto">
-        {service?.id ? 'Save Changes' : 'Create Service'}
-      </Button>
+      <SubmitButton isEditing={!!service?.id} />
     </form>
   );
 }

@@ -30,12 +30,11 @@ const ACCEPTED_IMAGE_TYPES = [
 const ServiceSchema = z.object({
   title: z.string().min(1, 'Title is required'),
   description: z.string().min(1, 'Description is required'),
-  imageUrl: z.string().url().optional().or(z.literal('')),
   imageFile: z
     .instanceof(File)
     .optional()
     .refine(
-      (file) => !file || file.size <= MAX_FILE_SIZE,
+      (file) => !file || file.size === 0 || file.size <= MAX_FILE_SIZE,
       `Max image size is 5MB.`
     )
     .refine(
@@ -47,7 +46,6 @@ const ServiceSchema = z.object({
   price: z.string().optional(),
   details: z.string().optional(),
   featured: z.boolean(),
-  prevImageUrl: z.string().url().optional().or(z.literal('')),
 });
 
 export type ServiceFormState = {
@@ -84,7 +82,6 @@ function parseServiceFormData(formData: FormData) {
   return {
     title: formData.get('title') as string,
     description: formData.get('description') as string,
-    imageUrl: formData.get('imageUrl') as string,
     imageFile:
       imageFile instanceof File && imageFile.size > 0 ? imageFile : undefined,
     benefits:
@@ -95,7 +92,6 @@ function parseServiceFormData(formData: FormData) {
     price: formData.get('price') as string,
     details: formData.get('details') as string,
     featured: formData.get('featured') === 'on',
-    prevImageUrl: formData.get('prevImageUrl') as string,
   };
 }
 
@@ -114,14 +110,12 @@ export async function createService(
     };
   }
 
-  const { imageFile, imageUrl, ...rest } = validatedFields.data;
+  const { imageFile, ...rest } = validatedFields.data;
   const payload: Record<string, any> = { ...rest, updatedAt: serverTimestamp() };
 
   try {
     if (imageFile) {
       payload.imageUrl = await uploadImage(imageFile);
-    } else if (imageUrl) {
-      payload.imageUrl = imageUrl;
     }
 
     payload.createdAt = serverTimestamp();
@@ -161,28 +155,18 @@ export async function updateService(
     };
   }
 
-  const { imageFile, imageUrl, prevImageUrl, ...rest } = validatedFields.data;
+  const { imageFile, ...rest } = validatedFields.data;
   const serviceDocRef = doc(firestore, 'services', id);
   const payload: Record<string, any> = { ...rest, updatedAt: serverTimestamp() };
 
   try {
-    let finalImageUrl = prevImageUrl;
-
     if (imageFile) {
-      if (prevImageUrl) {
-        await deleteImageFromStorage(prevImageUrl);
-      }
-      finalImageUrl = await uploadImage(imageFile);
-    } else if (imageUrl && imageUrl !== prevImageUrl) {
-      if (prevImageUrl) {
-        await deleteImageFromStorage(prevImageUrl);
-      }
-      finalImageUrl = imageUrl;
-    } else if (!imageUrl && !imageFile && prevImageUrl) {
-      await deleteImageFromStorage(prevImageUrl);
-      finalImageUrl = '';
+        const docSnap = await getDoc(serviceDocRef);
+        if (docSnap.exists() && docSnap.data().imageUrl) {
+            await deleteImageFromStorage(docSnap.data().imageUrl);
+        }
+        payload.imageUrl = await uploadImage(imageFile);
     }
-    payload.imageUrl = finalImageUrl;
 
     await updateDoc(serviceDocRef, payload);
 

@@ -35,7 +35,7 @@ const BaseGalleryImageSchema = z.object({
     .instanceof(File)
     .optional()
     .refine(
-      (file) => !file || file.size <= MAX_FILE_SIZE,
+      (file) => !file || file.size === 0 || file.size <= MAX_FILE_SIZE,
       `Max image size is 5MB.`
     )
     .refine(
@@ -43,18 +43,11 @@ const BaseGalleryImageSchema = z.object({
         !file || file.size === 0 || ACCEPTED_IMAGE_TYPES.includes(file.type),
       'Only .jpg, .jpeg, .png and .webp formats are supported.'
     ),
-  prevImageUrl: z.string().url().optional().or(z.literal('')),
 });
 
-const CreateGalleryImageSchema = BaseGalleryImageSchema.refine(
-  (data) => !!data.imageFile && data.imageFile.size > 0,
-  {
-    message: 'An image file is required.',
-    path: ['imageFile'],
-  }
-);
-
-const UpdateGalleryImageSchema = BaseGalleryImageSchema;
+const CreateGalleryImageSchema = BaseGalleryImageSchema.extend({
+    imageFile: BaseGalleryImageSchema.shape.imageFile.refine((file) => file && file.size > 0, "An image file is required."),
+});
 
 export type GalleryImageFormState = {
   message: string;
@@ -95,7 +88,6 @@ function parseGalleryFormData(formData: FormData) {
     featured: formData.get('featured') === 'on',
     imageFile:
       imageFile instanceof File && imageFile.size > 0 ? imageFile : undefined,
-    prevImageUrl: formData.get('prevImageUrl') as string,
   };
 }
 
@@ -149,7 +141,7 @@ export async function updateGalleryImage(
     return { message: 'Failed to update image: Missing ID', success: false };
 
   const rawData = parseGalleryFormData(formData);
-  const validatedFields = UpdateGalleryImageSchema.safeParse(rawData);
+  const validatedFields = BaseGalleryImageSchema.safeParse(rawData);
 
   if (!validatedFields.success) {
     return {
@@ -159,14 +151,15 @@ export async function updateGalleryImage(
     };
   }
 
-  const { imageFile, prevImageUrl, ...rest } = validatedFields.data;
+  const { imageFile, ...rest } = validatedFields.data;
   const galleryDocRef = doc(firestore, 'gallery', id);
   const payload: Record<string, any> = { ...rest, updatedAt: serverTimestamp() };
 
   try {
     if (imageFile) {
-      if (prevImageUrl) {
-        await deleteImageFromStorage(prevImageUrl);
+      const docSnap = await getDoc(galleryDocRef);
+      if (docSnap.exists() && docSnap.data().imageUrl) {
+          await deleteImageFromStorage(docSnap.data().imageUrl);
       }
       payload.imageUrl = await uploadImage(imageFile);
     }

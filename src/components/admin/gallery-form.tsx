@@ -1,7 +1,8 @@
 'use client';
 
 import { useActionState, useEffect } from 'react';
-
+import { useFormStatus } from 'react-dom';
+import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -25,6 +26,16 @@ type GalleryFormProps = {
   image?: GalleryImage | null;
   onSuccess: () => void;
 };
+
+function SubmitButton({ isEditing }: { isEditing: boolean }) {
+  const { pending } = useFormStatus();
+  return (
+    <Button type="submit" disabled={pending} className="w-full sm:w-auto">
+      {pending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+      {isEditing ? 'Save Changes' : 'Create Image'}
+    </Button>
+  );
+}
 
 export function GalleryForm({ image, onSuccess }: GalleryFormProps) {
   const { toast } = useToast();
@@ -59,16 +70,8 @@ export function GalleryForm({ image, onSuccess }: GalleryFormProps) {
 
   return (
     <form action={formAction} className="space-y-6">
-      {image?.id && (
-        <>
-          <input type="hidden" name="id" value={image.id} />
-          <input
-            type="hidden"
-            name="prevImageUrl"
-            value={image.imageUrl ?? ''}
-          />
-        </>
-      )}
+      {image?.id && <input type="hidden" name="id" value={image.id} />}
+      
       <div className="space-y-2">
         <Label htmlFor="title">Title</Label>
         <Input
@@ -131,9 +134,7 @@ export function GalleryForm({ image, onSuccess }: GalleryFormProps) {
         </Label>
       </div>
 
-      <Button type="submit" className="w-full sm:w-auto">
-        {image?.id ? 'Save Changes' : 'Create Image'}
-      </Button>
+      <SubmitButton isEditing={!!image?.id} />
     </form>
   );
 }

@@ -26,6 +26,7 @@ export type JobFormState = {
 };
 
 export async function createJob(
+  prevState: JobFormState,
   data: z.infer<typeof JobSchema>
 ): Promise<JobFormState> {
   const validatedFields = JobSchema.safeParse(data);
@@ -55,6 +56,7 @@ export async function createJob(
 
 export async function updateJob(
   id: string,
+  prevState: JobFormState,
   data: z.infer<typeof JobSchema>
 ): Promise<JobFormState> {
   const validatedFields = JobSchema.safeParse(data);

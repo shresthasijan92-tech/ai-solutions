@@ -26,7 +26,6 @@ const ACCEPTED_IMAGE_TYPES = [
   'image/webp',
 ];
 
-// Base schema for common fields
 const BaseProjectSchema = z.object({
   title: z.string().min(1, 'Title is required'),
   description: z.string().min(1, 'Description is required'),
@@ -37,22 +36,21 @@ const BaseProjectSchema = z.object({
   caseStudy: z.string().optional(),
   image: z
     .instanceof(File)
-    .refine((file) => file.size <= MAX_FILE_SIZE, `Max image size is 5MB.`)
+    .optional()
     .refine(
-      (file) => ACCEPTED_IMAGE_TYPES.includes(file.type),
-      'Only .jpg, .jpeg, .png and .webp formats are supported.'
+      (file) => !file || file.size === 0 || file.size <= MAX_FILE_SIZE,
+      `Max image size is 5MB.`
     )
-    .optional(),
+    .refine(
+      (file) =>
+        !file || file.size === 0 || ACCEPTED_IMAGE_TYPES.includes(file.type),
+      'Only .jpg, .jpeg, .png and .webp formats are supported.'
+    ),
 });
 
-// Schema for creating a project, where image is required
-const CreateProjectSchema = BaseProjectSchema.refine((data) => !!data.image && data.image.size > 0, {
-  message: 'An image is required for new projects.',
-  path: ['image'],
+const CreateProjectSchema = BaseProjectSchema.extend({
+    image: BaseProjectSchema.shape.image.refine((file) => file && file.size > 0, "An image is required for new projects."),
 });
-
-// Schema for updating a project, where image is optional
-const UpdateProjectSchema = BaseProjectSchema;
 
 export type ProjectFormState = {
   message: string;
@@ -60,7 +58,6 @@ export type ProjectFormState = {
   success: boolean;
 };
 
-// Helper to upload image to Firebase Storage
 async function uploadImage(file: File): Promise<string> {
   const fileBuffer = await file.arrayBuffer();
   const fileName = `projects/${Date.now()}-${file.name}`;
@@ -69,7 +66,6 @@ async function uploadImage(file: File): Promise<string> {
   return getDownloadURL(storageRef);
 }
 
-// Helper to delete an image from Firebase Storage
 async function deleteImageFromStorage(imageUrl: string) {
   if (!imageUrl || !imageUrl.includes('firebasestorage.googleapis.com')) {
     return;
@@ -81,13 +77,11 @@ async function deleteImageFromStorage(imageUrl: string) {
     if (error.code === 'storage/object-not-found') {
       console.warn('Image to delete was not found in storage:', imageUrl);
     } else {
-      // Re-throw other errors
       throw error;
     }
   }
 }
 
-// Helper to parse FormData into a structured object
 function parseFormData(formData: FormData) {
   const imageFile = formData.get('image');
   return {
@@ -119,12 +113,9 @@ export async function createProject(
   }
 
   const { image, ...rest } = validatedFields.data;
-  let imageUrl = '';
-
+  
   try {
-    // The schema ensures `image` is a file here
-    imageUrl = await uploadImage(image!);
-
+    const imageUrl = await uploadImage(image!);
     const projectsCollection = collection(firestore, 'projects');
     await addDoc(projectsCollection, {
       ...rest,
@@ -156,7 +147,7 @@ export async function updateProject(
   }
 
   const rawData = parseFormData(formData);
-  const validatedFields = UpdateProjectSchema.safeParse(rawData);
+  const validatedFields = BaseProjectSchema.safeParse(rawData);
 
   if (!validatedFields.success) {
     return {
