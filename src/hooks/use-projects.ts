@@ -1,29 +1,21 @@
 'use client';
 
-import { useMemo } from 'react';
 import { collection, query } from 'firebase/firestore';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import type { Project } from '@/lib/definitions';
 
-export function useProjects(enabled = true) {
+export function useProjects() {
   const firestore = useFirestore();
   const projectsCol = useMemoFirebase(
     () => (firestore ? collection(firestore, 'projects') : null),
     [firestore]
   );
-  const projectsQuery = useMemoFirebase(
-    () => {
-      if (!projectsCol || !enabled) return null;
-      return query(projectsCol)
-    },
-    [projectsCol, enabled]
-  );
-
+  
   const {
     data: projects,
     isLoading,
     error,
-  } = useCollection<Project>(projectsQuery);
+  } = useCollection<Project>(projectsCol);
 
   return { projects, isLoading, error };
 }

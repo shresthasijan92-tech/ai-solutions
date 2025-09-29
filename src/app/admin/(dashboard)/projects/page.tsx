@@ -19,7 +19,7 @@ import { useUser } from '@/firebase';
 
 export default function AdminProjectsPage() {
   const { isUserLoading } = useUser();
-  const { projects, isLoading, error } = useProjects(!isUserLoading);
+  const { projects, isLoading: areProjectsLoading, error } = useProjects();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
 
@@ -38,7 +38,7 @@ export default function AdminProjectsPage() {
     setEditingProject(null);
   };
   
-  const showLoading = isLoading || isUserLoading;
+  const showLoading = isUserLoading || areProjectsLoading;
 
   return (
     <div className="space-y-8">
