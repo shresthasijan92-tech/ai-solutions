@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect } from 'react';
-import { useFormState, useFormStatus } from 'react-dom';
+import { useEffect, useActionState } from 'react';
+import { useFormStatus } from 'react-dom';
 import { Loader2, Calendar as CalendarIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { Timestamp } from 'firebase/firestore';
@@ -54,7 +54,7 @@ export function ArticleForm({ article, onSuccess }: ArticleFormProps) {
   
   const action = article?.id ? updateArticle : createArticle;
 
-  const [state, formAction] = useFormState(action, {
+  const [state, formAction] = useActionState(action, {
     message: '',
     success: false,
   });
