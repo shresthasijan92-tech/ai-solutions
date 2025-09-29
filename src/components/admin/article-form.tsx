@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useActionState } from 'react';
+import { useEffect, useActionState } from 'react';
 import { Loader2, Calendar as CalendarIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { Timestamp } from 'firebase/firestore';
@@ -24,6 +24,7 @@ import {
   type ArticleFormState,
 } from '@/lib/actions/articles';
 import { cn } from '@/lib/utils';
+import { useState } from 'react';
 
 type ArticleFormProps = {
   article?: Article | null;
@@ -48,7 +49,7 @@ export function ArticleForm({ article, onSuccess }: ArticleFormProps) {
   const [state, formAction] = useActionState(action, {
     message: '',
     success: false,
-    errors: {}
+    errors: {},
   });
 
   const [selectedDate, setSelectedDate] = useState<Date>(
@@ -80,11 +81,19 @@ export function ArticleForm({ article, onSuccess }: ArticleFormProps) {
   }, [article]);
 
   return (
-    <form action={formAction} className="space-y-6" encType="multipart/form-data">
+    <form
+      action={formAction}
+      className="space-y-6"
+      encType="multipart/form-data"
+    >
       {article?.id && (
         <>
           <input type="hidden" name="id" value={article.id} />
-          <input type="hidden" name="prevImageUrl" value={article.imageUrl ?? ''} />
+          <input
+            type="hidden"
+            name="prevImageUrl"
+            value={article.imageUrl ?? ''}
+          />
         </>
       )}
 
@@ -98,7 +107,9 @@ export function ArticleForm({ article, onSuccess }: ArticleFormProps) {
           required
         />
         {state.errors?.title && (
-          <p className="text-sm text-destructive">{state.errors.title.join(', ')}</p>
+          <p className="text-sm text-destructive">
+            {state.errors.title.join(', ')}
+          </p>
         )}
       </div>
 
@@ -112,7 +123,9 @@ export function ArticleForm({ article, onSuccess }: ArticleFormProps) {
           required
         />
         {state.errors?.excerpt && (
-          <p className="text-sm text-destructive">{state.errors.excerpt.join(', ')}</p>
+          <p className="text-sm text-destructive">
+            {state.errors.excerpt.join(', ')}
+          </p>
         )}
       </div>
 
@@ -130,7 +143,9 @@ export function ArticleForm({ article, onSuccess }: ArticleFormProps) {
           This content will be displayed on the article page.
         </p>
         {state.errors?.content && (
-          <p className="text-sm text-destructive">{state.errors.content.join(', ')}</p>
+          <p className="text-sm text-destructive">
+            {state.errors.content.join(', ')}
+          </p>
         )}
       </div>
 
@@ -182,20 +197,19 @@ export function ArticleForm({ article, onSuccess }: ArticleFormProps) {
           Provide a link, or upload an image below. Upload will take precedence.
         </p>
         {state.errors?.imageUrl && (
-          <p className="text-sm text-destructive">{state.errors.imageUrl.join(', ')}</p>
+          <p className="text-sm text-destructive">
+            {state.errors.imageUrl.join(', ')}
+          </p>
         )}
       </div>
-      
+
       <div className="space-y-2">
         <Label htmlFor="imageFile">Or Upload Image</Label>
-        <Input
-          id="imageFile"
-          name="imageFile"
-          type="file"
-          accept="image/*"
-        />
-         {state.errors?.imageFile && (
-          <p className="text-sm text-destructive">{state.errors.imageFile.join(', ')}</p>
+        <Input id="imageFile" name="imageFile" type="file" accept="image/*" />
+        {state.errors?.imageFile && (
+          <p className="text-sm text-destructive">
+            {state.errors.imageFile.join(', ')}
+          </p>
         )}
       </div>
 

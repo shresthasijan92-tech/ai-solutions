@@ -32,16 +32,22 @@ const EventActionSchema = z.object({
   title: z.string().min(1, 'Title is required'),
   description: z.string().min(1, 'Description is required'),
   location: z.string().min(1, 'Location is required'),
-  date: z.date({coerce: true}),
-  imageUrl: z.string().optional(),
+  date: z.date({ coerce: true }),
+  imageUrl: z.string().url().optional().or(z.literal('')),
   imageFile: z
     .instanceof(File)
-    .refine((file) => file.size <= MAX_FILE_SIZE, `Max image size is 5MB.`)
+    .optional()
     .refine(
-      (file) => ACCEPTED_IMAGE_TYPES.includes(file.type),
+      (file) => !file || file.size <= MAX_FILE_SIZE,
+      `Max image size is 5MB.`
+    )
+    .refine(
+      (file) =>
+        !file || file.size === 0 || ACCEPTED_IMAGE_TYPES.includes(file.type),
       'Only .jpg, .jpeg, .png and .webp formats are supported.'
-    ).optional(),
+    ),
   featured: z.boolean(),
+  prevImageUrl: z.string().url().optional().or(z.literal('')),
 });
 
 export type EventFormState = {
@@ -76,18 +82,19 @@ async function deleteImageFromStorage(imageUrl: string) {
 }
 
 function parseEventFormData(formData: FormData) {
-    const imageFile = formData.get('imageFile');
-    return {
-        title: formData.get('title'),
-        description: formData.get('description'),
-        location: formData.get('location'),
-        date: formData.get('date'),
-        imageUrl: formData.get('imageUrl'),
-        imageFile: imageFile instanceof File && imageFile.size > 0 ? imageFile : undefined,
-        featured: formData.get('featured') === 'on',
-    };
+  const imageFile = formData.get('imageFile');
+  return {
+    title: formData.get('title'),
+    description: formData.get('description'),
+    location: formData.get('location'),
+    date: formData.get('date'),
+    imageUrl: formData.get('imageUrl'),
+    imageFile:
+      imageFile instanceof File && imageFile.size > 0 ? imageFile : undefined,
+    featured: formData.get('featured') === 'on',
+    prevImageUrl: formData.get('prevImageUrl') as string,
+  };
 }
-
 
 export async function createEvent(
   prevState: EventFormState,
@@ -105,11 +112,11 @@ export async function createEvent(
   }
 
   const { imageFile, imageUrl, ...rest } = validatedFields.data;
-  const payload: Record<string, any> = { 
-      ...rest, 
-      date: Timestamp.fromDate(rest.date),
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
+  const payload: Record<string, any> = {
+    ...rest,
+    date: Timestamp.fromDate(rest.date),
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
   };
 
   try {
@@ -137,7 +144,8 @@ export async function updateEvent(
   formData: FormData
 ): Promise<EventFormState> {
   const id = formData.get('id') as string;
-  if (!id) return { message: 'Failed to update event: Missing ID.', success: false };
+  if (!id)
+    return { message: 'Failed to update event: Missing ID.', success: false };
 
   const rawData = parseEventFormData(formData);
   const validatedFields = EventActionSchema.safeParse(rawData);
@@ -149,25 +157,34 @@ export async function updateEvent(
       success: false,
     };
   }
-  
-  const { imageFile, imageUrl, ...rest } = validatedFields.data;
+
+  const { imageFile, imageUrl, prevImageUrl, ...rest } = validatedFields.data;
   const eventDocRef = doc(firestore, 'events', id);
-  const payload: Record<string, any> = { 
-      ...rest, 
-      date: Timestamp.fromDate(rest.date),
-      updatedAt: serverTimestamp(),
+  const payload: Record<string, any> = {
+    ...rest,
+    date: Timestamp.fromDate(rest.date),
+    updatedAt: serverTimestamp(),
   };
 
   try {
+    let finalImageUrl = prevImageUrl;
+
     if (imageFile) {
-      const docSnap = await getDoc(eventDocRef);
-      if (docSnap.exists() && docSnap.data().imageUrl) {
-        await deleteImageFromStorage(docSnap.data().imageUrl);
+      if (prevImageUrl) {
+        await deleteImageFromStorage(prevImageUrl);
       }
-      payload.imageUrl = await uploadImage(imageFile);
-    } else {
-        payload.imageUrl = imageUrl;
+      finalImageUrl = await uploadImage(imageFile);
+    } else if (imageUrl && imageUrl !== prevImageUrl) {
+      if (prevImageUrl) {
+        await deleteImageFromStorage(prevImageUrl);
+      }
+      finalImageUrl = imageUrl;
+    } else if (!imageUrl && !imageFile && prevImageUrl) {
+      await deleteImageFromStorage(prevImageUrl);
+      finalImageUrl = '';
     }
+
+    payload.imageUrl = finalImageUrl;
 
     await updateDoc(eventDocRef, payload);
 
@@ -181,7 +198,6 @@ export async function updateEvent(
     return { message: 'Failed to update event.', success: false };
   }
 }
-
 
 export async function deleteEvent(
   id: string

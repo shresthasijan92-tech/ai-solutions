@@ -33,18 +33,26 @@ const BaseGalleryImageSchema = z.object({
   featured: z.boolean(),
   imageFile: z
     .instanceof(File)
-    .refine((file) => file.size <= MAX_FILE_SIZE, `Max image size is 5MB.`)
+    .optional()
     .refine(
-      (file) => ACCEPTED_IMAGE_TYPES.includes(file.type),
-      'Only .jpg, .jpeg, .png and .webp formats are supported.'
+      (file) => !file || file.size <= MAX_FILE_SIZE,
+      `Max image size is 5MB.`
     )
-    .optional(),
+    .refine(
+      (file) =>
+        !file || file.size === 0 || ACCEPTED_IMAGE_TYPES.includes(file.type),
+      'Only .jpg, .jpeg, .png and .webp formats are supported.'
+    ),
+  prevImageUrl: z.string().url().optional().or(z.literal('')),
 });
 
-const CreateGalleryImageSchema = BaseGalleryImageSchema.refine((data) => !!data.imageFile && data.imageFile.size > 0, {
-    message: "An image file is required.",
-    path: ["imageFile"],
-});
+const CreateGalleryImageSchema = BaseGalleryImageSchema.refine(
+  (data) => !!data.imageFile && data.imageFile.size > 0,
+  {
+    message: 'An image file is required.',
+    path: ['imageFile'],
+  }
+);
 
 const UpdateGalleryImageSchema = BaseGalleryImageSchema;
 
@@ -80,13 +88,15 @@ async function deleteImageFromStorage(imageUrl: string) {
 }
 
 function parseGalleryFormData(formData: FormData) {
-    const imageFile = formData.get('imageFile');
-    return {
-        title: formData.get('title'),
-        category: formData.get('category'),
-        featured: formData.get('featured') === 'on',
-        imageFile: imageFile instanceof File && imageFile.size > 0 ? imageFile : undefined,
-    }
+  const imageFile = formData.get('imageFile');
+  return {
+    title: formData.get('title'),
+    category: formData.get('category'),
+    featured: formData.get('featured') === 'on',
+    imageFile:
+      imageFile instanceof File && imageFile.size > 0 ? imageFile : undefined,
+    prevImageUrl: formData.get('prevImageUrl') as string,
+  };
 }
 
 export async function createGalleryImage(
@@ -109,17 +119,21 @@ export async function createGalleryImage(
   try {
     const imageUrl = await uploadImage(imageFile!);
     const galleryCollection = collection(firestore, 'gallery');
-    await addDoc(galleryCollection, { 
-        ...rest, 
-        imageUrl,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
+    await addDoc(galleryCollection, {
+      ...rest,
+      imageUrl,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
     });
 
     revalidatePath('/admin/gallery');
     revalidatePath('/gallery');
     revalidatePath('/');
-    return { message: 'Successfully created gallery image.', success: true, errors: {} };
+    return {
+      message: 'Successfully created gallery image.',
+      success: true,
+      errors: {},
+    };
   } catch (error) {
     console.error('Create Gallery Image Error:', error);
     return { message: 'Failed to create gallery image.', success: false };
@@ -131,7 +145,8 @@ export async function updateGalleryImage(
   formData: FormData
 ): Promise<GalleryImageFormState> {
   const id = formData.get('id') as string;
-  if (!id) return { message: 'Failed to update image: Missing ID', success: false };
+  if (!id)
+    return { message: 'Failed to update image: Missing ID', success: false };
 
   const rawData = parseGalleryFormData(formData);
   const validatedFields = UpdateGalleryImageSchema.safeParse(rawData);
@@ -144,15 +159,14 @@ export async function updateGalleryImage(
     };
   }
 
-  const { imageFile, ...rest } = validatedFields.data;
+  const { imageFile, prevImageUrl, ...rest } = validatedFields.data;
   const galleryDocRef = doc(firestore, 'gallery', id);
   const payload: Record<string, any> = { ...rest, updatedAt: serverTimestamp() };
 
   try {
     if (imageFile) {
-      const docSnap = await getDoc(galleryDocRef);
-      if (docSnap.exists() && docSnap.data().imageUrl) {
-        await deleteImageFromStorage(docSnap.data().imageUrl);
+      if (prevImageUrl) {
+        await deleteImageFromStorage(prevImageUrl);
       }
       payload.imageUrl = await uploadImage(imageFile);
     }
@@ -162,13 +176,16 @@ export async function updateGalleryImage(
     revalidatePath('/admin/gallery');
     revalidatePath('/gallery');
     revalidatePath('/');
-    return { message: 'Successfully updated gallery image.', success: true, errors: {} };
+    return {
+      message: 'Successfully updated gallery image.',
+      success: true,
+      errors: {},
+    };
   } catch (error) {
     console.error('Update Gallery Image Error:', error);
     return { message: 'Failed to update gallery image.', success: false };
   }
 }
-
 
 export async function deleteGalleryImage(
   id: string

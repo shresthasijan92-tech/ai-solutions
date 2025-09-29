@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useActionState } from 'react';
-import { useFormStatus } from 'react-dom';
 import { Loader2 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -27,27 +26,16 @@ type GalleryFormProps = {
   onSuccess: () => void;
 };
 
-function SubmitButton({ isEditing }: { isEditing: boolean }) {
-  const { pending } = useFormStatus();
-
-  return (
-    <Button type="submit" disabled={pending} className="w-full sm:w-auto">
-      {pending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-      {isEditing ? 'Save Changes' : 'Create Image'}
-    </Button>
-  );
-}
-
 export function GalleryForm({ image, onSuccess }: GalleryFormProps) {
   const { toast } = useToast();
-  
+
   const action = image?.id ? updateGalleryImage : createGalleryImage;
   const [state, formAction] = useActionState(action, {
     message: '',
     success: false,
-    errors: {}
+    errors: {},
   });
-  
+
   useEffect(() => {
     if (state.message) {
       if (state.success) {
@@ -67,48 +55,86 @@ export function GalleryForm({ image, onSuccess }: GalleryFormProps) {
   }, [state, toast, onSuccess]);
 
   return (
-      <form
-        action={formAction}
-        encType="multipart/form-data"
-        className="space-y-6"
-      >
-        {image?.id && <input type="hidden" name="id" value={image.id} />}
-        <div className="space-y-2">
-            <Label htmlFor="title">Title</Label>
-            <Input id="title" name="title" placeholder="Team Collaboration" defaultValue={image?.title} required />
-            {state.errors?.title && <p className="text-sm text-destructive">{state.errors.title.join(', ')}</p>}
-        </div>
+    <form
+      action={formAction}
+      encType="multipart/form-data"
+      className="space-y-6"
+    >
+      {image?.id && (
+        <>
+          <input type="hidden" name="id" value={image.id} />
+          <input
+            type="hidden"
+            name="prevImageUrl"
+            value={image.imageUrl ?? ''}
+          />
+        </>
+      )}
+      <div className="space-y-2">
+        <Label htmlFor="title">Title</Label>
+        <Input
+          id="title"
+          name="title"
+          placeholder="Team Collaboration"
+          defaultValue={image?.title}
+          required
+        />
+        {state.errors?.title && (
+          <p className="text-sm text-destructive">{state.errors.title.join(', ')}</p>
+        )}
+      </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="category">Category</Label>
-          <Select name="category" defaultValue={image?.category || 'Tech Solutions'}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select a category" />
-              </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="Events">Events</SelectItem>
-              <SelectItem value="Tech Solutions">Tech Solutions</SelectItem>
-              <SelectItem value="Team Collaboration">Team Collaboration</SelectItem>
-            </SelectContent>
-          </Select>
-           {state.errors?.category && <p className="text-sm text-destructive">{state.errors.category.join(', ')}</p>}
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="imageFile">Image</Label>
-          <Input id="imageFile" name="imageFile" type="file" accept="image/*" />
-          <p className="text-sm text-muted-foreground">
-            {image?.id ? 'Upload a new image to replace the existing one.' : 'An image file is required.'}
+      <div className="space-y-2">
+        <Label htmlFor="category">Category</Label>
+        <Select
+          name="category"
+          defaultValue={image?.category || 'Tech Solutions'}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Select a category" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="Events">Events</SelectItem>
+            <SelectItem value="Tech Solutions">Tech Solutions</SelectItem>
+            <SelectItem value="Team Collaboration">Team Collaboration</SelectItem>
+          </SelectContent>
+        </Select>
+        {state.errors?.category && (
+          <p className="text-sm text-destructive">
+            {state.errors.category.join(', ')}
           </p>
-          {state.errors?.imageFile && <p className="text-sm text-destructive">{state.errors.imageFile.join(', ')}</p>}
-        </div>
+        )}
+      </div>
 
-        <div className="flex items-center space-x-2 rounded-md border p-4">
-            <Checkbox id="featured" name="featured" defaultChecked={image?.featured} />
-            <Label htmlFor="featured" className="text-sm font-medium leading-none">Feature on homepage</Label>
-        </div>
+      <div className="space-y-2">
+        <Label htmlFor="imageFile">Image</Label>
+        <Input id="imageFile" name="imageFile" type="file" accept="image/*" />
+        <p className="text-sm text-muted-foreground">
+          {image?.id
+            ? 'Upload a new image to replace the existing one.'
+            : 'An image file is required.'}
+        </p>
+        {state.errors?.imageFile && (
+          <p className="text-sm text-destructive">
+            {state.errors.imageFile.join(', ')}
+          </p>
+        )}
+      </div>
 
-        <SubmitButton isEditing={!!image?.id} />
-      </form>
+      <div className="flex items-center space-x-2 rounded-md border p-4">
+        <Checkbox
+          id="featured"
+          name="featured"
+          defaultChecked={image?.featured}
+        />
+        <Label htmlFor="featured" className="text-sm font-medium leading-none">
+          Feature on homepage
+        </Label>
+      </div>
+
+      <Button type="submit" className="w-full sm:w-auto">
+        {image?.id ? 'Save Changes' : 'Create Image'}
+      </Button>
+    </form>
   );
 }

@@ -35,14 +35,22 @@ const BaseArticleSchema = z.object({
   publishedAt: z.date({ coerce: true }),
   featured: z.boolean(),
   imageUrl: z.string().url('Invalid URL').optional().or(z.literal('')),
+  imageFile: z
+    .instanceof(File)
+    .optional()
+    .refine(
+      (file) => !file || file.size <= MAX_FILE_SIZE,
+      `Max image size is 5MB.`
+    )
+    .refine(
+      (file) =>
+        !file || file.size === 0 || ACCEPTED_IMAGE_TYPES.includes(file.type),
+      'Only .jpg, .jpeg, .png and .webp formats are supported.'
+    ),
 });
 
 // Schema for creating, where an image is required (either URL or file)
-const CreateArticleSchema = BaseArticleSchema.extend({
-    imageFile: z
-    .instanceof(File)
-    .optional()
-}).refine(
+const CreateArticleSchema = BaseArticleSchema.refine(
   (data) => (data.imageUrl && data.imageUrl.length > 0) || (data.imageFile && data.imageFile.size > 0),
   {
     message: 'An image is required. Please provide a URL or upload a file.',
@@ -52,12 +60,8 @@ const CreateArticleSchema = BaseArticleSchema.extend({
 
 // Schema for updating
 const UpdateArticleSchema = BaseArticleSchema.extend({
-    imageFile: z
-    .instanceof(File)
-    .optional(),
-    prevImageUrl: z.string().url().optional().or(z.literal('')),
+  prevImageUrl: z.string().url().optional().or(z.literal('')),
 });
-
 
 export type ArticleFormState = {
   message: string;
@@ -156,7 +160,7 @@ export async function updateArticle(
   if (!id) {
     return { message: 'Failed to update article: Missing ID.', success: false };
   }
-  
+
   const rawData = parseFormData(formData);
   const validatedFields = UpdateArticleSchema.safeParse(rawData);
 
@@ -182,17 +186,17 @@ export async function updateArticle(
 
     // A new file was uploaded, this takes highest priority.
     if (imageFile) {
-        if (prevImageUrl) {
-            await deleteImageFromStorage(prevImageUrl);
-        }
-        finalImageUrl = await uploadImage(imageFile);
-    } 
+      if (prevImageUrl) {
+        await deleteImageFromStorage(prevImageUrl);
+      }
+      finalImageUrl = await uploadImage(imageFile);
+    }
     // No new file, but a new URL was provided in the text input.
     else if (imageUrl && imageUrl !== prevImageUrl) {
-        if (prevImageUrl) {
-            await deleteImageFromStorage(prevImageUrl);
-        }
-        finalImageUrl = imageUrl;
+      if (prevImageUrl) {
+        await deleteImageFromStorage(prevImageUrl);
+      }
+      finalImageUrl = imageUrl;
     }
     // If imageUrl is explicitly cleared in the form
     else if (!imageUrl && !imageFile && prevImageUrl) {

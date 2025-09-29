@@ -5,10 +5,9 @@ import { z } from 'zod';
 import { firestore, storage } from '@/firebase/server';
 import {
   ref,
-  uploadString,
+  uploadBytes,
   getDownloadURL,
   deleteObject,
-  uploadBytes,
 } from 'firebase/storage';
 import {
   collection,
@@ -31,26 +30,29 @@ const ACCEPTED_IMAGE_TYPES = [
 const ServiceSchema = z.object({
   title: z.string().min(1, 'Title is required'),
   description: z.string().min(1, 'Description is required'),
-  imageUrl: z.string().optional(),
+  imageUrl: z.string().url().optional().or(z.literal('')),
   imageFile: z
     .instanceof(File)
-    .refine((file) => file.size <= MAX_FILE_SIZE, `Max image size is 5MB.`)
+    .optional()
     .refine(
-      (file) => ACCEPTED_IMAGE_TYPES.includes(file.type),
-      'Only .jpg, .jpeg, .png and .webp formats are supported.'
+      (file) => !file || file.size <= MAX_FILE_SIZE,
+      `Max image size is 5MB.`
     )
-    .optional(),
+    .refine(
+      (file) =>
+        !file || file.size === 0 || ACCEPTED_IMAGE_TYPES.includes(file.type),
+      'Only .jpg, .jpeg, .png and .webp formats are supported.'
+    ),
   benefits: z.array(z.string().trim()).optional(),
   price: z.string().optional(),
   details: z.string().optional(),
   featured: z.boolean(),
+  prevImageUrl: z.string().url().optional().or(z.literal('')),
 });
 
 export type ServiceFormState = {
   message: string;
-  errors?: z.ZodError<
-    z.infer<typeof ServiceSchema>
-  >['formErrors']['fieldErrors'];
+  errors?: z.ZodError<z.infer<typeof ServiceSchema>>['formErrors']['fieldErrors'];
   success: boolean;
 };
 
@@ -83,7 +85,8 @@ function parseServiceFormData(formData: FormData) {
     title: formData.get('title') as string,
     description: formData.get('description') as string,
     imageUrl: formData.get('imageUrl') as string,
-    imageFile: imageFile instanceof File && imageFile.size > 0 ? imageFile : undefined,
+    imageFile:
+      imageFile instanceof File && imageFile.size > 0 ? imageFile : undefined,
     benefits:
       (formData.get('benefits') as string)
         ?.split(',')
@@ -92,6 +95,7 @@ function parseServiceFormData(formData: FormData) {
     price: formData.get('price') as string,
     details: formData.get('details') as string,
     featured: formData.get('featured') === 'on',
+    prevImageUrl: formData.get('prevImageUrl') as string,
   };
 }
 
@@ -109,7 +113,7 @@ export async function createService(
       success: false,
     };
   }
-  
+
   const { imageFile, imageUrl, ...rest } = validatedFields.data;
   const payload: Record<string, any> = { ...rest, updatedAt: serverTimestamp() };
 
@@ -119,7 +123,7 @@ export async function createService(
     } else if (imageUrl) {
       payload.imageUrl = imageUrl;
     }
-    
+
     payload.createdAt = serverTimestamp();
     const servicesCollection = collection(firestore, 'services');
     await addDoc(servicesCollection, payload);
@@ -127,7 +131,11 @@ export async function createService(
     revalidatePath('/admin/services');
     revalidatePath('/services');
     revalidatePath('/');
-    return { message: 'Successfully created service.', success: true, errors: {} };
+    return {
+      message: 'Successfully created service.',
+      success: true,
+      errors: {},
+    };
   } catch (error) {
     console.error('Create Service Error:', error);
     return { message: 'Failed to create service.', success: false };
@@ -139,8 +147,9 @@ export async function updateService(
   formData: FormData
 ): Promise<ServiceFormState> {
   const id = formData.get('id') as string;
-  if (!id) return { message: 'Failed to update service: Missing ID.', success: false };
-  
+  if (!id)
+    return { message: 'Failed to update service: Missing ID.', success: false };
+
   const rawData = parseServiceFormData(formData);
   const validatedFields = ServiceSchema.safeParse(rawData);
 
@@ -152,33 +161,44 @@ export async function updateService(
     };
   }
 
-  const { imageFile, imageUrl, ...rest } = validatedFields.data;
+  const { imageFile, imageUrl, prevImageUrl, ...rest } = validatedFields.data;
   const serviceDocRef = doc(firestore, 'services', id);
   const payload: Record<string, any> = { ...rest, updatedAt: serverTimestamp() };
 
   try {
+    let finalImageUrl = prevImageUrl;
+
     if (imageFile) {
-      const docSnap = await getDoc(serviceDocRef);
-      if (docSnap.exists() && docSnap.data().imageUrl) {
-        await deleteImageFromStorage(docSnap.data().imageUrl);
+      if (prevImageUrl) {
+        await deleteImageFromStorage(prevImageUrl);
       }
-      payload.imageUrl = await uploadImage(imageFile);
-    } else {
-       payload.imageUrl = imageUrl;
+      finalImageUrl = await uploadImage(imageFile);
+    } else if (imageUrl && imageUrl !== prevImageUrl) {
+      if (prevImageUrl) {
+        await deleteImageFromStorage(prevImageUrl);
+      }
+      finalImageUrl = imageUrl;
+    } else if (!imageUrl && !imageFile && prevImageUrl) {
+      await deleteImageFromStorage(prevImageUrl);
+      finalImageUrl = '';
     }
+    payload.imageUrl = finalImageUrl;
 
     await updateDoc(serviceDocRef, payload);
 
     revalidatePath('/admin/services');
     revalidatePath('/services');
     revalidatePath('/');
-    return { message: 'Successfully updated service.', success: true, errors: {} };
+    return {
+      message: 'Successfully updated service.',
+      success: true,
+      errors: {},
+    };
   } catch (error) {
     console.error('Update Service Error:', error);
     return { message: 'Failed to update service.', success: false };
   }
 }
-
 
 export async function deleteService(
   id: string

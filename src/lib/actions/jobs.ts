@@ -25,7 +25,9 @@ export type JobFormState = {
   success: boolean;
 };
 
-export async function createJob(data: z.infer<typeof JobSchema>): Promise<JobFormState> {
+export async function createJob(
+  data: z.infer<typeof JobSchema>
+): Promise<JobFormState> {
   const validatedFields = JobSchema.safeParse(data);
 
   if (!validatedFields.success) {
@@ -39,14 +41,13 @@ export async function createJob(data: z.infer<typeof JobSchema>): Promise<JobFor
   try {
     const jobsCollection = collection(firestore, 'jobs');
     await addDoc(jobsCollection, {
-        ...validatedFields.data,
-        createdAt: serverTimestamp(),
+      ...validatedFields.data,
+      createdAt: serverTimestamp(),
     });
-    
+
     revalidatePath('/admin/careers');
     revalidatePath('/careers');
     return { message: 'Successfully created job.', success: true };
-
   } catch (error) {
     return { message: 'Failed to create job.', success: false };
   }
@@ -68,12 +69,11 @@ export async function updateJob(
 
   try {
     const jobDoc = doc(firestore, 'jobs', id);
-    await updateDoc(jobDoc, validatedFields.data);
+    await updateDoc(jobDoc, { ...validatedFields.data, updatedAt: serverTimestamp() });
 
     revalidatePath('/admin/careers');
     revalidatePath('/careers');
     return { message: 'Successfully updated job.', success: true };
-
   } catch (error) {
     return { message: 'Failed to update job.', success: false };
   }
