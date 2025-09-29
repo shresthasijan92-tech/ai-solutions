@@ -27,7 +27,7 @@ const ProjectSchema = z.object({
     .array(z.string())
     .min(1, 'At least one technology is required'),
   featured: z.boolean(),
-  caseStudy: z.string().optional(),
+  caseStudy: z.string().optional().default(''),
 });
 
 export type ProjectFormState = {
