@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useActionState, useState } from 'react';
-import { useFormStatus } from 'react-dom';
 import { Loader2, Calendar as CalendarIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { Timestamp } from 'firebase/firestore';
@@ -19,7 +18,11 @@ import {
 import { Calendar } from '@/components/ui/calendar';
 import { useToast } from '@/hooks/use-toast';
 import { type Article } from '@/lib/definitions';
-import { createArticle, updateArticle } from '@/lib/actions/articles';
+import {
+  createArticle,
+  updateArticle,
+  type ArticleFormState,
+} from '@/lib/actions/articles';
 import { cn } from '@/lib/utils';
 
 type ArticleFormProps = {
@@ -28,7 +31,9 @@ type ArticleFormProps = {
 };
 
 // Helper to convert Firestore Timestamp or string to Date
-const toDate = (timestamp: string | Timestamp | Date | null | undefined): Date => {
+const toDate = (
+  timestamp: string | Timestamp | Date | null | undefined
+): Date => {
   if (!timestamp) return new Date();
   if (timestamp instanceof Timestamp) {
     return timestamp.toDate();
@@ -36,9 +41,15 @@ const toDate = (timestamp: string | Timestamp | Date | null | undefined): Date =
   return new Date(timestamp);
 };
 
-
 function SubmitButton({ isEditing }: { isEditing: boolean }) {
-  const { pending } = useFormStatus();
+  const [state, action, pending] = useActionState<ArticleFormState, FormData>(
+    isEditing ? updateArticle : createArticle,
+    {
+      message: '',
+      success: false,
+      errors: {},
+    }
+  );
 
   return (
     <Button type="submit" disabled={pending} className="w-full sm:w-auto">
@@ -50,7 +61,6 @@ function SubmitButton({ isEditing }: { isEditing: boolean }) {
 
 export function ArticleForm({ article, onSuccess }: ArticleFormProps) {
   const { toast } = useToast();
-  
   const action = article?.id ? updateArticle : createArticle;
 
   const [state, formAction] = useActionState(action, {
@@ -58,7 +68,6 @@ export function ArticleForm({ article, onSuccess }: ArticleFormProps) {
     success: false,
   });
 
-  // State to manage the date picker separately from the form state
   const [selectedDate, setSelectedDate] = useState<Date>(
     article?.publishedAt ? toDate(article.publishedAt) : new Date()
   );
@@ -80,13 +89,12 @@ export function ArticleForm({ article, onSuccess }: ArticleFormProps) {
       }
     }
   }, [state, toast, onSuccess]);
-  
-   useEffect(() => {
+
+  useEffect(() => {
     if (article?.publishedAt) {
       setSelectedDate(toDate(article.publishedAt));
     }
   }, [article]);
-
 
   return (
     <form action={formAction} className="space-y-6">
@@ -130,8 +138,8 @@ export function ArticleForm({ article, onSuccess }: ArticleFormProps) {
           rows={10}
           required
         />
-         <p className="text-sm text-muted-foreground">
-            This content will be displayed on the article page.
+        <p className="text-sm text-muted-foreground">
+          This content will be displayed on the article page.
         </p>
         {state.errors?.content && (
           <p className="text-sm text-destructive">{state.errors.content.join(', ')}</p>
@@ -139,33 +147,39 @@ export function ArticleForm({ article, onSuccess }: ArticleFormProps) {
       </div>
 
       <div className="space-y-2">
-          <Label>Published Date</Label>
-           <input type="hidden" name="publishedAt" value={selectedDate.toISOString()} />
-            <Popover>
-              <PopoverTrigger asChild>
-                  <Button
-                    variant={'outline'}
-                    className={cn(
-                      'w-[240px] justify-start text-left font-normal',
-                      !selectedDate && 'text-muted-foreground'
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {selectedDate ? format(selectedDate, 'PPP') : <span>Pick a date</span>}
-                  </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0">
-                <Calendar
-                  mode="single"
-                  selected={selectedDate}
-                  onSelect={(date) => setSelectedDate(date || new Date())}
-                  initialFocus
-                />
-              </PopoverContent>
-            </Popover>
-           {state.errors?.publishedAt && (
-             <p className="text-sm text-destructive">{state.errors.publishedAt.join(', ')}</p>
-           )}
+        <Label>Published Date</Label>
+        <input
+          type="hidden"
+          name="publishedAt"
+          value={selectedDate.toISOString()}
+        />
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button
+              variant={'outline'}
+              className={cn(
+                'w-[240px] justify-start text-left font-normal',
+                !selectedDate && 'text-muted-foreground'
+              )}
+            >
+              <CalendarIcon className="mr-2 h-4 w-4" />
+              {selectedDate ? format(selectedDate, 'PPP') : <span>Pick a date</span>}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0">
+            <Calendar
+              mode="single"
+              selected={selectedDate}
+              onSelect={(date) => setSelectedDate(date || new Date())}
+              initialFocus
+            />
+          </PopoverContent>
+        </Popover>
+        {state.errors?.publishedAt && (
+          <p className="text-sm text-destructive">
+            {state.errors.publishedAt.join(', ')}
+          </p>
+        )}
       </div>
 
       <div className="space-y-2">
@@ -175,13 +189,25 @@ export function ArticleForm({ article, onSuccess }: ArticleFormProps) {
           name="imageUrl"
           placeholder="https://example.com/image.jpg"
           defaultValue={article?.imageUrl}
-          required
         />
-         <p className="text-sm text-muted-foreground">
-            Provide a full web link to an image for the article.
+        <p className="text-sm text-muted-foreground">
+          Provide a link, or upload an image below. Upload will take precedence.
         </p>
         {state.errors?.imageUrl && (
           <p className="text-sm text-destructive">{state.errors.imageUrl.join(', ')}</p>
+        )}
+      </div>
+      
+      <div className="space-y-2">
+        <Label htmlFor="imageFile">Or Upload Image</Label>
+        <Input
+          id="imageFile"
+          name="imageFile"
+          type="file"
+          accept="image/*"
+        />
+         {state.errors?.imageFile && (
+          <p className="text-sm text-destructive">{state.errors.imageFile.join(', ')}</p>
         )}
       </div>
 
@@ -196,7 +222,9 @@ export function ArticleForm({ article, onSuccess }: ArticleFormProps) {
         </Label>
       </div>
 
-      <SubmitButton isEditing={!!article?.id} />
+      <Button type="submit" className="w-full sm:w-auto">
+        {article?.id ? 'Save Changes' : 'Create Article'}
+      </Button>
     </form>
   );
 }

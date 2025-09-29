@@ -19,7 +19,7 @@ import { useUser } from '@/firebase';
 
 export default function AdminArticlesPage() {
   const { isUserLoading } = useUser();
-  const { articles, isLoading: areArticlesLoading, error } = useArticles();
+  const { articles, isLoading: areArticlesLoading, error } = useArticles(!isUserLoading);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingArticle, setEditingArticle] = useState<Article | null>(null);
 
@@ -80,7 +80,18 @@ export default function AdminArticlesPage() {
       {error && <p className="text-destructive">{error.message}</p>}
 
       {!showLoading && !error && (
-        <ArticlesTable articles={articles || []} onEdit={handleEditClick} />
+        <>
+          {articles && articles.length > 0 ? (
+            <ArticlesTable articles={articles} onEdit={handleEditClick} />
+          ) : (
+             <div className="text-center py-10 border-2 border-dashed rounded-lg">
+                <h3 className="text-xl font-semibold">No Articles Found</h3>
+                <p className="text-muted-foreground mt-2">
+                    Click the &quot;Add Article&quot; button to create your first one.
+                </p>
+            </div>
+          )}
+        </>
       )}
     </div>
   );

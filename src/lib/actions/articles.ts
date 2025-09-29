@@ -5,7 +5,7 @@ import { z } from 'zod';
 import { firestore, storage } from '@/firebase/server';
 import {
   ref,
-  uploadString,
+  uploadBytes,
   getDownloadURL,
   deleteObject,
 } from 'firebase/storage';
@@ -14,41 +14,70 @@ import {
   doc,
   addDoc,
   updateDoc,
-  deleteDoc,
   getDoc,
   serverTimestamp,
   Timestamp,
 } from 'firebase/firestore';
 
-const ArticleSchema = z.object({
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+const ACCEPTED_IMAGE_TYPES = [
+  'image/jpeg',
+  'image/jpg',
+  'image/png',
+  'image/webp',
+];
+
+// Base schema for validation
+const BaseArticleSchema = z.object({
   title: z.string().min(1, 'Title is required'),
   excerpt: z.string().min(1, 'Excerpt is required'),
   content: z.string().min(1, 'Full article content is required.'),
-  imageUrl: z.string().min(1, 'Image is required'),
   publishedAt: z.date({ coerce: true }),
   featured: z.boolean(),
+  imageUrl: z.string().optional(), // For existing URL
+  imageFile: z
+    .instanceof(File)
+    .optional()
+    .refine(
+      (file) => !file || file.size <= MAX_FILE_SIZE,
+      `Max image size is 5MB.`
+    )
+    .refine(
+      (file) => !file || ACCEPTED_IMAGE_TYPES.includes(file.type),
+      'Only .jpg, .jpeg, .png and .webp formats are supported.'
+    ),
 });
+
+// Schema for creating, where an image is required (either URL or file)
+const CreateArticleSchema = BaseArticleSchema.refine(
+  (data) => !!data.imageUrl || !!data.imageFile,
+  {
+    message: 'An image is required. Please provide a URL or upload a file.',
+    path: ['imageUrl'],
+  }
+);
+
+// Schema for updating
+const UpdateArticleSchema = BaseArticleSchema;
 
 export type ArticleFormState = {
   message: string;
-  errors?: z.ZodError<
-    z.infer<typeof ArticleSchema>
-  >['formErrors']['fieldErrors'];
+  errors?: z.ZodError<z.infer<typeof BaseArticleSchema>>['formErrors']['fieldErrors'];
   success: boolean;
 };
 
-async function handleImageUpload(
-  dataUri: string,
-  folder: string
-): Promise<string> {
-  const fileName = `${folder}/${Date.now()}`;
+// Helper to upload image from File object
+async function uploadImage(file: File): Promise<string> {
+  const fileBuffer = await file.arrayBuffer();
+  const fileName = `articles/${Date.now()}-${file.name}`;
   const storageRef = ref(storage, fileName);
-  const uploadResult = await uploadString(storageRef, dataUri, 'data_url');
-  return getDownloadURL(uploadResult.ref);
+  await uploadBytes(storageRef, fileBuffer, { contentType: file.type });
+  return getDownloadURL(storageRef);
 }
 
+// Helper to delete an image from storage
 async function deleteImageFromStorage(imageUrl: string) {
-  if (imageUrl.includes('firebasestorage')) {
+  if (imageUrl && imageUrl.includes('firebasestorage')) {
     try {
       const imageRef = ref(storage, imageUrl);
       await deleteObject(imageRef);
@@ -62,48 +91,52 @@ async function deleteImageFromStorage(imageUrl: string) {
   }
 }
 
-async function parseAndValidateFormData(formData: FormData) {
-  const rawData = {
+// Helper to parse FormData
+function parseFormData(formData: FormData) {
+  const imageFile = formData.get('imageFile');
+  return {
     title: formData.get('title'),
     excerpt: formData.get('excerpt'),
     content: formData.get('content'),
-    imageUrl: formData.get('imageUrl'),
     publishedAt: formData.get('publishedAt'),
     featured: formData.get('featured') === 'on',
+    imageUrl: formData.get('imageUrl') as string,
+    imageFile: imageFile instanceof File && imageFile.size > 0 ? imageFile : undefined,
   };
-  return ArticleSchema.safeParse(rawData);
 }
 
 export async function createArticle(
   prevState: ArticleFormState,
   formData: FormData
 ): Promise<ArticleFormState> {
-  const validatedFields = await parseAndValidateFormData(formData);
+  const rawData = parseFormData(formData);
+  const validatedFields = CreateArticleSchema.safeParse(rawData);
 
   if (!validatedFields.success) {
     return {
-      message: 'Failed to create article.',
+      message: 'Failed to create article. Please check the form.',
       errors: validatedFields.error.flatten().fieldErrors,
       success: false,
     };
   }
 
-  const { imageUrl, ...rest } = validatedFields.data;
-  let finalImageUrl = imageUrl;
+  const { imageFile, imageUrl, ...rest } = validatedFields.data;
+  const payload: Record<string, any> = {
+    ...rest,
+    publishedAt: Timestamp.fromDate(rest.publishedAt),
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+  };
 
   try {
-    if (imageUrl.startsWith('data:image')) {
-      finalImageUrl = await handleImageUpload(imageUrl, 'articles');
+    if (imageFile) {
+      payload.imageUrl = await uploadImage(imageFile);
+    } else {
+      payload.imageUrl = imageUrl;
     }
 
     const articlesCollection = collection(firestore, 'articles');
-    await addDoc(articlesCollection, {
-      ...rest,
-      imageUrl: finalImageUrl,
-      publishedAt: Timestamp.fromDate(rest.publishedAt),
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
-    });
+    await addDoc(articlesCollection, payload);
 
     revalidatePath('/admin/articles');
     revalidatePath('/blog');
@@ -124,18 +157,18 @@ export async function updateArticle(
     return { message: 'Failed to update article: Missing ID.', success: false };
   }
 
-  const validatedFields = await parseAndValidateFormData(formData);
+  const rawData = parseFormData(formData);
+  const validatedFields = UpdateArticleSchema.safeParse(rawData);
 
   if (!validatedFields.success) {
     return {
-      message: 'Failed to update article.',
+      message: 'Failed to update article. Please check the form.',
       errors: validatedFields.error.flatten().fieldErrors,
       success: false,
     };
   }
 
-  const { imageUrl, ...rest } = validatedFields.data;
-  let finalImageUrl = imageUrl;
+  const { imageFile, imageUrl, ...rest } = validatedFields.data;
   const articleDocRef = doc(firestore, 'articles', id);
 
   try {
@@ -145,14 +178,15 @@ export async function updateArticle(
       updatedAt: serverTimestamp(),
     };
 
-    if (imageUrl.startsWith('data:image')) {
+    if (imageFile) {
+      // If a new file is uploaded, delete the old one and upload the new
       const docSnap = await getDoc(articleDocRef);
       if (docSnap.exists() && docSnap.data().imageUrl) {
         await deleteImageFromStorage(docSnap.data().imageUrl);
       }
-      finalImageUrl = await handleImageUpload(imageUrl, 'articles');
-      payload.imageUrl = finalImageUrl;
+      payload.imageUrl = await uploadImage(imageFile);
     } else {
+      // Otherwise, just use the imageUrl from the form (which might be the same or cleared)
       payload.imageUrl = imageUrl;
     }
 
