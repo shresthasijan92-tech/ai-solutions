@@ -28,33 +28,37 @@ const ACCEPTED_IMAGE_TYPES = [
   'image/webp',
 ];
 
-// Base schema for validation, used for both create and update.
-// Image is optional for updates, required for creates.
-const ArticleSchema = z.object({
+const ArticleCreateSchema = z.object({
   title: z.string().min(1, 'Title is required'),
   excerpt: z.string().min(1, 'Excerpt is required'),
   content: z.string().min(1, 'Full article content is required.'),
-  publishedAt: z.date({ coerce: true }),
+  publishedAt: z.coerce.date(),
   featured: z.boolean(),
-  imageUrl: z.string().url('A valid image URL is required.'),
+  imageFile: z
+    .instanceof(File)
+    .refine((file) => file.size > 0, 'An image file is required.')
+    .refine(
+      (file) => file.size <= MAX_FILE_SIZE,
+      `Max image size is 5MB.`
+    )
+    .refine(
+      (file) => ACCEPTED_IMAGE_TYPES.includes(file.type),
+      'Only .jpg, .jpeg, .png and .webp formats are supported.'
+    ),
 });
 
-const FileSchema = z
-  .instanceof(File)
-  .optional()
-  .refine(
-    (file) => !file || file.size === 0 || file.size <= MAX_FILE_SIZE,
-    `Max image size is 5MB.`
-  )
-  .refine(
-    (file) =>
-      !file || file.size === 0 || ACCEPTED_IMAGE_TYPES.includes(file.type),
-    'Only .jpg, .jpeg, .png and .webp formats are supported.'
-  );
+const ArticleUpdateSchema = z.object({
+    title: z.string().min(1, 'Title is required'),
+    excerpt: z.string().min(1, 'Excerpt is required'),
+    content: z.string().min(1, 'Full article content is required.'),
+    publishedAt: z.coerce.date(),
+    featured: z.boolean(),
+    imageUrl: z.string().url('A valid image URL is required.'),
+  });
 
 export type ArticleFormState = {
   message: string;
-  errors?: Partial<Record<keyof z.infer<typeof ArticleSchema> | 'imageFile', string[]>>;
+  errors?: Partial<Record<keyof z.infer<typeof ArticleCreateSchema>, string[]>>;
   success: boolean;
 };
 
@@ -85,45 +89,16 @@ export async function createArticle(
   prevState: ArticleFormState,
   formData: FormData
 ): Promise<ArticleFormState> {
-  const imageFile = formData.get('imageFile') as File | null;
-
-  const validatedFile = FileSchema.safeParse(imageFile);
-  if (!validatedFile.success) {
-      return {
-          message: 'Invalid image file.',
-          errors: validatedFile.error.flatten().fieldErrors,
-          success: false,
-      };
-  }
-
-  if (!imageFile || imageFile.size === 0) {
-      return {
-          message: 'Image is required.',
-          errors: { imageFile: ['An image file is required.'] },
-          success: false,
-      };
-  }
-
-  let imageUrl = '';
-  try {
-      imageUrl = await uploadImage(imageFile);
-  } catch (error) {
-      console.error('Image Upload Error:', error);
-      return { message: 'Failed to upload image.', success: false };
-  }
-
-  const validatedFields = ArticleSchema.safeParse({
+  const validatedFields = ArticleCreateSchema.safeParse({
     title: formData.get('title'),
     excerpt: formData.get('excerpt'),
     content: formData.get('content'),
     publishedAt: formData.get('publishedAt'),
     featured: formData.get('featured') === 'on',
-    imageUrl: imageUrl,
+    imageFile: formData.get('imageFile'),
   });
 
   if (!validatedFields.success) {
-    // If validation fails after upload, delete the orphaned image
-    await deleteImageFromStorage(imageUrl);
     return {
       message: 'Failed to create article. Please check the form.',
       errors: validatedFields.error.flatten().fieldErrors,
@@ -131,11 +106,15 @@ export async function createArticle(
     };
   }
 
+  const { imageFile, ...rest } = validatedFields.data;
+
   try {
-    const { ...rest } = validatedFields.data;
+    const imageUrl = await uploadImage(imageFile);
+    
     const articlesCollection = collection(firestore, 'articles');
     await addDoc(articlesCollection, {
         ...rest,
+        imageUrl: imageUrl,
         publishedAt: Timestamp.fromDate(rest.publishedAt),
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
@@ -147,8 +126,6 @@ export async function createArticle(
     return { message: 'Successfully created article.', success: true };
   } catch (error) {
     console.error('Create Article Error:', error);
-    // Attempt to delete the uploaded image on DB error
-    await deleteImageFromStorage(imageUrl);
     return { message: 'Failed to create article.', success: false };
   }
 }
@@ -172,34 +149,33 @@ export async function updateArticle(
     const existingData = existingDocSnap.data();
 
     const imageFile = formData.get('imageFile') as File | null;
-    const validatedFile = FileSchema.safeParse(imageFile);
-
-    if (!validatedFile.success) {
-        return {
-            message: 'Invalid image file.',
-            errors: validatedFile.error.flatten().fieldErrors,
-            success: false,
-        };
-    }
-
     let newImageUrl: string | undefined;
+
     if (imageFile && imageFile.size > 0) {
+      // Validate new file before uploading
+      const fileValidation = ArticleCreateSchema.shape.imageFile.safeParse(imageFile);
+      if (!fileValidation.success) {
+        return {
+          message: 'Invalid image file.',
+          errors: { imageFile: fileValidation.error.flatten().formErrors },
+          success: false,
+        };
+      }
       newImageUrl = await uploadImage(imageFile);
     }
-
+    
     const dataToValidate = {
       title: formData.get('title'),
       excerpt: formData.get('excerpt'),
       content: formData.get('content'),
       publishedAt: formData.get('publishedAt'),
       featured: formData.get('featured') === 'on',
-      imageUrl: newImageUrl ?? existingData.imageUrl, // Use new URL or fallback to existing
+      imageUrl: newImageUrl ?? existingData.imageUrl,
     };
 
-    const validatedFields = ArticleSchema.safeParse(dataToValidate);
+    const validatedFields = ArticleUpdateSchema.safeParse(dataToValidate);
 
     if (!validatedFields.success) {
-      // If validation fails but a new image was uploaded, delete it.
       if (newImageUrl) {
         await deleteImageFromStorage(newImageUrl);
       }
@@ -218,7 +194,6 @@ export async function updateArticle(
         updatedAt: serverTimestamp(),
     });
 
-    // If a new image was uploaded and the update was successful, delete the old one.
     if (newImageUrl && existingData.imageUrl) {
       await deleteImageFromStorage(existingData.imageUrl);
     }
