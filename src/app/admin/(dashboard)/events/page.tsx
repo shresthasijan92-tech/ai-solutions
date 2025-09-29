@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -15,17 +16,13 @@ import { EventsTable } from '@/components/admin/events-table';
 import { useEvents } from '@/hooks/use-events';
 import { type Event } from '@/lib/definitions';
 import { Skeleton } from '@/components/ui/skeleton';
-import { events as mockEvents } from '@/lib/mock-data';
+import { useUser } from '@/firebase';
 
 export default function AdminEventsPage() {
-  const { events: eventsFromDb, isLoading, error } = useEvents();
+  const { isUserLoading } = useUser();
+  const { events, isLoading: areEventsLoading, error } = useEvents(!isUserLoading);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingEvent, setEditingEvent] = useState<Event | null>(null);
-
-  const events =
-    isLoading || !eventsFromDb || eventsFromDb.length === 0
-      ? mockEvents
-      : eventsFromDb;
 
   const handleAddClick = () => {
     setEditingEvent(null);
@@ -41,6 +38,8 @@ export default function AdminEventsPage() {
     setIsDialogOpen(false);
     setEditingEvent(null);
   };
+
+  const showLoading = isUserLoading || areEventsLoading;
 
   return (
     <div className="space-y-8">
@@ -71,18 +70,23 @@ export default function AdminEventsPage() {
         </Dialog>
       </div>
 
-      {isLoading && (
-        <div className="space-y-2">
+       {showLoading ? (
+         <div className="space-y-2">
           <Skeleton className="h-10 w-full" />
           <Skeleton className="h-10 w-full" />
           <Skeleton className="h-10 w-full" />
         </div>
-      )}
-
-      {error && <p className="text-destructive">{error.message}</p>}
-
-      {!isLoading && !error && (
+      ) : error ? (
+        <p className="text-destructive">{error.message}</p>
+      ) : events && events.length > 0 ? (
         <EventsTable events={events} onEdit={handleEditClick} />
+      ) : (
+        <div className="text-center py-10 border-2 border-dashed rounded-lg">
+          <h3 className="text-xl font-semibold">No Events Found</h3>
+          <p className="text-muted-foreground mt-2">
+              Click the &quot;Add Event&quot; button to create your first one.
+          </p>
+        </div>
       )}
     </div>
   );

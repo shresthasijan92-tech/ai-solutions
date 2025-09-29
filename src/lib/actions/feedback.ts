@@ -1,3 +1,4 @@
+
 'use server';
 
 import { revalidatePath } from 'next/cache';
@@ -67,6 +68,9 @@ export async function submitFeedback(
 export async function deleteTestimonial(
   id: string
 ): Promise<{ success: boolean; message?: string }> {
+  if (!id) {
+    return { success: false, message: 'Failed to delete testimonial: Missing ID.' };
+  }
   const testimonialDoc = doc(firestore, 'testimonials', id);
 
   try {

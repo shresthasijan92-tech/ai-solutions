@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -15,17 +16,13 @@ import { JobsTable } from '@/components/admin/jobs-table';
 import { useJobs } from '@/hooks/use-jobs';
 import { type Job } from '@/lib/definitions';
 import { Skeleton } from '@/components/ui/skeleton';
-import { jobs as mockJobs } from '@/lib/mock-data';
 import { useUser } from '@/firebase';
 
 export default function AdminCareersPage() {
   const { isUserLoading } = useUser();
-  const { jobs: jobsFromDb, isLoading, error } = useJobs(!isUserLoading);
+  const { jobs, isLoading: areJobsLoading, error } = useJobs(!isUserLoading);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingJob, setEditingJob] = useState<Job | null>(null);
-
-  const jobs =
-    isLoading || !jobsFromDb || jobsFromDb.length === 0 ? mockJobs : jobsFromDb;
 
   const handleAddClick = () => {
     setEditingJob(null);
@@ -42,7 +39,7 @@ export default function AdminCareersPage() {
     setEditingJob(null);
   };
 
-  const showLoading = isLoading || isUserLoading;
+  const showLoading = isUserLoading || areJobsLoading;
 
   return (
     <div className="space-y-8">
@@ -73,18 +70,23 @@ export default function AdminCareersPage() {
         </Dialog>
       </div>
 
-      {showLoading && (
-        <div className="space-y-2">
+      {showLoading ? (
+         <div className="space-y-2">
           <Skeleton className="h-10 w-full" />
           <Skeleton className="h-10 w-full" />
           <Skeleton className="h-10 w-full" />
         </div>
-      )}
-
-      {error && <p className="text-destructive">{error.message}</p>}
-
-      {!showLoading && !error && (
+      ) : error ? (
+        <p className="text-destructive">{error.message}</p>
+      ) : jobs && jobs.length > 0 ? (
         <JobsTable jobs={jobs} onEdit={handleEditClick} />
+      ) : (
+        <div className="text-center py-10 border-2 border-dashed rounded-lg">
+          <h3 className="text-xl font-semibold">No Jobs Found</h3>
+          <p className="text-muted-foreground mt-2">
+              Click the &quot;Add Job&quot; button to create your first one.
+          </p>
+        </div>
       )}
     </div>
   );

@@ -1,3 +1,4 @@
+
 'use server';
 
 import { revalidatePath } from 'next/cache';
@@ -33,7 +34,7 @@ const EventActionSchema = z.object({
   title: z.string().min(1, 'Title is required'),
   description: z.string().min(1, 'Description is required'),
   location: z.string().min(1, 'Location is required'),
-  date: z.date({ coerce: true }),
+  date: z.coerce.date(),
   imageFile: z
     .instanceof(File)
     .optional()
@@ -65,17 +66,16 @@ async function uploadImage(file: File): Promise<string> {
   return getDownloadURL(storageRef);
 }
 
-async function deleteImageFromStorage(imageUrl: string) {
-  if (imageUrl && imageUrl.includes('firebasestorage')) {
-    try {
-      const imageRef = ref(storage, imageUrl);
-      await deleteObject(imageRef);
-    } catch (error: any) {
-      if (error.code === 'storage/object-not-found') {
-        console.warn('Image to delete was not found in storage.');
-      } else {
-        throw error;
-      }
+async function deleteImageFromStorage(imageUrl: string | undefined) {
+  if (!imageUrl || !imageUrl.includes('firebasestorage')) return;
+  try {
+    const imageRef = ref(storage, imageUrl);
+    await deleteObject(imageRef);
+  } catch (error: any) {
+    if (error.code === 'storage/object-not-found') {
+      console.warn('Image to delete was not found in storage.');
+    } else {
+      throw error;
     }
   }
 }
@@ -108,10 +108,10 @@ export async function createEvent(
     };
   }
 
-  const { imageFile, ...rest } = validatedFields.data;
+  const { imageFile, date, ...rest } = validatedFields.data;
   const payload: Omit<Event, 'id' | 'createdAt' | 'updatedAt' | 'date'> & { date: any, createdAt: any, updatedAt: any } = {
     ...rest,
-    date: Timestamp.fromDate(rest.date),
+    date: Timestamp.fromDate(date),
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   };
@@ -153,20 +153,23 @@ export async function updateEvent(
     };
   }
 
-  const { imageFile, ...rest } = validatedFields.data;
+  const { imageFile, date, ...rest } = validatedFields.data;
   const eventDocRef = doc(firestore, 'events', id);
   const payload: Partial<Event> & { date: any, updatedAt: any } = {
     ...rest,
-    date: Timestamp.fromDate(rest.date),
+    date: Timestamp.fromDate(date),
     updatedAt: serverTimestamp(),
   };
 
   try {
+    const docSnap = await getDoc(eventDocRef);
+    if (!docSnap.exists()) {
+        return { message: 'Event not found.', success: false };
+    }
+    const existingData = docSnap.data();
+    
     if (imageFile) {
-        const docSnap = await getDoc(eventDocRef);
-        if (docSnap.exists() && docSnap.data().imageUrl) {
-            await deleteImageFromStorage(docSnap.data().imageUrl);
-        }
+        await deleteImageFromStorage(existingData.imageUrl);
         payload.imageUrl = await uploadImage(imageFile);
     }
 

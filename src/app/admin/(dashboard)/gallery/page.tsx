@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -15,17 +16,14 @@ import { GalleryTable } from '@/components/admin/gallery-table';
 import { useGalleryImages } from '@/hooks/use-gallery-images';
 import { type GalleryImage } from '@/lib/definitions';
 import { Skeleton } from '@/components/ui/skeleton';
-import { galleryImages as mockGalleryImages } from '@/lib/mock-data';
+import { useUser } from '@/firebase';
 
 export default function AdminGalleryPage() {
-  const { galleryImages: imagesFromDb, isLoading, error } = useGalleryImages();
+  const { isUserLoading } = useUser();
+  const { galleryImages, isLoading: areImagesLoading, error } = useGalleryImages(!isUserLoading);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingImage, setEditingImage] = useState<GalleryImage | null>(null);
 
-  const galleryImages =
-    isLoading || !imagesFromDb || imagesFromDb.length === 0
-      ? mockGalleryImages
-      : imagesFromDb;
 
   const handleAddClick = () => {
     setEditingImage(null);
@@ -41,6 +39,8 @@ export default function AdminGalleryPage() {
     setIsDialogOpen(false);
     setEditingImage(null);
   };
+
+  const showLoading = isUserLoading || areImagesLoading;
 
   return (
     <div className="space-y-8">
@@ -71,18 +71,23 @@ export default function AdminGalleryPage() {
         </Dialog>
       </div>
 
-      {isLoading && (
-        <div className="space-y-2">
+      {showLoading ? (
+         <div className="space-y-2">
           <Skeleton className="h-10 w-full" />
           <Skeleton className="h-10 w-full" />
           <Skeleton className="h-10 w-full" />
         </div>
-      )}
-
-      {error && <p className="text-destructive">{error.message}</p>}
-
-      {!isLoading && !error && (
+      ) : error ? (
+        <p className="text-destructive">{error.message}</p>
+      ) : galleryImages && galleryImages.length > 0 ? (
         <GalleryTable galleryImages={galleryImages} onEdit={handleEditClick} />
+      ) : (
+        <div className="text-center py-10 border-2 border-dashed rounded-lg">
+          <h3 className="text-xl font-semibold">No Images Found</h3>
+          <p className="text-muted-foreground mt-2">
+              Click the &quot;Add Image&quot; button to create your first one.
+          </p>
+        </div>
       )}
     </div>
   );

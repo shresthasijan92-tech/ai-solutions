@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -91,7 +92,14 @@ export function TestimonialsTable({ testimonials }: TestimonialsTableProps) {
   };
 
   if (testimonials.length === 0) {
-    return <p>No testimonials have been submitted yet.</p>;
+    return (
+      <div className="text-center py-10 border-2 border-dashed rounded-lg">
+        <h3 className="text-xl font-semibold">No Testimonials Found</h3>
+        <p className="text-muted-foreground mt-2">
+          No feedback has been submitted by users yet.
+        </p>
+      </div>
+    );
   }
 
   return (

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useMemo } from 'react';
@@ -5,7 +6,7 @@ import { collection, query, orderBy } from 'firebase/firestore';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import type { Testimonial } from '@/lib/definitions';
 
-export function useTestimonials() {
+export function useTestimonials(enabled = true) {
   const firestore = useFirestore();
   const testimonialsCol = useMemoFirebase(
     () => (firestore ? collection(firestore, 'testimonials') : null),
@@ -13,9 +14,9 @@ export function useTestimonials() {
   );
 
   const testimonialsQuery = useMemoFirebase(() => {
-    if (!testimonialsCol) return null;
+    if (!testimonialsCol || !enabled) return null;
     return query(testimonialsCol, orderBy('createdAt', 'desc'));
-  }, [testimonialsCol]);
+  }, [testimonialsCol, enabled]);
 
   const {
     data: testimonials,

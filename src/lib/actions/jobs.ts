@@ -1,3 +1,4 @@
+
 'use server';
 
 import { revalidatePath } from 'next/cache';
@@ -60,6 +61,9 @@ export async function updateJob(
   prevState: JobFormState,
   data: z.infer<typeof JobSchema>
 ): Promise<JobFormState> {
+  if (!id) {
+    return { message: 'Failed to update job: Missing ID.', success: false };
+  }
   const validatedFields = JobSchema.safeParse(data);
 
   if (!validatedFields.success) {
@@ -85,6 +89,9 @@ export async function updateJob(
 export async function deleteJob(
   id: string
 ): Promise<{ message: string; success: boolean }> {
+  if (!id) {
+    return { message: 'Failed to delete job: Missing ID.', success: false };
+  }
   try {
     const jobDoc = doc(firestore, 'jobs', id);
     await deleteDoc(jobDoc);

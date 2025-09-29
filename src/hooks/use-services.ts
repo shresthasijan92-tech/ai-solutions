@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useMemo } from 'react';
@@ -5,15 +6,18 @@ import { collection, query } from 'firebase/firestore';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import type { Service } from '@/lib/definitions';
 
-export function useServices() {
+export function useServices(enabled = true) {
   const firestore = useFirestore();
   const servicesCol = useMemoFirebase(
     () => (firestore ? collection(firestore, 'services') : null),
     [firestore]
   );
   const servicesQuery = useMemoFirebase(
-    () => (servicesCol ? query(servicesCol) : null),
-    [servicesCol]
+    () => {
+      if (!servicesCol || !enabled) return null;
+      return query(servicesCol)
+    },
+    [servicesCol, enabled]
   );
 
   const {

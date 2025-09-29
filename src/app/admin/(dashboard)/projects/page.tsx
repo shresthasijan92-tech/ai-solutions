@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -19,7 +20,7 @@ import { useUser } from '@/firebase';
 
 export default function AdminProjectsPage() {
   const { isUserLoading } = useUser();
-  const { projects, isLoading: areProjectsLoading, error } = useProjects();
+  const { projects, isLoading: areProjectsLoading, error } = useProjects(!isUserLoading);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
 
@@ -69,18 +70,23 @@ export default function AdminProjectsPage() {
         </Dialog>
       </div>
 
-      {showLoading && (
+      {showLoading ? (
         <div className="space-y-2">
           <Skeleton className="h-10 w-full" />
           <Skeleton className="h-10 w-full" />
           <Skeleton className="h-10 w-full" />
         </div>
-      )}
-
-      {error && <p className="text-destructive">{error.message}</p>}
-
-      {!showLoading && !error && (
-        <ProjectsTable projects={projects || []} onEdit={handleEditClick} />
+      ) : error ? (
+        <p className="text-destructive">{error.message}</p>
+      ) : projects && projects.length > 0 ? (
+        <ProjectsTable projects={projects} onEdit={handleEditClick} />
+      ) : (
+         <div className="text-center py-10 border-2 border-dashed rounded-lg">
+          <h3 className="text-xl font-semibold">No Projects Found</h3>
+          <p className="text-muted-foreground mt-2">
+              Click the &quot;Add Project&quot; button to create your first one.
+          </p>
+        </div>
       )}
     </div>
   );

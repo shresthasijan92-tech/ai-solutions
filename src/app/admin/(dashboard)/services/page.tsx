@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -15,17 +16,13 @@ import { ServicesTable } from '@/components/admin/services-table';
 import { useServices } from '@/hooks/use-services';
 import { type Service } from '@/lib/definitions';
 import { Skeleton } from '@/components/ui/skeleton';
-import { services as mockServices } from '@/lib/mock-data';
+import { useUser } from '@/firebase';
 
 export default function AdminServicesPage() {
-  const { services: servicesFromDb, isLoading, error } = useServices();
+  const { isUserLoading } = useUser();
+  const { services, isLoading: areServicesLoading, error } = useServices(!isUserLoading);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingService, setEditingService] = useState<Service | null>(null);
-
-  const services =
-    isLoading || !servicesFromDb || servicesFromDb.length === 0
-      ? mockServices
-      : servicesFromDb;
 
   const handleAddClick = () => {
     setEditingService(null);
@@ -41,6 +38,8 @@ export default function AdminServicesPage() {
     setIsDialogOpen(false);
     setEditingService(null);
   };
+
+  const showLoading = isUserLoading || areServicesLoading;
 
   return (
     <div className="space-y-8">
@@ -71,18 +70,23 @@ export default function AdminServicesPage() {
         </Dialog>
       </div>
 
-      {isLoading && (
+      {showLoading ? (
         <div className="space-y-2">
           <Skeleton className="h-10 w-full" />
           <Skeleton className="h-10 w-full" />
           <Skeleton className="h-10 w-full" />
         </div>
-      )}
-
-      {error && <p className="text-destructive">{error.message}</p>}
-
-      {!isLoading && !error && (
+      ) : error ? (
+        <p className="text-destructive">{error.message}</p>
+      ): services && services.length > 0 ? (
         <ServicesTable services={services} onEdit={handleEditClick} />
+      ) : (
+        <div className="text-center py-10 border-2 border-dashed rounded-lg">
+            <h3 className="text-xl font-semibold">No Services Found</h3>
+            <p className="text-muted-foreground mt-2">
+                Click the &quot;Add Service&quot; button to create your first one.
+            </p>
+        </div>
       )}
     </div>
   );

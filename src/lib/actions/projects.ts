@@ -1,3 +1,4 @@
+
 'use server';
 
 import { revalidatePath } from 'next/cache';
@@ -67,7 +68,7 @@ async function uploadImage(file: File): Promise<string> {
   return getDownloadURL(storageRef);
 }
 
-async function deleteImageFromStorage(imageUrl: string) {
+async function deleteImageFromStorage(imageUrl: string | undefined) {
   if (!imageUrl || !imageUrl.includes('firebasestorage.googleapis.com')) {
     return;
   }
@@ -162,13 +163,16 @@ export async function updateProject(
   const projectDocRef = doc(firestore, 'projects', id);
 
   try {
+    const docSnap = await getDoc(projectDocRef);
+    if (!docSnap.exists()) {
+      return { message: 'Project not found.', success: false };
+    }
+    const existingData = docSnap.data();
+
     const payload: Partial<Project> & { updatedAt: any } = { ...rest, updatedAt: serverTimestamp() };
 
     if (image) {
-      const docSnap = await getDoc(projectDocRef);
-      if (docSnap.exists() && docSnap.data().imageUrl) {
-        await deleteImageFromStorage(docSnap.data().imageUrl);
-      }
+      await deleteImageFromStorage(existingData.imageUrl);
       payload.imageUrl = await uploadImage(image);
     }
 

@@ -1,3 +1,4 @@
+
 'use server';
 
 import { revalidatePath } from 'next/cache';
@@ -63,17 +64,18 @@ async function uploadImage(file: File): Promise<string> {
   return getDownloadURL(storageRef);
 }
 
-async function deleteImageFromStorage(imageUrl: string) {
-  if (imageUrl && imageUrl.includes('firebasestorage.googleapis.com')) {
-    try {
-      const imageRef = ref(storage, imageUrl);
-      await deleteObject(imageRef);
-    } catch (error: any) {
-      if (error.code === 'storage/object-not-found') {
-        console.warn('Image to delete was not found in storage.');
-      } else {
-        throw error;
-      }
+async function deleteImageFromStorage(imageUrl: string | undefined) {
+  if (!imageUrl || !imageUrl.includes('firebasestorage.googleapis.com')) {
+    return;
+  }
+  try {
+    const imageRef = ref(storage, imageUrl);
+    await deleteObject(imageRef);
+  } catch (error: any) {
+    if (error.code === 'storage/object-not-found') {
+      console.warn('Image to delete was not found in storage.');
+    } else {
+      throw error;
     }
   }
 }
@@ -161,11 +163,14 @@ export async function updateService(
   const payload: Partial<Service> & {updatedAt: any} = { ...rest, updatedAt: serverTimestamp() };
 
   try {
+    const docSnap = await getDoc(serviceDocRef);
+    if (!docSnap.exists()) {
+      return { message: 'Service not found.', success: false };
+    }
+    const existingData = docSnap.data();
+
     if (imageFile) {
-        const docSnap = await getDoc(serviceDocRef);
-        if (docSnap.exists() && docSnap.data().imageUrl) {
-            await deleteImageFromStorage(docSnap.data().imageUrl);
-        }
+        await deleteImageFromStorage(existingData.imageUrl);
         payload.imageUrl = await uploadImage(imageFile);
     }
 
