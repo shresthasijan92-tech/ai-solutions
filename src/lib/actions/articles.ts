@@ -28,6 +28,7 @@ const ACCEPTED_IMAGE_TYPES = [
   'image/webp',
 ];
 
+// Schema for creating an article
 const ArticleCreateSchema = z.object({
   title: z.string().min(1, 'Title is required'),
   excerpt: z.string().min(1, 'Excerpt is required'),
@@ -44,14 +45,11 @@ const ArticleCreateSchema = z.object({
     ),
 });
 
-const ArticleUpdateSchema = z.object({
-  title: z.string().min(1, 'Title is required'),
-  excerpt: z.string().min(1, 'Excerpt is required'),
-  content: z.string().min(1, 'Full article content is required.'),
-  publishedAt: z.coerce.date(),
-  featured: z.boolean(),
-  imageUrl: z.string().url().optional(),
+// Schema for updating an article (image is optional)
+const ArticleUpdateSchema = ArticleCreateSchema.extend({
+  imageFile: ArticleCreateSchema.shape.imageFile.optional(),
 });
+
 
 export type ArticleFormState = {
   message: string;
@@ -136,60 +134,55 @@ export async function updateArticle(
     return { message: 'Failed to update article: Missing ID.', success: false };
   }
 
+  const imageFile = formData.get('imageFile') as File | null;
+
+  const dataToValidate = {
+    title: formData.get('title'),
+    excerpt: formData.get('excerpt'),
+    content: formData.get('content'),
+    publishedAt: formData.get('publishedAt'),
+    featured: formData.get('featured') === 'on',
+    // Conditionally include imageFile only if it's a valid file
+    ...(imageFile && imageFile.size > 0 && { imageFile }),
+  };
+
+  const validatedFields = ArticleUpdateSchema.safeParse(dataToValidate);
+
+  if (!validatedFields.success) {
+    return {
+      message: 'Failed to update article. Please check the form.',
+      errors: validatedFields.error.flatten().fieldErrors,
+      success: false,
+    };
+  }
+
+  const { imageFile: validatedImageFile, ...rest } = validatedFields.data;
+
   try {
     const articleDocRef = doc(firestore, 'articles', id);
-    const existingDocSnap = await getDoc(articleDocRef);
-    if (!existingDocSnap.exists()) {
+    const docSnap = await getDoc(articleDocRef);
+
+    if (!docSnap.exists()) {
       return { message: 'Article not found.', success: false };
     }
-    const existingData = existingDocSnap.data();
 
-    const imageFile = formData.get('imageFile') as File | null;
-    let newImageUrl: string | undefined;
+    const existingData = docSnap.data();
+    let newImageUrl = existingData.imageUrl; // Default to existing URL
 
-    if (imageFile && imageFile.size > 0) {
-      const fileValidation = ArticleCreateSchema.shape.imageFile.safeParse(imageFile);
-      if (!fileValidation.success) {
-        return {
-          message: 'Invalid image file.',
-          errors: { imageFile: fileValidation.error.flatten().formErrors },
-          success: false,
-        };
+    // If a new valid file was uploaded, handle the upload and deletion of the old one
+    if (validatedImageFile) {
+      newImageUrl = await uploadImage(validatedImageFile);
+      if (existingData.imageUrl) {
+        await deleteImageFromStorage(existingData.imageUrl);
       }
-      newImageUrl = await uploadImage(imageFile);
-    }
-    
-    const dataToValidate = {
-      title: formData.get('title'),
-      excerpt: formData.get('excerpt'),
-      content: formData.get('content'),
-      publishedAt: formData.get('publishedAt'),
-      featured: formData.get('featured') === 'on',
-      imageUrl: newImageUrl ?? existingData.imageUrl,
-    };
-
-    const validatedFields = ArticleUpdateSchema.safeParse(dataToValidate);
-
-    if (!validatedFields.success) {
-      if (newImageUrl) {
-        await deleteImageFromStorage(newImageUrl);
-      }
-      return {
-        message: 'Failed to update article. Please check the form.',
-        errors: validatedFields.error.flatten().fieldErrors,
-        success: false,
-      };
     }
 
     await updateDoc(articleDocRef, {
-        ...validatedFields.data,
-        publishedAt: Timestamp.fromDate(validatedFields.data.publishedAt),
-        updatedAt: serverTimestamp(),
+      ...rest,
+      imageUrl: newImageUrl,
+      publishedAt: Timestamp.fromDate(rest.publishedAt),
+      updatedAt: serverTimestamp(),
     });
-
-    if (newImageUrl && existingData.imageUrl) {
-      await deleteImageFromStorage(existingData.imageUrl);
-    }
 
     revalidatePath('/admin/articles');
     revalidatePath('/blog');
