@@ -1,24 +1,14 @@
 'use client';
 
-import { useEffect, useTransition } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
+import { useEffect } from 'react';
+import { useFormState, useFormStatus } from 'react-dom';
 import { Loader2, Calendar as CalendarIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { Timestamp } from 'firebase/firestore';
 
 import { Button } from '@/components/ui/button';
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
@@ -31,19 +21,7 @@ import { useToast } from '@/hooks/use-toast';
 import { type Article } from '@/lib/definitions';
 import { createArticle, updateArticle } from '@/lib/actions/articles';
 import { cn } from '@/lib/utils';
-
-const ArticleFormSchema = z.object({
-  title: z.string().min(1, 'Title is required'),
-  excerpt: z.string().min(1, 'Excerpt is required'),
-  content: z.string().min(1, 'Full article content is required'),
-  imageUrl: z.string().min(1, 'An image is required'),
-  publishedAt: z.date({
-    required_error: 'A date of publication is required.',
-  }),
-  featured: z.boolean(),
-});
-
-type ArticleFormValues = z.infer<typeof ArticleFormSchema>;
+import { useState } from 'react';
 
 type ArticleFormProps = {
   article?: Article | null;
@@ -51,218 +29,175 @@ type ArticleFormProps = {
 };
 
 // Helper to convert Firestore Timestamp or string to Date
-const toDate = (timestamp: string | Timestamp | Date): Date => {
+const toDate = (timestamp: string | Timestamp | Date | null | undefined): Date => {
+  if (!timestamp) return new Date();
   if (timestamp instanceof Timestamp) {
     return timestamp.toDate();
   }
   return new Date(timestamp);
 };
 
+
+function SubmitButton({ isEditing }: { isEditing: boolean }) {
+  const { pending } = useFormStatus();
+
+  return (
+    <Button type="submit" disabled={pending} className="w-full sm:w-auto">
+      {pending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+      {isEditing ? 'Save Changes' : 'Create Article'}
+    </Button>
+  );
+}
+
 export function ArticleForm({ article, onSuccess }: ArticleFormProps) {
   const { toast } = useToast();
-  const [isPending, startTransition] = useTransition();
-
-  const form = useForm<ArticleFormValues>({
-    resolver: zodResolver(ArticleFormSchema),
-    defaultValues: {
-      title: '',
-      excerpt: '',
-      content: '',
-      imageUrl: '',
-      publishedAt: new Date(),
-      featured: false,
-    },
-  });
   
+  const action = article?.id ? updateArticle : createArticle;
+
+  const [state, formAction] = useFormState(action, {
+    message: '',
+    success: false,
+  });
+
+  // State to manage the date picker separately from the form state
+  const [selectedDate, setSelectedDate] = useState<Date>(
+    article?.publishedAt ? toDate(article.publishedAt) : new Date()
+  );
+
   useEffect(() => {
-    if (article) {
-      form.reset({
-        title: article.title || '',
-        excerpt: article.excerpt || '',
-        content: article.content || '',
-        imageUrl: article.imageUrl || '',
-        publishedAt: article.publishedAt ? toDate(article.publishedAt) : new Date(),
-        featured: article.featured || false,
-      });
-    } else {
-       form.reset({
-        title: '',
-        excerpt: '',
-        content: '',
-        imageUrl: '',
-        publishedAt: new Date(),
-        featured: false,
-      });
-    }
-  }, [article, form]);
-
-
-  const onSubmit = (data: ArticleFormValues) => {
-    startTransition(async () => {
-      const action = article?.id
-        ? updateArticle.bind(null, article.id)
-        : createArticle;
-
-      const result = await action(data);
-
-      if (result.success) {
+    if (state.message) {
+      if (state.success) {
         toast({
           title: 'Success!',
-          description: result.message,
+          description: state.message,
         });
         onSuccess();
       } else {
         toast({
           variant: 'destructive',
           title: 'Error',
-          description: result.message,
+          description: state.message,
         });
-        if (result.errors) {
-          Object.entries(result.errors).forEach(([key, value]) => {
-            if (value) {
-              form.setError(key as keyof ArticleFormValues, {
-                type: 'manual',
-                message: value.join(', '),
-              });
-            }
-          });
-        }
       }
-    });
-  };
+    }
+  }, [state, toast, onSuccess]);
+  
+   useEffect(() => {
+    if (article?.publishedAt) {
+      setSelectedDate(toDate(article.publishedAt));
+    }
+  }, [article]);
+
 
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        <FormField
-          control={form.control}
-          name="title"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Title</FormLabel>
-              <FormControl>
-                <Input placeholder="The Generative AI Revolution" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="excerpt"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Excerpt</FormLabel>
-              <FormControl>
-                <Textarea
-                  placeholder="A short summary of the article"
-                  {...field}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-         <FormField
-          control={form.control}
-          name="content"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Full Content</FormLabel>
-              <FormControl>
-                <Textarea
-                  placeholder="The full content of the article."
-                  {...field}
-                  rows={10}
-                />
-              </FormControl>
-               <FormDescription>
-                This content will be displayed on the article page.
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="publishedAt"
-          render={({ field }) => (
-            <FormItem className="flex flex-col">
-              <FormLabel>Published Date</FormLabel>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <FormControl>
-                    <Button
-                      variant={'outline'}
-                      className={cn(
-                        'w-[240px] pl-3 text-left font-normal',
-                        !field.value && 'text-muted-foreground'
-                      )}
-                    >
-                      {field.value ? (
-                        format(toDate(field.value), 'PPP')
-                      ) : (
-                        <span>Pick a date</span>
-                      )}
-                      <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                    </Button>
-                  </FormControl>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={field.value}
-                    onSelect={field.onChange}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="imageUrl"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Image URL</FormLabel>
-              <FormControl>
-                <Input placeholder="https://example.com/image.jpg" {...field} value={field.value ?? ''} />
-              </FormControl>
-              <FormDescription>
-                Provide a full web link to an image for the article.
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="featured"
-          render={({ field }) => (
-            <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
-              <FormControl>
-                <Checkbox
-                  checked={field.value}
-                  onCheckedChange={field.onChange}
-                />
-              </FormControl>
-              <div className="space-y-1 leading-none">
-                <FormLabel>Feature on homepage</FormLabel>
-                <FormDescription>
-                  Check this to display this article on the homepage.
-                </FormDescription>
-              </div>
-            </FormItem>
-          )}
-        />
+    <form action={formAction} className="space-y-6">
+      {article?.id && <input type="hidden" name="id" value={article.id} />}
 
-        <Button type="submit" disabled={isPending} className="w-full sm:w-auto">
-          {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          {article?.id ? 'Save Changes' : 'Create Article'}
-        </Button>
-      </form>
-    </Form>
+      <div className="space-y-2">
+        <Label htmlFor="title">Title</Label>
+        <Input
+          id="title"
+          name="title"
+          placeholder="The Generative AI Revolution"
+          defaultValue={article?.title}
+          required
+        />
+        {state.errors?.title && (
+          <p className="text-sm text-destructive">{state.errors.title.join(', ')}</p>
+        )}
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="excerpt">Excerpt</Label>
+        <Textarea
+          id="excerpt"
+          name="excerpt"
+          placeholder="A short summary of the article"
+          defaultValue={article?.excerpt}
+          required
+        />
+        {state.errors?.excerpt && (
+          <p className="text-sm text-destructive">{state.errors.excerpt.join(', ')}</p>
+        )}
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="content">Full Content</Label>
+        <Textarea
+          id="content"
+          name="content"
+          placeholder="The full content of the article."
+          defaultValue={article?.content}
+          rows={10}
+          required
+        />
+         <p className="text-sm text-muted-foreground">
+            This content will be displayed on the article page.
+        </p>
+        {state.errors?.content && (
+          <p className="text-sm text-destructive">{state.errors.content.join(', ')}</p>
+        )}
+      </div>
+
+      <div className="space-y-2">
+          <Label>Published Date</Label>
+           <input type="hidden" name="publishedAt" value={selectedDate.toISOString()} />
+            <Popover>
+              <PopoverTrigger asChild>
+                  <Button
+                    variant={'outline'}
+                    className={cn(
+                      'w-[240px] justify-start text-left font-normal',
+                      !selectedDate && 'text-muted-foreground'
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {selectedDate ? format(selectedDate, 'PPP') : <span>Pick a date</span>}
+                  </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0">
+                <Calendar
+                  mode="single"
+                  selected={selectedDate}
+                  onSelect={(date) => setSelectedDate(date || new Date())}
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
+           {state.errors?.publishedAt && (
+             <p className="text-sm text-destructive">{state.errors.publishedAt.join(', ')}</p>
+           )}
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="imageUrl">Image URL</Label>
+        <Input
+          id="imageUrl"
+          name="imageUrl"
+          placeholder="https://example.com/image.jpg"
+          defaultValue={article?.imageUrl}
+          required
+        />
+         <p className="text-sm text-muted-foreground">
+            Provide a full web link to an image for the article.
+        </p>
+        {state.errors?.imageUrl && (
+          <p className="text-sm text-destructive">{state.errors.imageUrl.join(', ')}</p>
+        )}
+      </div>
+
+      <div className="flex items-center space-x-2 rounded-md border p-4">
+        <Checkbox
+          id="featured"
+          name="featured"
+          defaultChecked={article?.featured}
+        />
+        <Label htmlFor="featured" className="text-sm font-medium leading-none">
+          Feature on homepage
+        </Label>
+      </div>
+
+      <SubmitButton isEditing={!!article?.id} />
+    </form>
   );
 }

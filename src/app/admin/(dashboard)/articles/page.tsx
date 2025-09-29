@@ -15,17 +15,13 @@ import { ArticlesTable } from '@/components/admin/articles-table';
 import { useArticles } from '@/hooks/use-articles';
 import { type Article } from '@/lib/definitions';
 import { Skeleton } from '@/components/ui/skeleton';
-import { articles as mockArticles } from '@/lib/mock-data';
+import { useUser } from '@/firebase';
 
 export default function AdminArticlesPage() {
-  const { articles: articlesFromDb, isLoading, error } = useArticles();
+  const { isUserLoading } = useUser();
+  const { articles, isLoading: areArticlesLoading, error } = useArticles();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingArticle, setEditingArticle] = useState<Article | null>(null);
-
-  const articles =
-    isLoading || !articlesFromDb || articlesFromDb.length === 0
-      ? mockArticles
-      : articlesFromDb;
 
   const handleAddClick = () => {
     setEditingArticle(null);
@@ -41,6 +37,8 @@ export default function AdminArticlesPage() {
     setIsDialogOpen(false);
     setEditingArticle(null);
   };
+  
+  const showLoading = isUserLoading || areArticlesLoading;
 
   return (
     <div className="space-y-8">
@@ -71,7 +69,7 @@ export default function AdminArticlesPage() {
         </Dialog>
       </div>
 
-      {isLoading && (
+      {showLoading && (
         <div className="space-y-2">
           <Skeleton className="h-10 w-full" />
           <Skeleton className="h-10 w-full" />
@@ -81,8 +79,8 @@ export default function AdminArticlesPage() {
 
       {error && <p className="text-destructive">{error.message}</p>}
 
-      {!isLoading && !error && (
-        <ArticlesTable articles={articles} onEdit={handleEditClick} />
+      {!showLoading && !error && (
+        <ArticlesTable articles={articles || []} onEdit={handleEditClick} />
       )}
     </div>
   );
