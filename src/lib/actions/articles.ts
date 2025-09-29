@@ -35,21 +35,14 @@ const BaseArticleSchema = z.object({
   publishedAt: z.date({ coerce: true }),
   featured: z.boolean(),
   imageUrl: z.string().url('Invalid URL').optional().or(z.literal('')),
-  imageFile: z
-    .instanceof(File)
-    .optional()
-    .refine(
-      (file) => !file || file.size <= MAX_FILE_SIZE,
-      `Max image size is 5MB.`
-    )
-    .refine(
-      (file) => !file || file.type === '' || ACCEPTED_IMAGE_TYPES.includes(file.type),
-      'Only .jpg, .jpeg, .png and .webp formats are supported.'
-    ),
 });
 
 // Schema for creating, where an image is required (either URL or file)
-const CreateArticleSchema = BaseArticleSchema.refine(
+const CreateArticleSchema = BaseArticleSchema.extend({
+    imageFile: z
+    .instanceof(File)
+    .optional()
+}).refine(
   (data) => (data.imageUrl && data.imageUrl.length > 0) || (data.imageFile && data.imageFile.size > 0),
   {
     message: 'An image is required. Please provide a URL or upload a file.',
@@ -58,7 +51,13 @@ const CreateArticleSchema = BaseArticleSchema.refine(
 );
 
 // Schema for updating
-const UpdateArticleSchema = BaseArticleSchema;
+const UpdateArticleSchema = BaseArticleSchema.extend({
+    imageFile: z
+    .instanceof(File)
+    .optional(),
+    prevImageUrl: z.string().url().optional().or(z.literal('')),
+});
+
 
 export type ArticleFormState = {
   message: string;
@@ -102,6 +101,7 @@ function parseFormData(formData: FormData) {
     featured: formData.get('featured') === 'on',
     imageUrl: formData.get('imageUrl') as string,
     imageFile: imageFile instanceof File && imageFile.size > 0 ? imageFile : undefined,
+    prevImageUrl: formData.get('prevImageUrl') as string,
   };
 }
 
@@ -157,10 +157,7 @@ export async function updateArticle(
     return { message: 'Failed to update article: Missing ID.', success: false };
   }
   
-  const rawData = {
-    ...parseFormData(formData),
-    prevImageUrl: formData.get('prevImageUrl') as string,
-  };
+  const rawData = parseFormData(formData);
   const validatedFields = UpdateArticleSchema.safeParse(rawData);
 
   if (!validatedFields.success) {
@@ -171,7 +168,7 @@ export async function updateArticle(
     };
   }
 
-  const { imageFile, imageUrl, ...rest } = validatedFields.data;
+  const { imageFile, imageUrl, prevImageUrl, ...rest } = validatedFields.data;
   const articleDocRef = doc(firestore, 'articles', id);
 
   try {
@@ -181,26 +178,29 @@ export async function updateArticle(
       updatedAt: serverTimestamp(),
     };
 
+    let finalImageUrl = prevImageUrl;
+
+    // A new file was uploaded, this takes highest priority.
     if (imageFile) {
-        // A new file is uploaded, so upload it and delete the old one.
-        const docSnap = await getDoc(articleDocRef);
-        if (docSnap.exists() && docSnap.data().imageUrl) {
-            await deleteImageFromStorage(docSnap.data().imageUrl);
+        if (prevImageUrl) {
+            await deleteImageFromStorage(prevImageUrl);
         }
-        payload.imageUrl = await uploadImage(imageFile);
-    } else {
-        // No new file. Use the URL from the form if provided, otherwise preserve the old one.
-        // This allows clearing the image by submitting an empty URL.
-        payload.imageUrl = imageUrl;
+        finalImageUrl = await uploadImage(imageFile);
+    } 
+    // No new file, but a new URL was provided in the text input.
+    else if (imageUrl && imageUrl !== prevImageUrl) {
+        if (prevImageUrl) {
+            await deleteImageFromStorage(prevImageUrl);
+        }
+        finalImageUrl = imageUrl;
     }
-    
-    // If an explicit URL is provided in the form, it takes precedence.
-    if (typeof imageUrl === 'string' && imageUrl) {
-      payload.imageUrl = imageUrl;
-    } else if (!imageFile) {
-      // If no file and no new URL, keep the previous one from hidden input.
-      payload.imageUrl = rawData.prevImageUrl;
+    // If imageUrl is explicitly cleared in the form
+    else if (!imageUrl && !imageFile && prevImageUrl) {
+      await deleteImageFromStorage(prevImageUrl);
+      finalImageUrl = '';
     }
+
+    payload.imageUrl = finalImageUrl;
 
     await updateDoc(articleDocRef, payload);
 
