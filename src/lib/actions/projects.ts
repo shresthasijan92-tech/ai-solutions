@@ -27,7 +27,7 @@ const ProjectSchema = z.object({
     .array(z.string())
     .min(1, 'At least one technology is required'),
   featured: z.boolean(),
-  caseStudy: z.string().optional().default(''),
+  caseStudy: z.string().optional(),
 });
 
 export type ProjectFormState = {
@@ -51,7 +51,10 @@ async function handleImageUpload(
 export async function createProject(
   data: z.infer<typeof ProjectSchema>
 ): Promise<ProjectFormState> {
-  const validatedFields = ProjectSchema.safeParse(data);
+  const validatedFields = ProjectSchema.safeParse({
+    ...data,
+    caseStudy: data.caseStudy || '',
+  });
 
   if (!validatedFields.success) {
     return {
@@ -86,7 +89,10 @@ export async function updateProject(
   id: string,
   data: z.infer<typeof ProjectSchema>
 ): Promise<ProjectFormState> {
-  const validatedFields = ProjectSchema.safeParse(data);
+  const validatedFields = ProjectSchema.safeParse({
+    ...data,
+    caseStudy: data.caseStudy || '',
+  });
 
   if (!validatedFields.success) {
     return {
