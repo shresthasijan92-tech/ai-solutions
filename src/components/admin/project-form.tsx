@@ -1,251 +1,141 @@
 'use client';
 
 import { useEffect, useTransition } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
+import { useFormState, useFormStatus } from 'react-dom';
 import { Loader2 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { type Project } from '@/lib/definitions';
-import {
-  createProject,
-  updateProject,
-} from '@/lib/actions/projects';
-
-const ProjectFormSchema = z.object({
-  title: z.string().min(1, 'Title is required'),
-  description: z.string().min(1, 'Description is required'),
-  imageUrl: z.string().min(1, 'An image is required'),
-  technologies: z.string().min(1, 'At least one technology is required'),
-  featured: z.boolean(),
-  caseStudy: z.string().optional(),
-});
-
-type ProjectFormValues = z.infer<typeof ProjectFormSchema>;
+import { createProject, updateProject } from '@/lib/actions/projects';
 
 type ProjectFormProps = {
   project?: Project | null;
   onSuccess: () => void;
 };
 
-export function ProjectForm({ project, onSuccess }: ProjectFormProps) {
-  const { toast } = useToast();
-  const [isPending, startTransition] = useTransition();
-
-  const form = useForm<ProjectFormValues>({
-    resolver: zodResolver(ProjectFormSchema),
-    defaultValues: {
-      title: '',
-      description: '',
-      imageUrl: '',
-      technologies: '',
-      featured: false,
-      caseStudy: '',
-    },
-  });
-  
-  useEffect(() => {
-    if (project) {
-      form.reset({
-        title: project.title || '',
-        description: project.description || '',
-        imageUrl: project.imageUrl || '',
-        technologies: project.technologies?.join(', ') || '',
-        featured: project.featured || false,
-        caseStudy: project.caseStudy || '',
-      });
-    } else {
-       form.reset({
-        title: '',
-        description: '',
-        imageUrl: '',
-        technologies: '',
-        featured: false,
-        caseStudy: '',
-      });
-    }
-  }, [project, form]);
-  
-  const onSubmit = (data: ProjectFormValues) => {
-    startTransition(async () => {
-      const payload = {
-        ...data,
-        technologies: data.technologies.split(',').map(t => t.trim()).filter(t => t.length > 0)
-      };
-
-      try {
-        let result;
-        if (project?.id) {
-          result = await updateProject(project.id, payload);
-        } else {
-          result = await createProject(payload);
-        }
-
-        if (result.success) {
-          toast({
-            title: 'Success!',
-            description: result.message,
-          });
-          onSuccess();
-          form.reset();
-        } else {
-          toast({
-            variant: 'destructive',
-            title: 'Error',
-            description: result.message,
-          });
-          if (result.errors) {
-            Object.entries(result.errors).forEach(([key, value]) => {
-              if (value) {
-                form.setError(key as keyof ProjectFormValues, {
-                  type: 'manual',
-                  message: value.join(', '),
-                });
-              }
-            });
-          }
-        }
-      } catch (error) {
-         toast({
-            variant: 'destructive',
-            title: 'Error',
-            description: 'An unexpected error occurred.',
-          });
-      }
-    });
-  };
+function SubmitButton({ isEditing }: { isEditing: boolean }) {
+  const { pending } = useFormStatus();
 
   return (
-    <Form {...form}>
-      <form
-        onSubmit={form.handleSubmit(onSubmit)}
-        className="space-y-6"
-      >
-        <FormField
-          control={form.control}
-          name="title"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Title</FormLabel>
-              <FormControl>
-                <Input placeholder="E-commerce Recommendation Engine" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="description"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Description</FormLabel>
-              <FormControl>
-                <Textarea
-                  placeholder="A short description of the project"
-                  {...field}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="caseStudy"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Case Study Content</FormLabel>
-              <FormControl>
-                <Textarea
-                  placeholder="The full case study content for the project."
-                  {...field}
-                  value={field.value ?? ''}
-                  rows={10}
-                />
-              </FormControl>
-              <FormDescription>
-                This content will be displayed on the project's case study page.
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="imageUrl"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Image URL</FormLabel>
-              <FormControl>
-                <Input placeholder="https://example.com/image.jpg" {...field} value={field.value ?? ''} />
-              </FormControl>
-              <FormDescription>
-                Provide a full web link to an image for the project.
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="technologies"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Technologies</FormLabel>
-              <FormControl>
-                <Input
-                  placeholder="Python, TensorFlow, Firebase"
-                  {...field}
-                />
-              </FormControl>
-              <FormDescription>
-                Enter a comma-separated list of technologies.
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="featured"
-          render={({ field }) => (
-            <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
-              <FormControl>
-                <Checkbox
-                  checked={field.value}
-                  onCheckedChange={field.onChange}
-                />
-              </FormControl>
-              <div className="space-y-1 leading-none">
-                <FormLabel>Feature on homepage</FormLabel>
-                <FormDescription>
-                  Check this to display this project on the homepage.
-                </FormDescription>
-              </div>
-            </FormItem>
-          )}
-        />
+    <Button type="submit" disabled={pending} className="w-full sm:w-auto">
+      {pending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+      {isEditing ? 'Save Changes' : 'Create Project'}
+    </Button>
+  );
+}
 
-        <Button type="submit" disabled={isPending} className="w-full sm:w-auto">
-          {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          {project?.id ? 'Save Changes' : 'Create Project'}
-        </Button>
-      </form>
-    </Form>
+export function ProjectForm({ project, onSuccess }: ProjectFormProps) {
+  const { toast } = useToast();
+
+  const action = project?.id ? updateProject : createProject;
+
+  const [state, formAction] = useFormState(action, {
+    message: '',
+    success: false,
+  });
+
+  useEffect(() => {
+    if (state.message) {
+      if (state.success) {
+        toast({
+          title: 'Success!',
+          description: state.message,
+        });
+        onSuccess();
+      } else {
+        toast({
+          variant: 'destructive',
+          title: 'Error',
+          description: state.message,
+        });
+      }
+    }
+  }, [state, toast, onSuccess]);
+
+  return (
+    <form action={formAction} encType="multipart/form-data" className="space-y-6">
+      {project?.id && <input type="hidden" name="id" value={project.id} />}
+      
+      <div className="space-y-2">
+        <Label htmlFor="title">Title</Label>
+        <Input 
+          id="title" 
+          name="title" 
+          placeholder="E-commerce Recommendation Engine" 
+          defaultValue={project?.title} 
+          required 
+        />
+        {state.errors?.title && <p className="text-sm text-destructive">{state.errors.title.join(', ')}</p>}
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="description">Description</Label>
+        <Textarea 
+          id="description" 
+          name="description" 
+          placeholder="A short description of the project" 
+          defaultValue={project?.description} 
+          required 
+        />
+        {state.errors?.description && <p className="text-sm text-destructive">{state.errors.description.join(', ')}</p>}
+      </div>
+
+       <div className="space-y-2">
+        <Label htmlFor="caseStudy">Case Study Content (Optional)</Label>
+        <Textarea 
+          id="caseStudy" 
+          name="caseStudy" 
+          placeholder="The full case study content for the project." 
+          defaultValue={project?.caseStudy ?? ''}
+          rows={10} 
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="image">Project Image</Label>
+        <Input 
+          id="image" 
+          name="image" 
+          type="file" 
+          accept="image/*" 
+        />
+        <p className="text-sm text-muted-foreground">
+          Upload a new image to replace the existing one. Leave blank to keep the current image.
+        </p>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="technologies">Technologies</Label>
+        <Input 
+          id="technologies" 
+          name="technologies" 
+          placeholder="Python, TensorFlow, Firebase" 
+          defaultValue={project?.technologies?.join(', ')} 
+          required 
+        />
+        <p className="text-sm text-muted-foreground">
+          Enter a comma-separated list of technologies.
+        </p>
+         {state.errors?.technologies && <p className="text-sm text-destructive">{state.errors.technologies.join(', ')}</p>}
+      </div>
+      
+      <div className="flex items-center space-x-2 rounded-md border p-4">
+        <Checkbox 
+          id="featured" 
+          name="featured" 
+          defaultChecked={project?.featured} 
+        />
+        <Label htmlFor="featured" className="text-sm font-medium leading-none">
+          Feature on homepage
+        </Label>
+      </div>
+
+      <SubmitButton isEditing={!!project?.id} />
+    </form>
   );
 }
