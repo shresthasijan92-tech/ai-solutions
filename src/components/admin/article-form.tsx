@@ -1,7 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useActionState } from 'react';
+import { useEffect, useState, useActionState } from 'react';
 import { Loader2, Calendar as CalendarIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { Timestamp } from 'firebase/firestore';
@@ -82,7 +81,12 @@ export function ArticleForm({ article, onSuccess }: ArticleFormProps) {
 
   return (
     <form action={formAction} className="space-y-6" encType="multipart/form-data">
-      {article?.id && <input type="hidden" name="id" value={article.id} />}
+      {article?.id && (
+        <>
+          <input type="hidden" name="id" value={article.id} />
+          <input type="hidden" name="prevImageUrl" value={article.imageUrl ?? ''} />
+        </>
+      )}
 
       <div className="space-y-2">
         <Label htmlFor="title">Title</Label>

@@ -34,7 +34,7 @@ const BaseArticleSchema = z.object({
   content: z.string().min(1, 'Full article content is required.'),
   publishedAt: z.date({ coerce: true }),
   featured: z.boolean(),
-  imageUrl: z.string().url('Invalid URL').optional(),
+  imageUrl: z.string().url('Invalid URL').optional().or(z.literal('')),
   imageFile: z
     .instanceof(File)
     .optional()
@@ -157,7 +157,10 @@ export async function updateArticle(
     return { message: 'Failed to update article: Missing ID.', success: false };
   }
   
-  const rawData = parseFormData(formData);
+  const rawData = {
+    ...parseFormData(formData),
+    prevImageUrl: formData.get('prevImageUrl') as string,
+  };
   const validatedFields = UpdateArticleSchema.safeParse(rawData);
 
   if (!validatedFields.success) {
@@ -178,17 +181,25 @@ export async function updateArticle(
       updatedAt: serverTimestamp(),
     };
 
-    if (imageFile && imageFile.size > 0) {
-      // If a new file is uploaded, delete the old one and upload the new
-      const docSnap = await getDoc(articleDocRef);
-      if (docSnap.exists() && docSnap.data().imageUrl) {
-        await deleteImageFromStorage(docSnap.data().imageUrl);
-      }
-      payload.imageUrl = await uploadImage(imageFile);
+    if (imageFile) {
+        // A new file is uploaded, so upload it and delete the old one.
+        const docSnap = await getDoc(articleDocRef);
+        if (docSnap.exists() && docSnap.data().imageUrl) {
+            await deleteImageFromStorage(docSnap.data().imageUrl);
+        }
+        payload.imageUrl = await uploadImage(imageFile);
     } else {
-      // If no new file, use the URL from the form.
-      // This allows clearing the image by submitting an empty URL.
+        // No new file. Use the URL from the form if provided, otherwise preserve the old one.
+        // This allows clearing the image by submitting an empty URL.
+        payload.imageUrl = imageUrl;
+    }
+    
+    // If an explicit URL is provided in the form, it takes precedence.
+    if (typeof imageUrl === 'string' && imageUrl) {
       payload.imageUrl = imageUrl;
+    } else if (!imageFile) {
+      // If no file and no new URL, keep the previous one from hidden input.
+      payload.imageUrl = rawData.prevImageUrl;
     }
 
     await updateDoc(articleDocRef, payload);
