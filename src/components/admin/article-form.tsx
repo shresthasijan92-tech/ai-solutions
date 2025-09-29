@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useActionState, useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useActionState } from 'react';
 import { Loader2, Calendar as CalendarIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { Timestamp } from 'firebase/firestore';
@@ -41,24 +42,6 @@ const toDate = (
   return new Date(timestamp);
 };
 
-function SubmitButton({ isEditing }: { isEditing: boolean }) {
-  const [state, action, pending] = useActionState<ArticleFormState, FormData>(
-    isEditing ? updateArticle : createArticle,
-    {
-      message: '',
-      success: false,
-      errors: {},
-    }
-  );
-
-  return (
-    <Button type="submit" disabled={pending} className="w-full sm:w-auto">
-      {pending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-      {isEditing ? 'Save Changes' : 'Create Article'}
-    </Button>
-  );
-}
-
 export function ArticleForm({ article, onSuccess }: ArticleFormProps) {
   const { toast } = useToast();
   const action = article?.id ? updateArticle : createArticle;
@@ -66,6 +49,7 @@ export function ArticleForm({ article, onSuccess }: ArticleFormProps) {
   const [state, formAction] = useActionState(action, {
     message: '',
     success: false,
+    errors: {}
   });
 
   const [selectedDate, setSelectedDate] = useState<Date>(
@@ -97,7 +81,7 @@ export function ArticleForm({ article, onSuccess }: ArticleFormProps) {
   }, [article]);
 
   return (
-    <form action={formAction} className="space-y-6">
+    <form action={formAction} className="space-y-6" encType="multipart/form-data">
       {article?.id && <input type="hidden" name="id" value={article.id} />}
 
       <div className="space-y-2">

@@ -34,7 +34,7 @@ const BaseArticleSchema = z.object({
   content: z.string().min(1, 'Full article content is required.'),
   publishedAt: z.date({ coerce: true }),
   featured: z.boolean(),
-  imageUrl: z.string().optional(), // For existing URL
+  imageUrl: z.string().url('Invalid URL').optional(),
   imageFile: z
     .instanceof(File)
     .optional()
@@ -43,14 +43,14 @@ const BaseArticleSchema = z.object({
       `Max image size is 5MB.`
     )
     .refine(
-      (file) => !file || ACCEPTED_IMAGE_TYPES.includes(file.type),
+      (file) => !file || file.type === '' || ACCEPTED_IMAGE_TYPES.includes(file.type),
       'Only .jpg, .jpeg, .png and .webp formats are supported.'
     ),
 });
 
 // Schema for creating, where an image is required (either URL or file)
 const CreateArticleSchema = BaseArticleSchema.refine(
-  (data) => !!data.imageUrl || !!data.imageFile,
+  (data) => (data.imageUrl && data.imageUrl.length > 0) || (data.imageFile && data.imageFile.size > 0),
   {
     message: 'An image is required. Please provide a URL or upload a file.',
     path: ['imageUrl'],
@@ -95,10 +95,10 @@ async function deleteImageFromStorage(imageUrl: string) {
 function parseFormData(formData: FormData) {
   const imageFile = formData.get('imageFile');
   return {
-    title: formData.get('title'),
-    excerpt: formData.get('excerpt'),
-    content: formData.get('content'),
-    publishedAt: formData.get('publishedAt'),
+    title: formData.get('title') as string,
+    excerpt: formData.get('excerpt') as string,
+    content: formData.get('content') as string,
+    publishedAt: formData.get('publishedAt') as string,
     featured: formData.get('featured') === 'on',
     imageUrl: formData.get('imageUrl') as string,
     imageFile: imageFile instanceof File && imageFile.size > 0 ? imageFile : undefined,
@@ -156,7 +156,7 @@ export async function updateArticle(
   if (!id) {
     return { message: 'Failed to update article: Missing ID.', success: false };
   }
-
+  
   const rawData = parseFormData(formData);
   const validatedFields = UpdateArticleSchema.safeParse(rawData);
 
@@ -178,7 +178,7 @@ export async function updateArticle(
       updatedAt: serverTimestamp(),
     };
 
-    if (imageFile) {
+    if (imageFile && imageFile.size > 0) {
       // If a new file is uploaded, delete the old one and upload the new
       const docSnap = await getDoc(articleDocRef);
       if (docSnap.exists() && docSnap.data().imageUrl) {
@@ -186,7 +186,8 @@ export async function updateArticle(
       }
       payload.imageUrl = await uploadImage(imageFile);
     } else {
-      // Otherwise, just use the imageUrl from the form (which might be the same or cleared)
+      // If no new file, use the URL from the form.
+      // This allows clearing the image by submitting an empty URL.
       payload.imageUrl = imageUrl;
     }
 
