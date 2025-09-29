@@ -64,7 +64,7 @@ export function ProjectForm({ project, onSuccess }: ProjectFormProps) {
         title: project.title || '',
         description: project.description || '',
         imageUrl: project.imageUrl || '',
-        technologies: project.technologies.join(', ') || '',
+        technologies: project.technologies?.join(', ') || '',
         featured: project.featured || false,
         caseStudy: project.caseStudy || '',
       });
