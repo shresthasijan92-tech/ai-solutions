@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect } from 'react';
-import { useFormState, useFormStatus } from 'react-dom';
+import { useEffect, useActionState } from 'react';
+import { useFormStatus } from 'react-dom';
 import { Loader2 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -34,7 +34,7 @@ export function ProjectForm({ project, onSuccess }: ProjectFormProps) {
 
   const action = project?.id ? updateProject : createProject;
 
-  const [state, formAction] = useFormState(action, {
+  const [state, formAction] = useActionState(action, {
     message: '',
     success: false,
     errors: {},

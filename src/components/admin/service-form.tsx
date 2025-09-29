@@ -1,22 +1,12 @@
 'use client';
 
-import { useEffect, useTransition } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
+import { useEffect, useActionState } from 'react';
+import { useFormStatus } from 'react-dom';
 import { Loader2 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
@@ -26,252 +16,151 @@ import {
   updateService,
 } from '@/lib/actions/services';
 
-const ServiceFormSchema = z.object({
-  title: z.string().min(1, 'Title is required'),
-  description: z.string().min(1, 'Description is required'),
-  imageUrl: z.string().optional(),
-  benefits: z.string().optional(),
-  price: z.string().optional(),
-  details: z.string().optional(),
-  featured: z.boolean(),
-});
-
-type ServiceFormValues = z.infer<typeof ServiceFormSchema>;
-
 type ServiceFormProps = {
   service?: Service | null;
   onSuccess: () => void;
 };
 
+function SubmitButton({ isEditing }: { isEditing: boolean }) {
+  const { pending } = useFormStatus();
+  return (
+    <Button type="submit" disabled={pending} className="w-full sm:w-auto">
+      {pending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+      {isEditing ? 'Save Changes' : 'Create Service'}
+    </Button>
+  );
+}
+
 export function ServiceForm({ service, onSuccess }: ServiceFormProps) {
   const { toast } = useToast();
-  const [isPending, startTransition] = useTransition();
-
-  const form = useForm<ServiceFormValues>({
-    resolver: zodResolver(ServiceFormSchema),
-    defaultValues: {
-      title: '',
-      description: '',
-      imageUrl: '',
-      benefits: '',
-      price: '',
-      details: '',
-      featured: false,
-    },
+  
+  const action = service?.id ? updateService : createService;
+  
+  const [state, formAction] = useActionState(action, {
+    message: '',
+    success: false,
+    errors: {},
   });
 
   useEffect(() => {
-    if (service) {
-      form.reset({
-        title: service.title || '',
-        description: service.description || '',
-        imageUrl: service.imageUrl || '',
-        benefits: service.benefits?.join(', ') || '',
-        price: service.price || '',
-        details: service.details || '',
-        featured: service.featured || false,
-      });
-    } else {
-      form.reset({
-        title: '',
-        description: '',
-        imageUrl: '',
-        benefits: '',
-        price: '',
-        details: '',
-        featured: false,
-      });
-    }
-  }, [service, form]);
-  
-  const handleFileChange = (
-    e: React.ChangeEvent<HTMLInputElement>,
-    fieldChange: (value: string) => void
-  ) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        fieldChange(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const onSubmit = (data: ServiceFormValues) => {
-    startTransition(async () => {
-      const action = service?.id
-        ? updateService.bind(null, service.id)
-        : createService;
-      
-      const result = await action(data);
-      
-      if (result.success) {
+    if (state.message) {
+      if (state.success) {
         toast({
           title: 'Success!',
-          description: result.message,
+          description: state.message,
         });
         onSuccess();
-        form.reset();
       } else {
         toast({
           variant: 'destructive',
           title: 'Error',
-          description: result.message,
+          description: state.message,
         });
-        if (result.errors) {
-            Object.entries(result.errors).forEach(([key, value]) => {
-                if (value) {
-                    form.setError(key as keyof ServiceFormValues, {
-                        type: 'manual',
-                        message: value.join(', '),
-                    });
-                }
-            });
-        }
       }
-    });
-  };
-
+    }
+  }, [state, toast, onSuccess]);
+  
   return (
-    <Form {...form}>
-      <form
-        onSubmit={form.handleSubmit(onSubmit)}
-        className="space-y-6"
-      >
-        <FormField
-          control={form.control}
-          name="title"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Title</FormLabel>
-              <FormControl>
-                <Input placeholder="AI Strategy Consulting" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
+    <form
+      action={formAction}
+      className="space-y-6"
+    >
+      {service?.id && <input type="hidden" name="id" value={service.id} />}
+      <div className="space-y-2">
+        <Label htmlFor="title">Title</Label>
+        <Input 
+          id="title" 
+          name="title" 
+          placeholder="AI Strategy Consulting" 
+          defaultValue={service?.title}
+          required
         />
-        <FormField
-          control={form.control}
-          name="description"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Description</FormLabel>
-              <FormControl>
-                <Textarea
-                  placeholder="A short description of the service"
-                  {...field}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-         <FormField
-          control={form.control}
-          name="details"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Details</FormLabel>
-              <FormControl>
-                <Textarea
-                  placeholder="A more detailed description of the service"
-                  {...field}
-                  rows={5}
-                />
-              </FormControl>
-              <FormDescription>
-                This will be shown in the "Learn More" dialog.
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-         <FormField
-          control={form.control}
-          name="benefits"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Key Benefits</FormLabel>
-              <FormControl>
-                <Input placeholder="Benefit 1, Benefit 2, Benefit 3" {...field} />
-              </FormControl>
-               <FormDescription>
-                Enter a comma-separated list of key benefits.
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-         <FormField
-          control={form.control}
-          name="price"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Price</FormLabel>
-              <FormControl>
-                <Input placeholder="Starting at $5,000" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="imageUrl"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Image URL</FormLabel>
-              <FormControl>
-                <Input placeholder="https://example.com/image.jpg" {...field} value={field.value ?? ''} />
-              </FormControl>
-              <FormDescription>
-                Provide a full web link to an image for the service.
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormItem>
-          <FormLabel>Or Upload Image</FormLabel>
-          <FormControl>
-            <Input
-              type="file"
-              accept="image/*"
-              onChange={(e) => handleFileChange(e, (value) => form.setValue('imageUrl', value))}
-            />
-          </FormControl>
-          <FormDescription>
-            Upload an image from your device. This will override the Image URL field.
-          </FormDescription>
-        </FormItem>
-        <FormField
-          control={form.control}
-          name="featured"
-          render={({ field }) => (
-            <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
-              <FormControl>
-                <Checkbox
-                  checked={field.value}
-                  onCheckedChange={field.onChange}
-                />
-              </FormControl>
-              <div className="space-y-1 leading-none">
-                <FormLabel>Feature on homepage</FormLabel>
-                <FormDescription>
-                  Check this to display this service on the homepage.
-                </FormDescription>
-              </div>
-            </FormItem>
-          )}
-        />
+        {state.errors?.title && <p className="text-sm text-destructive">{state.errors.title.join(', ')}</p>}
+      </div>
 
-        <Button type="submit" disabled={isPending} className="w-full sm:w-auto">
-          {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          {service?.id ? 'Save Changes' : 'Create Service'}
-        </Button>
-      </form>
-    </Form>
+      <div className="space-y-2">
+        <Label htmlFor="description">Description</Label>
+        <Textarea 
+          id="description" 
+          name="description" 
+          placeholder="A short description of the service"
+          defaultValue={service?.description}
+          required
+        />
+        {state.errors?.description && <p className="text-sm text-destructive">{state.errors.description.join(', ')}</p>}
+      </div>
+      
+      <div className="space-y-2">
+        <Label htmlFor="details">Details</Label>
+        <Textarea 
+          id="details" 
+          name="details" 
+          placeholder="A more detailed description of the service"
+          defaultValue={service?.details}
+          rows={5}
+        />
+        <p className="text-sm text-muted-foreground">This will be shown in the "Learn More" dialog.</p>
+        {state.errors?.details && <p className="text-sm text-destructive">{state.errors.details.join(', ')}</p>}
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="benefits">Key Benefits</Label>
+        <Input 
+          id="benefits" 
+          name="benefits" 
+          placeholder="Benefit 1, Benefit 2, Benefit 3"
+          defaultValue={service?.benefits?.join(', ')}
+        />
+        <p className="text-sm text-muted-foreground">Enter a comma-separated list of key benefits.</p>
+        {state.errors?.benefits && <p className="text-sm text-destructive">{state.errors.benefits.join(', ')}</p>}
+      </div>
+      
+      <div className="space-y-2">
+        <Label htmlFor="price">Price</Label>
+        <Input 
+          id="price" 
+          name="price" 
+          placeholder="Starting at $5,000"
+          defaultValue={service?.price}
+        />
+        {state.errors?.price && <p className="text-sm text-destructive">{state.errors.price.join(', ')}</p>}
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="imageUrl">Image URL</Label>
+        <Input 
+          id="imageUrl" 
+          name="imageUrl" 
+          placeholder="https://example.com/image.jpg"
+          defaultValue={service?.imageUrl}
+        />
+        <p className="text-sm text-muted-foreground">Provide a full web link to an image for the service, or upload a file below.</p>
+        {state.errors?.imageUrl && <p className="text-sm text-destructive">{state.errors.imageUrl.join(', ')}</p>}
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="imageFile">Or Upload Image</Label>
+        <Input 
+          id="imageFile" 
+          name="imageFile" 
+          type="file" 
+          accept="image/*" 
+        />
+        <p className="text-sm text-muted-foreground">This will override the Image URL if both are provided.</p>
+      </div>
+
+      <div className="flex items-center space-x-2 rounded-md border p-4">
+        <Checkbox 
+          id="featured" 
+          name="featured" 
+          defaultChecked={service?.featured} 
+        />
+        <Label htmlFor="featured" className="text-sm font-medium leading-none">
+          Feature on homepage
+        </Label>
+      </div>
+      
+      <SubmitButton isEditing={!!service?.id} />
+    </form>
   );
 }

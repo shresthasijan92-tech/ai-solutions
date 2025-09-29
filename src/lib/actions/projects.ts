@@ -31,13 +31,12 @@ const BaseProjectSchema = z.object({
   title: z.string().min(1, 'Title is required'),
   description: z.string().min(1, 'Description is required'),
   technologies: z
-    .array(z.string())
+    .array(z.string().trim())
     .min(1, 'At least one technology is required'),
   featured: z.boolean(),
   caseStudy: z.string().optional(),
   image: z
     .instanceof(File)
-    .refine((file) => file.size > 0, 'Image is required.')
     .refine((file) => file.size <= MAX_FILE_SIZE, `Max image size is 5MB.`)
     .refine(
       (file) => ACCEPTED_IMAGE_TYPES.includes(file.type),
@@ -47,7 +46,7 @@ const BaseProjectSchema = z.object({
 });
 
 // Schema for creating a project, where image is required
-const CreateProjectSchema = BaseProjectSchema.refine((data) => data.image, {
+const CreateProjectSchema = BaseProjectSchema.refine((data) => !!data.image && data.image.size > 0, {
   message: 'An image is required for new projects.',
   path: ['image'],
 });
@@ -97,9 +96,9 @@ function parseFormData(formData: FormData) {
     technologies: (formData.get('technologies') as string)
       ?.split(',')
       .map((t) => t.trim())
-      .filter(Boolean),
+      .filter(Boolean) ?? [],
     featured: formData.get('featured') === 'on',
-    caseStudy: (formData.get('caseStudy') as string) || '',
+    caseStudy: (formData.get('caseStudy') as string) || undefined,
     image: imageFile instanceof File && imageFile.size > 0 ? imageFile : undefined,
   };
 }

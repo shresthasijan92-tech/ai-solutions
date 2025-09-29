@@ -5,7 +5,7 @@ import { z } from 'zod';
 import { firestore, storage } from '@/firebase/server';
 import {
   ref,
-  uploadString,
+  uploadBytes,
   getDownloadURL,
   deleteObject,
 } from 'firebase/storage';
@@ -16,133 +16,56 @@ import {
   updateDoc,
   deleteDoc,
   getDoc,
-  setDoc,
+  serverTimestamp,
 } from 'firebase/firestore';
 
-const GalleryImageSchema = z.object({
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+const ACCEPTED_IMAGE_TYPES = [
+  'image/jpeg',
+  'image/jpg',
+  'image/png',
+  'image/webp',
+];
+
+const BaseGalleryImageSchema = z.object({
   title: z.string().min(1, 'Title is required'),
-  imageUrl: z.string().min(1, 'An image is required'),
   category: z.enum(['Events', 'Tech Solutions', 'Team Collaboration']),
   featured: z.boolean(),
+  imageFile: z
+    .instanceof(File)
+    .refine((file) => file.size <= MAX_FILE_SIZE, `Max image size is 5MB.`)
+    .refine(
+      (file) => ACCEPTED_IMAGE_TYPES.includes(file.type),
+      'Only .jpg, .jpeg, .png and .webp formats are supported.'
+    )
+    .optional(),
 });
+
+const CreateGalleryImageSchema = BaseGalleryImageSchema.refine((data) => !!data.imageFile && data.imageFile.size > 0, {
+    message: "An image file is required.",
+    path: ["imageFile"],
+});
+
+const UpdateGalleryImageSchema = BaseGalleryImageSchema;
 
 export type GalleryImageFormState = {
   message: string;
   errors?: z.ZodError<
-    z.infer<typeof GalleryImageSchema>
+    z.infer<typeof BaseGalleryImageSchema>
   >['formErrors']['fieldErrors'];
-  success?: boolean;
+  success: boolean;
 };
 
-async function handleImageUpload(
-  dataUri: string,
-  folder: string
-): Promise<string> {
-  const fileName = `${folder}/${Date.now()}`;
+async function uploadImage(file: File): Promise<string> {
+  const fileBuffer = await file.arrayBuffer();
+  const fileName = `gallery/${Date.now()}-${file.name}`;
   const storageRef = ref(storage, fileName);
-  const uploadResult = await uploadString(storageRef, dataUri, 'data_url');
-  return getDownloadURL(uploadResult.ref);
-}
-
-export async function createGalleryImage(
-  data: z.infer<typeof GalleryImageSchema>
-): Promise<GalleryImageFormState> {
-  const validatedFields = GalleryImageSchema.safeParse(data);
-
-  if (!validatedFields.success) {
-    return {
-      message: 'Failed to create gallery image.',
-      errors: validatedFields.error.flatten().fieldErrors,
-      success: false,
-    };
-  }
-
-  const { imageUrl, ...rest } = validatedFields.data;
-  let finalImageUrl = imageUrl;
-
-  try {
-    if (imageUrl.startsWith('data:image')) {
-      finalImageUrl = await handleImageUpload(imageUrl, 'gallery');
-    }
-
-    const galleryCollection = collection(firestore, 'gallery');
-    await addDoc(galleryCollection, { ...rest, imageUrl: finalImageUrl });
-  } catch (error) {
-    console.error(error);
-    return { message: 'Failed to create gallery image.', success: false };
-  }
-
-  revalidatePath('/admin/gallery');
-  revalidatePath('/gallery');
-  revalidatePath('/');
-  return { message: 'Successfully created gallery image.', success: true };
-}
-
-export async function updateGalleryImage(
-  id: string,
-  data: z.infer<typeof GalleryImageSchema>
-): Promise<GalleryImageFormState> {
-  const validatedFields = GalleryImageSchema.safeParse(data);
-
-  if (!validatedFields.success) {
-    return {
-      message: 'Failed to update gallery image.',
-      errors: validatedFields.error.flatten().fieldErrors,
-      success: false,
-    };
-  }
-
-  const { imageUrl, ...rest } = validatedFields.data;
-  let finalImageUrl = imageUrl;
-
-  try {
-    const galleryDocRef = doc(firestore, 'gallery', id);
-    const existingDoc = await getDoc(galleryDocRef);
-
-    if (imageUrl.startsWith('data:image')) {
-      finalImageUrl = await handleImageUpload(imageUrl, 'gallery');
-
-      if (existingDoc.exists()) {
-        const existingData = existingDoc.data();
-        if (
-          existingData?.imageUrl &&
-          existingData.imageUrl.includes('firebasestorage')
-        ) {
-          try {
-            const oldImageRef = ref(storage, existingData.imageUrl);
-            await deleteObject(oldImageRef);
-          } catch (storageError: any) {
-            if (storageError.code !== 'storage/object-not-found') {
-              console.warn(
-                'Could not delete old image, may not exist:',
-                storageError
-              );
-            }
-          }
-        }
-      }
-    }
-
-    const galleryData = { ...rest, imageUrl: finalImageUrl };
-
-    if (existingDoc.exists()) {
-      await updateDoc(galleryDocRef, galleryData);
-    } else {
-      await setDoc(galleryDocRef, galleryData);
-    }
-  } catch (error) {
-    console.error(error);
-    return { message: 'Failed to update gallery image.', success: false };
-  }
-
-  revalidatePath('/admin/gallery');
-  revalidatePath('/gallery');
-  revalidatePath('/');
-  return { message: 'Successfully updated gallery image.', success: true };
+  await uploadBytes(storageRef, fileBuffer, { contentType: file.type });
+  return getDownloadURL(storageRef);
 }
 
 async function deleteImageFromStorage(imageUrl: string) {
-  if (imageUrl.includes('firebasestorage')) {
+  if (imageUrl && imageUrl.includes('firebasestorage.googleapis.com')) {
     try {
       const imageRef = ref(storage, imageUrl);
       await deleteObject(imageRef);
@@ -155,6 +78,97 @@ async function deleteImageFromStorage(imageUrl: string) {
     }
   }
 }
+
+function parseGalleryFormData(formData: FormData) {
+    const imageFile = formData.get('imageFile');
+    return {
+        title: formData.get('title'),
+        category: formData.get('category'),
+        featured: formData.get('featured') === 'on',
+        imageFile: imageFile instanceof File && imageFile.size > 0 ? imageFile : undefined,
+    }
+}
+
+export async function createGalleryImage(
+  prevState: GalleryImageFormState,
+  formData: FormData
+): Promise<GalleryImageFormState> {
+  const rawData = parseGalleryFormData(formData);
+  const validatedFields = CreateGalleryImageSchema.safeParse(rawData);
+
+  if (!validatedFields.success) {
+    return {
+      message: 'Failed to create gallery image.',
+      errors: validatedFields.error.flatten().fieldErrors,
+      success: false,
+    };
+  }
+
+  const { imageFile, ...rest } = validatedFields.data;
+
+  try {
+    const imageUrl = await uploadImage(imageFile!);
+    const galleryCollection = collection(firestore, 'gallery');
+    await addDoc(galleryCollection, { 
+        ...rest, 
+        imageUrl,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+    });
+
+    revalidatePath('/admin/gallery');
+    revalidatePath('/gallery');
+    revalidatePath('/');
+    return { message: 'Successfully created gallery image.', success: true, errors: {} };
+  } catch (error) {
+    console.error('Create Gallery Image Error:', error);
+    return { message: 'Failed to create gallery image.', success: false };
+  }
+}
+
+export async function updateGalleryImage(
+  prevState: GalleryImageFormState,
+  formData: FormData
+): Promise<GalleryImageFormState> {
+  const id = formData.get('id') as string;
+  if (!id) return { message: 'Failed to update image: Missing ID', success: false };
+
+  const rawData = parseGalleryFormData(formData);
+  const validatedFields = UpdateGalleryImageSchema.safeParse(rawData);
+
+  if (!validatedFields.success) {
+    return {
+      message: 'Failed to update gallery image.',
+      errors: validatedFields.error.flatten().fieldErrors,
+      success: false,
+    };
+  }
+
+  const { imageFile, ...rest } = validatedFields.data;
+  const galleryDocRef = doc(firestore, 'gallery', id);
+  const payload: Record<string, any> = { ...rest, updatedAt: serverTimestamp() };
+
+  try {
+    if (imageFile) {
+      const docSnap = await getDoc(galleryDocRef);
+      if (docSnap.exists() && docSnap.data().imageUrl) {
+        await deleteImageFromStorage(docSnap.data().imageUrl);
+      }
+      payload.imageUrl = await uploadImage(imageFile);
+    }
+
+    await updateDoc(galleryDocRef, payload);
+
+    revalidatePath('/admin/gallery');
+    revalidatePath('/gallery');
+    revalidatePath('/');
+    return { message: 'Successfully updated gallery image.', success: true, errors: {} };
+  } catch (error) {
+    console.error('Update Gallery Image Error:', error);
+    return { message: 'Failed to update gallery image.', success: false };
+  }
+}
+
 
 export async function deleteGalleryImage(
   id: string

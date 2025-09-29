@@ -17,8 +17,8 @@ import {
   deleteDoc,
   getDoc,
   serverTimestamp,
+  Timestamp,
 } from 'firebase/firestore';
-import { Timestamp } from 'firebase/firestore';
 
 const ArticleSchema = z.object({
   title: z.string().min(1, 'Title is required'),

@@ -9,6 +9,7 @@ import {
   addDoc,
   updateDoc,
   deleteDoc,
+  serverTimestamp,
 } from 'firebase/firestore';
 
 const JobSchema = z.object({
@@ -20,22 +21,12 @@ const JobSchema = z.object({
 
 export type JobFormState = {
   message: string;
-  errors?: {
-    title?: string[];
-    description?: string[];
-    location?: string[];
-    type?: string[];
-  };
-  success?: boolean;
+  errors?: z.ZodError<z.infer<typeof JobSchema>>['formErrors']['fieldErrors'];
+  success: boolean;
 };
 
-export async function createJob(formData: FormData): Promise<JobFormState> {
-  const validatedFields = JobSchema.safeParse({
-    title: formData.get('title'),
-    description: formData.get('description'),
-    location: formData.get('location'),
-    type: formData.get('type'),
-  });
+export async function createJob(data: z.infer<typeof JobSchema>): Promise<JobFormState> {
+  const validatedFields = JobSchema.safeParse(data);
 
   if (!validatedFields.success) {
     return {
@@ -47,26 +38,25 @@ export async function createJob(formData: FormData): Promise<JobFormState> {
 
   try {
     const jobsCollection = collection(firestore, 'jobs');
-    await addDoc(jobsCollection, validatedFields.data);
+    await addDoc(jobsCollection, {
+        ...validatedFields.data,
+        createdAt: serverTimestamp(),
+    });
+    
+    revalidatePath('/admin/careers');
+    revalidatePath('/careers');
+    return { message: 'Successfully created job.', success: true };
+
   } catch (error) {
     return { message: 'Failed to create job.', success: false };
   }
-
-  revalidatePath('/admin/careers');
-  revalidatePath('/careers');
-  return { message: 'Successfully created job.', success: true };
 }
 
 export async function updateJob(
   id: string,
-  formData: FormData
+  data: z.infer<typeof JobSchema>
 ): Promise<JobFormState> {
-  const validatedFields = JobSchema.safeParse({
-    title: formData.get('title'),
-    description: formData.get('description'),
-    location: formData.get('location'),
-    type: formData.get('type'),
-  });
+  const validatedFields = JobSchema.safeParse(data);
 
   if (!validatedFields.success) {
     return {
@@ -79,13 +69,14 @@ export async function updateJob(
   try {
     const jobDoc = doc(firestore, 'jobs', id);
     await updateDoc(jobDoc, validatedFields.data);
+
+    revalidatePath('/admin/careers');
+    revalidatePath('/careers');
+    return { message: 'Successfully updated job.', success: true };
+
   } catch (error) {
     return { message: 'Failed to update job.', success: false };
   }
-
-  revalidatePath('/admin/careers');
-  revalidatePath('/careers');
-  return { message: 'Successfully updated job.', success: true };
 }
 
 export async function deleteJob(

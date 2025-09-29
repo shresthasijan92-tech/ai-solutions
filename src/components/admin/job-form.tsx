@@ -1,6 +1,6 @@
 'use client';
 
-import { useTransition } from 'react';
+import { useTransition, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -51,26 +51,30 @@ export function JobForm({ job, onSuccess }: JobFormProps) {
 
   const form = useForm<JobFormValues>({
     resolver: zodResolver(JobFormSchema),
-    defaultValues: {
-      title: job?.title || '',
-      description: job?.description || '',
-      location: job?.location || '',
-      type: job?.type || 'Full-time',
+    defaultValues: job || {
+      title: '',
+      description: '',
+      location: '',
+      type: 'Full-time',
     },
   });
 
+  useEffect(() => {
+    form.reset(job || {
+      title: '',
+      description: '',
+      location: '',
+      type: 'Full-time',
+    });
+  }, [job, form]);
+
   const onSubmit = (data: JobFormValues) => {
     startTransition(async () => {
-      const formData = new FormData();
-      Object.entries(data).forEach(([key, value]) => {
-        formData.append(key, String(value));
-      });
-
-      const action = job
+      const action = job?.id
         ? updateJob.bind(null, job.id)
         : createJob;
         
-      const result = await action(formData);
+      const result = await action(data);
 
       if (result.success) {
         toast({

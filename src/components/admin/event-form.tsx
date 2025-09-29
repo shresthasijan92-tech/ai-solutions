@@ -1,24 +1,14 @@
 'use client';
 
-import { useEffect, useTransition } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
+import { useEffect, useActionState, useState } from 'react';
+import { useFormStatus } from 'react-dom';
 import { Loader2, Calendar as CalendarIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { Timestamp } from 'firebase/firestore';
 
 import { Button } from '@/components/ui/button';
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
@@ -35,25 +25,11 @@ import {
 } from '@/lib/actions/events';
 import { cn } from '@/lib/utils';
 
-const EventFormSchema = z.object({
-  title: z.string().min(1, 'Title is required'),
-  description: z.string().min(1, 'Description is required'),
-  location: z.string().min(1, 'Location is required'),
-  date: z.date({
-    required_error: "A date for the event is required.",
-  }),
-  imageUrl: z.string().optional(),
-  featured: z.boolean(),
-});
-
-type EventFormValues = z.infer<typeof EventFormSchema>;
-
 type EventFormProps = {
   event?: Event | null;
   onSuccess: () => void;
 };
 
-// Helper to convert Firestore Timestamp or string to Date
 const toDate = (timestamp: string | Timestamp | Date | undefined | null): Date => {
   if (!timestamp) {
     return new Date();
@@ -64,237 +40,131 @@ const toDate = (timestamp: string | Timestamp | Date | undefined | null): Date =
   return new Date(timestamp);
 };
 
+function SubmitButton({ isEditing }: { isEditing: boolean }) {
+  const { pending } = useFormStatus();
+
+  return (
+    <Button type="submit" disabled={pending} className="w-full sm:w-auto">
+      {pending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+      {isEditing ? 'Save Changes' : 'Create Event'}
+    </Button>
+  );
+}
 
 export function EventForm({ event, onSuccess }: EventFormProps) {
   const { toast } = useToast();
-  const [isPending, startTransition] = useTransition();
-
-  const form = useForm<EventFormValues>({
-    resolver: zodResolver(EventFormSchema),
-    defaultValues: {
-      title: '',
-      description: '',
-      location: '',
-      date: new Date(),
-      imageUrl: '',
-      featured: false,
-    },
+  
+  const action = event?.id ? updateEvent : createEvent;
+  const [state, formAction] = useActionState(action, {
+    message: '',
+    success: false,
+    errors: {}
   });
 
+  const [selectedDate, setSelectedDate] = useState<Date>(
+    event?.date ? toDate(event.date) : new Date()
+  );
+
   useEffect(() => {
-    if (event) {
-        form.reset({
-            title: event.title || '',
-            description: event.description || '',
-            location: event.location || '',
-            date: toDate(event.date),
-            imageUrl: event.imageUrl || '',
-            featured: event.featured || false,
-        });
-    } else {
-        form.reset({
-            title: '',
-            description: '',
-            location: '',
-            date: new Date(),
-            imageUrl: '',
-            featured: false,
-        });
-    }
-  }, [event, form]);
-
-  const handleFileChange = (
-    e: React.ChangeEvent<HTMLInputElement>,
-    fieldChange: (value: string) => void
-  ) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        fieldChange(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const onSubmit = (data: EventFormValues) => {
-    startTransition(async () => {
-      const action = event?.id
-        ? updateEvent.bind(null, event.id)
-        : createEvent;
-        
-      const result = await action(data);
-
-      if (result.success) {
+    if (state.message) {
+      if (state.success) {
         toast({
           title: 'Success!',
-          description: result.message,
+          description: state.message,
         });
         onSuccess();
       } else {
         toast({
           variant: 'destructive',
           title: 'Error',
-          description: result.message,
+          description: state.message,
         });
-         if (result.errors) {
-            Object.entries(result.errors).forEach(([key, value]) => {
-                if (value) {
-                    form.setError(key as keyof EventFormValues, {
-                        type: 'manual',
-                        message: value.join(', '),
-                    });
-                }
-            });
-        }
       }
-    });
-  };
+    }
+  }, [state, toast, onSuccess]);
+
+  useEffect(() => {
+    if (event?.date) {
+      setSelectedDate(toDate(event.date));
+    }
+  }, [event]);
 
   return (
-    <Form {...form}>
       <form
-        onSubmit={form.handleSubmit(onSubmit)}
+        action={formAction}
         className="space-y-6"
       >
-        <FormField
-          control={form.control}
-          name="title"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Title</FormLabel>
-              <FormControl>
-                <Input placeholder="AI Innovation Summit" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="description"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Description</FormLabel>
-              <FormControl>
-                <Textarea
-                  placeholder="A short description of the event"
-                  {...field}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="location"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Location</FormLabel>
-              <FormControl>
-                <Input
-                  placeholder="San Francisco, CA or Online"
-                  {...field}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-         <FormField
-          control={form.control}
-          name="date"
-          render={({ field }) => (
-            <FormItem className="flex flex-col">
-              <FormLabel>Event Date</FormLabel>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <FormControl>
-                    <Button
-                      variant={"outline"}
-                      className={cn(
-                        "w-[240px] pl-3 text-left font-normal",
-                        !field.value && "text-muted-foreground"
-                      )}
-                    >
-                      {field.value ? (
-                        format(toDate(field.value), "PPP")
-                      ) : (
-                        <span>Pick a date</span>
-                      )}
-                      <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                    </Button>
-                  </FormControl>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={field.value}
-                    onSelect={field.onChange}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="imageUrl"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Image URL</FormLabel>
-              <FormControl>
-                <Input placeholder="https://example.com/image.jpg" {...field} value={field.value ?? ''} />
-              </FormControl>
-              <FormDescription>
-                Provide a full web link to an image for the event.
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-         <FormItem>
-          <FormLabel>Or Upload Image</FormLabel>
-          <FormControl>
-            <Input
-              type="file"
-              accept="image/*"
-              onChange={(e) => handleFileChange(e, (value) => form.setValue('imageUrl', value))}
-            />
-          </FormControl>
-          <FormDescription>
-            Upload an image from your device. This will override the Image URL field.
-          </FormDescription>
-        </FormItem>
-        <FormField
-          control={form.control}
-          name="featured"
-          render={({ field }) => (
-            <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
-              <FormControl>
-                <Checkbox
-                  checked={field.value}
-                  onCheckedChange={field.onChange}
-                />
-              </FormControl>
-              <div className="space-y-1 leading-none">
-                <FormLabel>Feature on homepage</FormLabel>
-                <FormDescription>
-                  Check this to display this event on the homepage.
-                </FormDescription>
-              </div>
-            </FormItem>
-          )}
-        />
+        {event?.id && <input type="hidden" name="id" value={event.id} />}
+        <div className="space-y-2">
+            <Label htmlFor="title">Title</Label>
+            <Input id="title" name="title" placeholder="AI Innovation Summit" defaultValue={event?.title} required />
+            {state.errors?.title && <p className="text-sm text-destructive">{state.errors.title.join(', ')}</p>}
+        </div>
 
-        <Button type="submit" disabled={isPending} className="w-full sm:w-auto">
-          {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          {event ? 'Save Changes' : 'Create Event'}
-        </Button>
+        <div className="space-y-2">
+            <Label htmlFor="description">Description</Label>
+            <Textarea id="description" name="description" placeholder="A short description of the event" defaultValue={event?.description} required />
+            {state.errors?.description && <p className="text-sm text-destructive">{state.errors.description.join(', ')}</p>}
+        </div>
+
+        <div className="space-y-2">
+            <Label htmlFor="location">Location</Label>
+            <Input id="location" name="location" placeholder="San Francisco, CA or Online" defaultValue={event?.location} required />
+            {state.errors?.location && <p className="text-sm text-destructive">{state.errors.location.join(', ')}</p>}
+        </div>
+
+        <div className="space-y-2">
+            <Label>Event Date</Label>
+            <input type="hidden" name="date" value={selectedDate.toISOString()} />
+            <Popover>
+              <PopoverTrigger asChild>
+                  <Button
+                    variant={'outline'}
+                    className={cn(
+                      'w-[240px] justify-start text-left font-normal',
+                      !selectedDate && 'text-muted-foreground'
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {selectedDate ? format(selectedDate, 'PPP') : <span>Pick a date</span>}
+                  </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0">
+                <Calendar
+                  mode="single"
+                  selected={selectedDate}
+                  onSelect={(date) => setSelectedDate(date || new Date())}
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
+            {state.errors?.date && <p className="text-sm text-destructive">{state.errors.date.join(', ')}</p>}
+        </div>
+        
+        <div className="space-y-2">
+          <Label htmlFor="imageUrl">Image URL</Label>
+          <Input id="imageUrl" name="imageUrl" placeholder="https://example.com/image.jpg" defaultValue={event?.imageUrl ?? ''} />
+          <p className="text-sm text-muted-foreground">Provide a link to an image, or upload a file below.</p>
+           {state.errors?.imageUrl && <p className="text-sm text-destructive">{state.errors.imageUrl.join(', ')}</p>}
+        </div>
+
+         <div className="space-y-2">
+          <Label htmlFor="imageFile">Or Upload Image</Label>
+          <Input
+            id="imageFile"
+            name="imageFile"
+            type="file"
+            accept="image/*"
+          />
+          <p className="text-sm text-muted-foreground">This will override the Image URL if both are provided.</p>
+        </div>
+
+        <div className="flex items-center space-x-2 rounded-md border p-4">
+            <Checkbox id="featured" name="featured" defaultChecked={event?.featured} />
+            <Label htmlFor="featured" className="text-sm font-medium leading-none">Feature on homepage</Label>
+        </div>
+
+        <SubmitButton isEditing={!!event?.id} />
       </form>
-    </Form>
   );
 }
