@@ -18,6 +18,7 @@ import {
   getDoc,
   serverTimestamp,
 } from 'firebase/firestore';
+import type { GalleryImage } from '../definitions';
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const ACCEPTED_IMAGE_TYPES = [
@@ -153,7 +154,7 @@ export async function updateGalleryImage(
 
   const { imageFile, ...rest } = validatedFields.data;
   const galleryDocRef = doc(firestore, 'gallery', id);
-  const payload: Record<string, any> = { ...rest, updatedAt: serverTimestamp() };
+  const payload: Partial<GalleryImage> & { updatedAt: any } = { ...rest, updatedAt: serverTimestamp() };
 
   try {
     if (imageFile) {

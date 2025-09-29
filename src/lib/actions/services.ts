@@ -18,6 +18,7 @@ import {
   getDoc,
   serverTimestamp,
 } from 'firebase/firestore';
+import type { Service } from '../definitions';
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const ACCEPTED_IMAGE_TYPES = [
@@ -111,7 +112,7 @@ export async function createService(
   }
 
   const { imageFile, ...rest } = validatedFields.data;
-  const payload: Record<string, any> = { ...rest, updatedAt: serverTimestamp() };
+  const payload: Partial<Service> & {createdAt: any, updatedAt: any} = { ...rest, updatedAt: serverTimestamp() };
 
   try {
     if (imageFile) {
@@ -157,7 +158,7 @@ export async function updateService(
 
   const { imageFile, ...rest } = validatedFields.data;
   const serviceDocRef = doc(firestore, 'services', id);
-  const payload: Record<string, any> = { ...rest, updatedAt: serverTimestamp() };
+  const payload: Partial<Service> & {updatedAt: any} = { ...rest, updatedAt: serverTimestamp() };
 
   try {
     if (imageFile) {

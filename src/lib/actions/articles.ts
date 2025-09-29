@@ -18,6 +18,7 @@ import {
   serverTimestamp,
   Timestamp,
 } from 'firebase/firestore';
+import type { Article } from '../definitions';
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const ACCEPTED_IMAGE_TYPES = [
@@ -115,7 +116,7 @@ export async function createArticle(
   try {
     const imageUrl = await uploadImage(imageFile!);
     
-    const payload: Record<string, any> = {
+    const payload: Omit<Article, 'id' | 'createdAt' | 'updatedAt'> & { createdAt: any, updatedAt: any } = {
       ...rest,
       imageUrl,
       publishedAt: Timestamp.fromDate(rest.publishedAt),
@@ -160,15 +161,13 @@ export async function updateArticle(
   const articleDocRef = doc(firestore, 'articles', id);
 
   try {
-    const payload: Record<string, any> = {
+    const payload: Partial<Article> & {updatedAt: any, publishedAt: any} = {
       ...rest,
       publishedAt: Timestamp.fromDate(rest.publishedAt),
       updatedAt: serverTimestamp(),
     };
 
-    // Handle image update
     if (imageFile) {
-      // Get current document to delete old image
       const docSnap = await getDoc(articleDocRef);
       if (docSnap.exists() && docSnap.data().imageUrl) {
         await deleteImageFromStorage(docSnap.data().imageUrl);

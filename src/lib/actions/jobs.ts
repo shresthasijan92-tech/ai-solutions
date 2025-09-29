@@ -44,6 +44,7 @@ export async function createJob(
     await addDoc(jobsCollection, {
       ...validatedFields.data,
       createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
     });
 
     revalidatePath('/admin/careers');

@@ -17,6 +17,7 @@ import {
   getDoc,
   serverTimestamp,
 } from 'firebase/firestore';
+import type { Project } from '../definitions';
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const ACCEPTED_IMAGE_TYPES = [
@@ -161,7 +162,7 @@ export async function updateProject(
   const projectDocRef = doc(firestore, 'projects', id);
 
   try {
-    const payload: Record<string, any> = { ...rest, updatedAt: serverTimestamp() };
+    const payload: Partial<Project> & { updatedAt: any } = { ...rest, updatedAt: serverTimestamp() };
 
     if (image) {
       const docSnap = await getDoc(projectDocRef);

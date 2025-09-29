@@ -49,8 +49,9 @@ function SubmitButton({ isEditing }: { isEditing: boolean }) {
 export function JobForm({ job, onSuccess }: JobFormProps) {
   const { toast } = useToast();
   
+  const action = job?.id ? updateJob.bind(null, job.id) : createJob;
   const [state, formAction] = useActionState<JobFormState, JobFormValues>(
-    job?.id ? updateJob.bind(null, job.id) : createJob, 
+    action, 
     { message: '', success: false, errors: {} }
   );
 

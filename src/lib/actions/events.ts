@@ -19,6 +19,7 @@ import {
   serverTimestamp,
   Timestamp,
 } from 'firebase/firestore';
+import type { Event } from '../definitions';
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const ACCEPTED_IMAGE_TYPES = [
@@ -108,7 +109,7 @@ export async function createEvent(
   }
 
   const { imageFile, ...rest } = validatedFields.data;
-  const payload: Record<string, any> = {
+  const payload: Omit<Event, 'id' | 'createdAt' | 'updatedAt' | 'date'> & { date: any, createdAt: any, updatedAt: any } = {
     ...rest,
     date: Timestamp.fromDate(rest.date),
     createdAt: serverTimestamp(),
@@ -154,7 +155,7 @@ export async function updateEvent(
 
   const { imageFile, ...rest } = validatedFields.data;
   const eventDocRef = doc(firestore, 'events', id);
-  const payload: Record<string, any> = {
+  const payload: Partial<Event> & { date: any, updatedAt: any } = {
     ...rest,
     date: Timestamp.fromDate(rest.date),
     updatedAt: serverTimestamp(),

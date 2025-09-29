@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -28,7 +27,6 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import { useState } from 'react';
 
@@ -65,7 +63,13 @@ function StarRating({ rating }: { rating: number }) {
 
 export function TestimonialsTable({ testimonials }: TestimonialsTableProps) {
   const { toast } = useToast();
+  const [dialogOpen, setDialogOpen] = useState(false);
   const [testimonialToDelete, setTestimonialToDelete] = useState<Testimonial | null>(null);
+
+  const handleDeleteClick = (testimonial: Testimonial) => {
+    setTestimonialToDelete(testimonial);
+    setDialogOpen(true);
+  };
 
   const handleConfirmDelete = async () => {
     if (!testimonialToDelete) return;
@@ -82,6 +86,7 @@ export function TestimonialsTable({ testimonials }: TestimonialsTableProps) {
         description: result.message,
       });
     }
+    setDialogOpen(false);
     setTestimonialToDelete(null);
   };
 
@@ -90,7 +95,7 @@ export function TestimonialsTable({ testimonials }: TestimonialsTableProps) {
   }
 
   return (
-    <AlertDialog>
+    <>
       <div className="rounded-lg border">
         <Table>
           <TableHeader>
@@ -114,18 +119,16 @@ export function TestimonialsTable({ testimonials }: TestimonialsTableProps) {
                 </TableCell>
                 <TableCell>{toDate(testimonial.createdAt).toLocaleDateString()}</TableCell>
                 <TableCell className="text-right">
-                   <AlertDialogTrigger asChild>
-                    <Button variant="ghost" size="icon" onClick={() => setTestimonialToDelete(testimonial)}>
+                    <Button variant="ghost" size="icon" onClick={() => handleDeleteClick(testimonial)}>
                       <Trash2 className="h-4 w-4 text-destructive" />
                     </Button>
-                  </AlertDialogTrigger>
                 </TableCell>
               </TableRow>
             ))}
           </TableBody>
         </Table>
       </div>
-      {testimonialToDelete && (
+      <AlertDialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <AlertDialogContent>
             <AlertDialogHeader>
             <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
@@ -134,7 +137,7 @@ export function TestimonialsTable({ testimonials }: TestimonialsTableProps) {
             </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setTestimonialToDelete(null)}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel onClick={() => setDialogOpen(false)}>Cancel</AlertDialogCancel>
             <AlertDialogAction
                 onClick={handleConfirmDelete}
                 className="bg-destructive hover:bg-destructive/90"
@@ -143,7 +146,7 @@ export function TestimonialsTable({ testimonials }: TestimonialsTableProps) {
             </AlertDialogAction>
             </AlertDialogFooter>
         </AlertDialogContent>
-      )}
-    </AlertDialog>
+      </AlertDialog>
+    </>
   );
 }
