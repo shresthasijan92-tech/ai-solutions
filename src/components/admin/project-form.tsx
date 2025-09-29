@@ -82,40 +82,49 @@ export function ProjectForm({ project, onSuccess }: ProjectFormProps) {
   
   const onSubmit = (data: ProjectFormValues) => {
     startTransition(async () => {
-       const payload = {
+      const payload = {
         ...data,
         technologies: data.technologies.split(',').map(t => t.trim()).filter(t => t.length > 0)
       };
-      
-      const action = project?.id
-        ? updateProject.bind(null, project.id, payload)
-        : createProject.bind(null, payload);
-        
-      const result = await action();
 
-      if (result.success) {
-        toast({
-          title: 'Success!',
-          description: result.message,
-        });
-        onSuccess();
-        form.reset();
-      } else {
-        toast({
-          variant: 'destructive',
-          title: 'Error',
-          description: result.message,
-        });
-         if (result.errors) {
-            Object.entries(result.errors).forEach(([key, value]) => {
-                if (value) {
-                    form.setError(key as keyof ProjectFormValues, {
-                        type: 'manual',
-                        message: value.join(', '),
-                    });
-                }
-            });
+      try {
+        let result;
+        if (project?.id) {
+          result = await updateProject(project.id, payload);
+        } else {
+          result = await createProject(payload);
         }
+
+        if (result.success) {
+          toast({
+            title: 'Success!',
+            description: result.message,
+          });
+          onSuccess();
+          form.reset();
+        } else {
+          toast({
+            variant: 'destructive',
+            title: 'Error',
+            description: result.message,
+          });
+          if (result.errors) {
+            Object.entries(result.errors).forEach(([key, value]) => {
+              if (value) {
+                form.setError(key as keyof ProjectFormValues, {
+                  type: 'manual',
+                  message: value.join(', '),
+                });
+              }
+            });
+          }
+        }
+      } catch (error) {
+         toast({
+            variant: 'destructive',
+            title: 'Error',
+            description: 'An unexpected error occurred.',
+          });
       }
     });
   };
