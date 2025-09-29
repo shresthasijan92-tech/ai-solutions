@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useTransition } from 'react';
+import { useEffect } from 'react';
 import { useFormState, useFormStatus } from 'react-dom';
 import { Loader2 } from 'lucide-react';
 
@@ -37,6 +37,7 @@ export function ProjectForm({ project, onSuccess }: ProjectFormProps) {
   const [state, formAction] = useFormState(action, {
     message: '',
     success: false,
+    errors: {},
   });
 
   useEffect(() => {
@@ -94,6 +95,7 @@ export function ProjectForm({ project, onSuccess }: ProjectFormProps) {
           defaultValue={project?.caseStudy ?? ''}
           rows={10} 
         />
+         {state.errors?.caseStudy && <p className="text-sm text-destructive">{state.errors.caseStudy.join(', ')}</p>}
       </div>
 
       <div className="space-y-2">
@@ -105,8 +107,9 @@ export function ProjectForm({ project, onSuccess }: ProjectFormProps) {
           accept="image/*" 
         />
         <p className="text-sm text-muted-foreground">
-          Upload a new image to replace the existing one. Leave blank to keep the current image.
+          {project?.id ? 'Upload a new image to replace the existing one. Leave blank to keep the current image.' : 'An image is required for a new project.'}
         </p>
+        {state.errors?.image && <p className="text-sm text-destructive">{state.errors.image.join(', ')}</p>}
       </div>
 
       <div className="space-y-2">
