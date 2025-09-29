@@ -1,7 +1,6 @@
 'use client';
 
-import { useEffect, useActionState } from 'react';
-import { Loader2 } from 'lucide-react';
+import { useActionState, useEffect } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,7 +9,11 @@ import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { type Service } from '@/lib/definitions';
-import { createService, updateService } from '@/lib/actions/services';
+import {
+  createService,
+  updateService,
+  type ServiceFormState,
+} from '@/lib/actions/services';
 
 type ServiceFormProps = {
   service?: Service | null;
@@ -22,11 +25,14 @@ export function ServiceForm({ service, onSuccess }: ServiceFormProps) {
 
   const action = service?.id ? updateService : createService;
 
-  const [state, formAction] = useActionState(action, {
-    message: '',
-    success: false,
-    errors: {},
-  });
+  const [state, formAction] = useActionState<ServiceFormState, FormData>(
+    action,
+    {
+      message: '',
+      success: false,
+      errors: {},
+    }
+  );
 
   useEffect(() => {
     if (state.message) {
@@ -47,11 +53,7 @@ export function ServiceForm({ service, onSuccess }: ServiceFormProps) {
   }, [state, toast, onSuccess]);
 
   return (
-    <form
-      action={formAction}
-      className="space-y-6"
-      encType="multipart/form-data"
-    >
+    <form action={formAction} className="space-y-6">
       {service?.id && (
         <>
           <input type="hidden" name="id" value={service.id} />

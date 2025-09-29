@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useActionState } from 'react';
-import { Loader2, Calendar as CalendarIcon } from 'lucide-react';
+import { useActionState, useEffect, useState } from 'react';
+import { Calendar as CalendarIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { Timestamp } from 'firebase/firestore';
 
@@ -24,7 +24,6 @@ import {
   type ArticleFormState,
 } from '@/lib/actions/articles';
 import { cn } from '@/lib/utils';
-import { useState } from 'react';
 
 type ArticleFormProps = {
   article?: Article | null;
@@ -81,11 +80,7 @@ export function ArticleForm({ article, onSuccess }: ArticleFormProps) {
   }, [article]);
 
   return (
-    <form
-      action={formAction}
-      className="space-y-6"
-      encType="multipart/form-data"
-    >
+    <form action={formAction} className="space-y-6">
       {article?.id && (
         <>
           <input type="hidden" name="id" value={article.id} />

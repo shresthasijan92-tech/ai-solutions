@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useActionState, useState } from 'react';
-import { Loader2, Calendar as CalendarIcon } from 'lucide-react';
+import { useActionState, useEffect, useState } from 'react';
+import { Calendar as CalendarIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { Timestamp } from 'firebase/firestore';
 
@@ -18,7 +18,11 @@ import {
 import { Calendar } from '@/components/ui/calendar';
 import { useToast } from '@/hooks/use-toast';
 import { type Event } from '@/lib/definitions';
-import { createEvent, updateEvent } from '@/lib/actions/events';
+import {
+  createEvent,
+  updateEvent,
+  type EventFormState,
+} from '@/lib/actions/events';
 import { cn } from '@/lib/utils';
 
 type EventFormProps = {
@@ -42,11 +46,14 @@ export function EventForm({ event, onSuccess }: EventFormProps) {
   const { toast } = useToast();
 
   const action = event?.id ? updateEvent : createEvent;
-  const [state, formAction] = useActionState(action, {
-    message: '',
-    success: false,
-    errors: {},
-  });
+  const [state, formAction] = useActionState<EventFormState, FormData>(
+    action,
+    {
+      message: '',
+      success: false,
+      errors: {},
+    }
+  );
 
   const [selectedDate, setSelectedDate] = useState<Date>(
     event?.date ? toDate(event.date) : new Date()
@@ -77,11 +84,15 @@ export function EventForm({ event, onSuccess }: EventFormProps) {
   }, [event]);
 
   return (
-    <form action={formAction} className="space-y-6" encType="multipart/form-data">
+    <form action={formAction} className="space-y-6">
       {event?.id && (
         <>
           <input type="hidden" name="id" value={event.id} />
-          <input type="hidden" name="prevImageUrl" value={event.imageUrl ?? ''} />
+          <input
+            type="hidden"
+            name="prevImageUrl"
+            value={event.imageUrl ?? ''}
+          />
         </>
       )}
       <div className="space-y-2">

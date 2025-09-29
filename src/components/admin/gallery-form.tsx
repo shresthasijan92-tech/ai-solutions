@@ -1,7 +1,6 @@
 'use client';
 
-import { useEffect, useActionState } from 'react';
-import { Loader2 } from 'lucide-react';
+import { useActionState, useEffect } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,6 +11,7 @@ import { type GalleryImage } from '@/lib/definitions';
 import {
   createGalleryImage,
   updateGalleryImage,
+  type GalleryImageFormState,
 } from '@/lib/actions/gallery';
 import {
   Select,
@@ -30,7 +30,10 @@ export function GalleryForm({ image, onSuccess }: GalleryFormProps) {
   const { toast } = useToast();
 
   const action = image?.id ? updateGalleryImage : createGalleryImage;
-  const [state, formAction] = useActionState(action, {
+  const [state, formAction] = useActionState<
+    GalleryImageFormState,
+    FormData
+  >(action, {
     message: '',
     success: false,
     errors: {},
@@ -55,11 +58,7 @@ export function GalleryForm({ image, onSuccess }: GalleryFormProps) {
   }, [state, toast, onSuccess]);
 
   return (
-    <form
-      action={formAction}
-      encType="multipart/form-data"
-      className="space-y-6"
-    >
+    <form action={formAction} className="space-y-6">
       {image?.id && (
         <>
           <input type="hidden" name="id" value={image.id} />
