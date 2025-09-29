@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useActionState, useEffect, useState } from 'react';
@@ -92,7 +93,10 @@ export function ArticleForm({ article, onSuccess }: ArticleFormProps) {
   }, [article]);
 
   return (
-    <form action={formAction} className="space-y-6">
+    <form
+      action={formAction}
+      className="space-y-6"
+    >
       {article?.id && <input type="hidden" name="id" value={article.id} />}
 
       <div className="space-y-2">

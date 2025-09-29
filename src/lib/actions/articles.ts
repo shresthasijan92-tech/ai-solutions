@@ -1,3 +1,4 @@
+
 'use server';
 
 import { revalidatePath } from 'next/cache';
@@ -18,7 +19,6 @@ import {
   serverTimestamp,
   Timestamp,
 } from 'firebase/firestore';
-import type { Article } from '../definitions';
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const ACCEPTED_IMAGE_TYPES = [
@@ -37,10 +37,7 @@ const ArticleCreateSchema = z.object({
   imageFile: z
     .instanceof(File)
     .refine((file) => file.size > 0, 'An image file is required.')
-    .refine(
-      (file) => file.size <= MAX_FILE_SIZE,
-      `Max image size is 5MB.`
-    )
+    .refine((file) => file.size <= MAX_FILE_SIZE, `Max image size is 5MB.`)
     .refine(
       (file) => ACCEPTED_IMAGE_TYPES.includes(file.type),
       'Only .jpg, .jpeg, .png and .webp formats are supported.'
@@ -48,13 +45,13 @@ const ArticleCreateSchema = z.object({
 });
 
 const ArticleUpdateSchema = z.object({
-    title: z.string().min(1, 'Title is required'),
-    excerpt: z.string().min(1, 'Excerpt is required'),
-    content: z.string().min(1, 'Full article content is required.'),
-    publishedAt: z.coerce.date(),
-    featured: z.boolean(),
-    imageUrl: z.string().url('A valid image URL is required.'),
-  });
+  title: z.string().min(1, 'Title is required'),
+  excerpt: z.string().min(1, 'Excerpt is required'),
+  content: z.string().min(1, 'Full article content is required.'),
+  publishedAt: z.coerce.date(),
+  featured: z.boolean(),
+  imageUrl: z.string().url().optional(),
+});
 
 export type ArticleFormState = {
   message: string;
@@ -139,9 +136,8 @@ export async function updateArticle(
     return { message: 'Failed to update article: Missing ID.', success: false };
   }
 
-  const articleDocRef = doc(firestore, 'articles', id);
-
   try {
+    const articleDocRef = doc(firestore, 'articles', id);
     const existingDocSnap = await getDoc(articleDocRef);
     if (!existingDocSnap.exists()) {
       return { message: 'Article not found.', success: false };
@@ -152,7 +148,6 @@ export async function updateArticle(
     let newImageUrl: string | undefined;
 
     if (imageFile && imageFile.size > 0) {
-      // Validate new file before uploading
       const fileValidation = ArticleCreateSchema.shape.imageFile.safeParse(imageFile);
       if (!fileValidation.success) {
         return {
@@ -186,11 +181,9 @@ export async function updateArticle(
       };
     }
 
-    const { ...dataToUpdate } = validatedFields.data;
-
     await updateDoc(articleDocRef, {
-        ...dataToUpdate,
-        publishedAt: Timestamp.fromDate(dataToUpdate.publishedAt),
+        ...validatedFields.data,
+        publishedAt: Timestamp.fromDate(validatedFields.data.publishedAt),
         updatedAt: serverTimestamp(),
     });
 
