@@ -15,17 +15,13 @@ import { ProjectsTable } from '@/components/admin/projects-table';
 import { useProjects } from '@/hooks/use-projects';
 import { type Project } from '@/lib/definitions';
 import { Skeleton } from '@/components/ui/skeleton';
-import { projects as mockProjects } from '@/lib/mock-data';
+import { useUser } from '@/firebase';
 
 export default function AdminProjectsPage() {
-  const { projects: projectsFromDb, isLoading, error } = useProjects();
+  const { isUserLoading } = useUser();
+  const { projects, isLoading, error } = useProjects(!isUserLoading);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
-
-  const projects =
-    isLoading || !projectsFromDb || projectsFromDb.length === 0
-      ? mockProjects
-      : projectsFromDb;
 
   const handleAddClick = () => {
     setEditingProject(null);
@@ -41,6 +37,8 @@ export default function AdminProjectsPage() {
     setIsDialogOpen(false);
     setEditingProject(null);
   };
+  
+  const showLoading = isLoading || isUserLoading;
 
   return (
     <div className="space-y-8">
@@ -71,7 +69,7 @@ export default function AdminProjectsPage() {
         </Dialog>
       </div>
 
-      {isLoading && (
+      {showLoading && (
         <div className="space-y-2">
           <Skeleton className="h-10 w-full" />
           <Skeleton className="h-10 w-full" />
@@ -81,8 +79,8 @@ export default function AdminProjectsPage() {
 
       {error && <p className="text-destructive">{error.message}</p>}
 
-      {!isLoading && !error && (
-        <ProjectsTable projects={projects} onEdit={handleEditClick} />
+      {!showLoading && !error && (
+        <ProjectsTable projects={projects || []} onEdit={handleEditClick} />
       )}
     </div>
   );

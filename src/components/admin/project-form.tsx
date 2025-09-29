@@ -88,10 +88,10 @@ export function ProjectForm({ project, onSuccess }: ProjectFormProps) {
       };
       
       const action = project?.id
-        ? updateProject.bind(null, project.id)
-        : createProject;
+        ? updateProject.bind(null, project.id, payload)
+        : createProject.bind(null, payload);
         
-      const result = await action(payload);
+      const result = await action();
 
       if (result.success) {
         toast({
@@ -165,6 +165,7 @@ export function ProjectForm({ project, onSuccess }: ProjectFormProps) {
                 <Textarea
                   placeholder="The full case study content for the project."
                   {...field}
+                  value={field.value ?? ''}
                   rows={10}
                 />
               </FormControl>
