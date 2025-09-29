@@ -29,7 +29,7 @@ const ACCEPTED_IMAGE_TYPES = [
   'image/webp',
 ];
 
-// Base schema for validation
+// --- Zod Schemas ---
 const ArticleBaseSchema = z.object({
   title: z.string().min(1, 'Title is required'),
   excerpt: z.string().min(1, 'Excerpt is required'),
@@ -50,7 +50,6 @@ const ArticleBaseSchema = z.object({
     ),
 });
 
-// Schema for creating an article (image is required)
 const ArticleCreateSchema = ArticleBaseSchema.extend({
   imageFile: ArticleBaseSchema.shape.imageFile.refine(
     (file) => file && file.size > 0,
@@ -58,8 +57,8 @@ const ArticleCreateSchema = ArticleBaseSchema.extend({
   ),
 });
 
-// Schema for updating an article (image is optional)
 const ArticleUpdateSchema = ArticleBaseSchema;
+
 
 export type ArticleFormState = {
   message: string;
@@ -98,6 +97,7 @@ function parseFormData(formData: FormData) {
     excerpt: formData.get('excerpt'),
     content: formData.get('content'),
     publishedAt: formData.get('publishedAt'),
+    // This is the key fix: correctly handle the checkbox value
     featured: formData.get('featured') === 'on',
     imageFile: imageFile instanceof File && imageFile.size > 0 ? imageFile : undefined,
   };
@@ -130,7 +130,7 @@ export async function createArticle(
     await addDoc(articlesCollection, {
         ...rest,
         imageUrl: imageUrl,
-        publishedAt: Timestamp.fromDate(rest.publishedAt), // Convert to Timestamp
+        publishedAt: Timestamp.fromDate(rest.publishedAt),
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
     });
@@ -164,7 +164,14 @@ export async function updateArticle(
     const existingData = docSnap.data() as Article;
 
     const rawData = parseFormData(formData);
-    const validatedFields = ArticleUpdateSchema.safeParse(rawData);
+    
+    // Merge existing data with form data to prepare for validation
+    const mergedData = {
+      ...existingData,
+      ...rawData,
+    };
+    
+    const validatedFields = ArticleUpdateSchema.safeParse(mergedData);
 
     if (!validatedFields.success) {
       return {
@@ -175,9 +182,14 @@ export async function updateArticle(
     }
 
     const { imageFile, ...rest } = validatedFields.data;
-    const payload: Omit<Partial<Article>, 'id' | 'publishedAt'> & { publishedAt?: Timestamp; updatedAt: Timestamp } = {
-        ...rest,
-        publishedAt: Timestamp.fromDate(rest.publishedAt), // Convert to Timestamp
+    
+    // Create the final payload for Firestore
+    const payload: Omit<Partial<Article>, 'id' | 'publishedAt'> & { publishedAt?: Timestamp; updatedAt: any } = {
+        title: rest.title,
+        excerpt: rest.excerpt,
+        content: rest.content,
+        featured: rest.featured,
+        publishedAt: Timestamp.fromDate(rest.publishedAt),
         updatedAt: serverTimestamp(),
     };
     
