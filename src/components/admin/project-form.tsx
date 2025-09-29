@@ -84,7 +84,7 @@ export function ProjectForm({ project, onSuccess }: ProjectFormProps) {
     startTransition(async () => {
        const payload = {
         ...data,
-        technologies: data.technologies.split(',').map(t => t.trim())
+        technologies: data.technologies.split(',').map(t => t.trim()).filter(t => t.length > 0)
       };
       
       const action = project?.id
