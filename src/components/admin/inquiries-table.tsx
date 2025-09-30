@@ -9,9 +9,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import {
-  Trash2,
-} from 'lucide-react';
+import { Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { deleteInquiry } from '@/lib/actions/contact';
 import { type Contact } from '@/lib/definitions';
@@ -25,15 +23,14 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
+} from '@/components/ui/alert-dialog';
 import { useState } from 'react';
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from "@/components/ui/accordion"
-
+} from '@/components/ui/accordion';
 
 type InquiriesTableProps = {
   inquiries: Contact[];
@@ -44,7 +41,7 @@ const toDate = (timestamp: string | Timestamp | Date): Date => {
     return timestamp.toDate();
   }
   return new Date(timestamp);
-}
+};
 
 export function InquiriesTable({ inquiries }: InquiriesTableProps) {
   const { toast } = useToast();
@@ -88,72 +85,89 @@ export function InquiriesTable({ inquiries }: InquiriesTableProps) {
               <TableHead className="w-[50px] text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
-          {inquiries.map((inquiry) => (
-            <Accordion key={inquiry.id} type="single" collapsible className="w-full" asChild>
-                <TableBody>
-                  <AccordionItem value={inquiry.id} asChild>
-                    <>
-                      <TableRow>
-                        <TableCell>{toDate(inquiry.submittedAt).toLocaleString()}</TableCell>
-                        <TableCell className="font-medium">{inquiry.fullName}</TableCell>
-                        <TableCell>{inquiry.companyName}</TableCell>
-                        <TableCell><a href={`mailto:${inquiry.email}`} className="text-primary hover:underline">{inquiry.email}</a></TableCell>
-                        <TableCell className="text-right">
-                            <div className="flex items-center justify-end gap-2">
-                              <AccordionTrigger className="p-2 hover:bg-accent rounded-md [&[data-state=open]>svg]:rotate-90">
-                              </AccordionTrigger>
-                              <Button variant="ghost" size="icon" onClick={() => handleDeleteClick(inquiry)}>
-                                  <Trash2 className="h-4 w-4 text-destructive" />
-                              </Button>
+          <TableBody>
+            {inquiries.map((inquiry) => (
+              <Accordion asChild type="single" collapsible key={inquiry.id}>
+                <AccordionItem value={inquiry.id}>
+                  <TableRow>
+                    <TableCell>
+                      {toDate(inquiry.submittedAt).toLocaleString()}
+                    </TableCell>
+                    <TableCell className="font-medium">
+                      {inquiry.fullName}
+                    </TableCell>
+                    <TableCell>{inquiry.companyName}</TableCell>
+                    <TableCell>
+                      <a
+                        href={`mailto:${inquiry.email}`}
+                        className="text-primary hover:underline"
+                      >
+                        {inquiry.email}
+                      </a>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        <AccordionTrigger className="p-2 hover:bg-accent rounded-md [&[data-state=open]>svg]:rotate-90" />
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleDeleteClick(inquiry)}
+                        >
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell colSpan={5} className="p-0">
+                      <AccordionContent>
+                        <div className="p-6 bg-muted/50">
+                          <div className="grid grid-cols-2 gap-4 text-sm">
+                            <div>
+                              <p className="font-semibold">Country</p>
+                              <p>{inquiry.country}</p>
                             </div>
-                        </TableCell>
-                      </TableRow>
-                      <TableRow>
-                          <TableCell colSpan={5} className="p-0">
-                              <AccordionContent>
-                                  <div className="p-6 bg-muted/50">
-                                      <div className="grid grid-cols-2 gap-4 text-sm">
-                                          <div>
-                                              <p className="font-semibold">Country</p>
-                                              <p>{inquiry.country}</p>
-                                          </div>
-                                          <div>
-                                              <p className="font-semibold">Contact Number</p>
-                                              <p>{inquiry.contactNumber || 'Not provided'}</p>
-                                          </div>
-                                          <div className="col-span-2">
-                                              <p className="font-semibold">Project Details</p>
-                                              <p className="whitespace-pre-wrap">{inquiry.projectDetails}</p>
-                                          </div>
-                                      </div>
-                                  </div>
-                              </AccordionContent>
-                          </TableCell>
-                      </TableRow>
-                    </>
-                  </AccordionItem>
-                </TableBody>
-            </Accordion>
+                            <div>
+                              <p className="font-semibold">Contact Number</p>
+                              <p>{inquiry.contactNumber || 'Not provided'}</p>
+                            </div>
+                            <div className="col-span-2">
+                              <p className="font-semibold">Project Details</p>
+                              <p className="whitespace-pre-wrap">
+                                {inquiry.projectDetails}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      </AccordionContent>
+                    </TableCell>
+                  </TableRow>
+                </AccordionItem>
+              </Accordion>
             ))}
+          </TableBody>
         </Table>
       </div>
       <AlertDialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <AlertDialogContent>
-            <AlertDialogHeader>
+          <AlertDialogHeader>
             <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
             <AlertDialogDescription>
-                This action cannot be undone. This will permanently delete the inquiry from &quot;{inquiryToDelete?.fullName}&quot;.
+              This action cannot be undone. This will permanently delete the
+              inquiry from &quot;{inquiryToDelete?.fullName}&quot;.
             </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setDialogOpen(false)}>Cancel</AlertDialogCancel>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setDialogOpen(false)}>
+              Cancel
+            </AlertDialogCancel>
             <AlertDialogAction
-                onClick={handleConfirmDelete}
-                className="bg-destructive hover:bg-destructive/90"
+              onClick={handleConfirmDelete}
+              className="bg-destructive hover:bg-destructive/90"
             >
-                Delete
+              Delete
             </AlertDialogAction>
-            </AlertDialogFooter>
+          </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
     </>
