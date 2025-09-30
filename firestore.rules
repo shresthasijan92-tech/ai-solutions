@@ -1,48 +1,36 @@
-
 rules_version = '2';
+
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    // Helper function to check if a user is an administrator.
     function isAdmin() {
-      return exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid));
+      // Check if a document for the user's UID exists in the 'roles_admin' collection.
+      return request.auth != null && exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid));
     }
 
-    // Public collections can be read by anyone.
-    // Admin collections can be written to only by admins.
-    match /articles/{articleId} {
-      allow get: if true;
-      allow list, write: if isAdmin();
+    // Rules for all content collections (Services, Projects, etc.)
+    // These collections are publicly readable but only writable by administrators.
+    match /{collection}/{docId} 
+    where collection in ['services', 'projects', 'articles', 'gallery', 'events', 'jobs'] {
+      // Allow public read access (get and list) for website pages.
+      allow get, list: if true;
+      // Allow write access (create, update, delete) only for admins.
+      allow write: if isAdmin();
     }
-    match /services/{serviceId} {
-      allow get: if true;
-      allow list, write: if isAdmin();
-    }
-    match /projects/{projectId} {
-      allow get: if true;
-      allow list, write: if isAdmin();
-    }
-    match /gallery/{galleryItemId} {
-      allow get: if true;
-      allow list, write: if isAdmin();
-    }
-    match /events/{eventId} {
-      allow get: if true;
-      allow list, write: if isAdmin();
-    }
-    match /jobs/{jobId} {
-      allow get: if true;
-      allow list, write: if isAdmin();
+
+    // Special rules for the testimonials collection.
+    match /testimonials/{testimonialId} {
+      // Allow anyone to create (submit) feedback.
+      allow create: if true;
+      // Allow public read of individual testimonials if needed, and allow admins to list, update, and delete.
+      allow read, update, delete: if isAdmin();
     }
     
-    // Testimonials can be created by anyone, but only read and deleted by admins.
-    match /testimonials/{testimonialId} {
-      allow create: if true;
-      allow read, write, delete: if isAdmin();
-    }
-
-    // Default deny all other reads/writes
-    match /{path=**}/{document} {
-      allow read, write: if false;
+    // The roles_admin collection is only readable and writable by other admins.
+    // This prevents non-admins from making themselves an admin.
+    match /roles_admin/{userId} {
+      allow read, write: if isAdmin();
     }
   }
 }
