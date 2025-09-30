@@ -1,37 +1,81 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Logo } from '@/components/logo';
+import { useAuth } from '@/firebase';
+import { signInWithEmailAndPassword } from 'firebase/auth';
+import { useToast } from '@/hooks/use-toast';
 
 export default function LoginPage() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const router = useRouter();
+  const auth = useAuth();
+  const { toast } = useToast();
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError('');
 
-    // This is a mock login. In a real app, this would be a server action
-    // that validates credentials and sets a secure, http-only cookie.
-    setTimeout(() => {
-      if (username === 'sijan' && password === 'sijan') {
-        // In a real app, you would set a session cookie here.
-        // For this demo, we'll just use localStorage.
-        localStorage.setItem('isAdminAuthenticated', 'true');
-        window.location.href = '/admin';
-      } else {
-        setError('Invalid username or password.');
-      }
+    // In a real app, use a secure username/password.
+    // For this demo, we use a hardcoded admin user for simplicity.
+    if (username !== 'sijan' || password !== 'sijan') {
+       setError('Invalid username or password.');
+       setLoading(false);
+       return;
+    }
+
+    try {
+      // Use a dummy email for the hardcoded user, as Firebase requires it.
+      const adminEmail = 'admin@aisolutions.com';
+      await signInWithEmailAndPassword(auth, adminEmail, password);
+      router.push('/admin');
+    } catch (authError: any) {
+        // This block will handle cases where the admin user doesn't exist yet.
+        if (authError.code === 'auth/user-not-found' || authError.code === 'auth/invalid-credential') {
+            try {
+                const adminEmail = 'admin@aisolutions.com';
+                await createUserAndSignIn(adminEmail, password);
+                router.push('/admin');
+            } catch (creationError) {
+                 setError('Failed to create admin user. Please try again.');
+                 console.error('Admin user creation error:', creationError);
+            }
+        } else {
+            setError('An unknown error occurred during login.');
+            console.error('Login error:', authError);
+        }
+    } finally {
       setLoading(false);
-    }, 1000);
+    }
   };
+
+  const createUserAndSignIn = async (email: string, pass: string) => {
+    try {
+        const { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword } = await import('firebase/auth');
+        const auth = getAuth();
+        await createUserWithEmailAndPassword(auth, email, pass);
+        await signInWithEmailAndPassword(auth, email, pass);
+    } catch (e) {
+        console.error("Could not create and sign in admin user", e);
+        throw e; // re-throw to be caught by the caller
+    }
+  }
+
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-secondary">
@@ -41,7 +85,9 @@ export default function LoginPage() {
             <Logo href="/admin" />
           </div>
           <CardTitle className="font-headline text-2xl">Admin Login</CardTitle>
-          <CardDescription>Enter your credentials to access the dashboard.</CardDescription>
+          <CardDescription>
+            Enter your credentials to access the dashboard.
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleLogin} className="space-y-4">

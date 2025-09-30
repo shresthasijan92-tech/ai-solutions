@@ -11,6 +11,7 @@ import {
   deleteDoc,
   Timestamp,
 } from 'firebase/firestore';
+import { getAuthenticatedAdmin } from '../auth';
 
 const FeedbackSchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -68,6 +69,12 @@ export async function submitFeedback(
 export async function deleteTestimonial(
   id: string
 ): Promise<{ success: boolean; message?: string }> {
+  try {
+    await getAuthenticatedAdmin();
+  } catch (e) {
+    return { success: false, message: 'Unauthorized: You must be logged in to delete feedback.' };
+  }
+  
   if (!id) {
     return { success: false, message: 'Failed to delete testimonial: Missing ID.' };
   }

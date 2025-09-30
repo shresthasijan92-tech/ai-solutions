@@ -17,8 +17,10 @@ import {
   updateDoc,
   getDoc,
   serverTimestamp,
+  deleteDoc,
 } from 'firebase/firestore';
 import type { Project } from '../definitions';
+import { getAuthenticatedAdmin } from '../auth';
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const ACCEPTED_IMAGE_TYPES = [
@@ -103,6 +105,12 @@ export async function createProject(
   prevState: ProjectFormState,
   formData: FormData
 ): Promise<ProjectFormState> {
+  try {
+    await getAuthenticatedAdmin();
+  } catch (e) {
+    return { message: 'Unauthorized: You must be logged in to create a project.', success: false };
+  }
+
   const rawData = parseFormData(formData);
   const validatedFields = CreateProjectSchema.safeParse(rawData);
 
@@ -143,6 +151,12 @@ export async function updateProject(
   prevState: ProjectFormState,
   formData: FormData
 ): Promise<ProjectFormState> {
+  try {
+    await getAuthenticatedAdmin();
+  } catch (e) {
+    return { message: 'Unauthorized: You must be logged in to update a project.', success: false };
+  }
+
   const id = formData.get('id') as string;
   if (!id) {
     return { message: 'Failed to update project: Missing ID.', success: false };
@@ -195,6 +209,12 @@ export async function updateProject(
 }
 
 export async function deleteProject(id: string): Promise<{ message: string; success: boolean }> {
+  try {
+    await getAuthenticatedAdmin();
+  } catch (e) {
+    return { message: 'Unauthorized: You must be logged in to delete a project.', success: false };
+  }
+
   if (!id) {
     return { message: 'Failed to delete project: Missing ID.', success: false };
   }

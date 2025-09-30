@@ -20,6 +20,7 @@ import {
   serverTimestamp,
 } from 'firebase/firestore';
 import type { Service } from '../definitions';
+import { getAuthenticatedAdmin } from '../auth';
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const ACCEPTED_IMAGE_TYPES = [
@@ -102,6 +103,12 @@ export async function createService(
   prevState: ServiceFormState,
   formData: FormData
 ): Promise<ServiceFormState> {
+  try {
+    await getAuthenticatedAdmin();
+  } catch (e) {
+    return { message: 'Unauthorized: You must be logged in to create a service.', success: false };
+  }
+
   const rawData = parseServiceFormData(formData);
   const validatedFields = ServiceSchema.safeParse(rawData);
 
@@ -142,6 +149,12 @@ export async function updateService(
   prevState: ServiceFormState,
   formData: FormData
 ): Promise<ServiceFormState> {
+  try {
+    await getAuthenticatedAdmin();
+  } catch (e) {
+    return { message: 'Unauthorized: You must be logged in to update a service.', success: false };
+  }
+  
   const id = formData.get('id') as string;
   if (!id)
     return { message: 'Failed to update service: Missing ID.', success: false };
@@ -196,6 +209,12 @@ export async function updateService(
 export async function deleteService(
   id: string
 ): Promise<{ message: string; success: boolean }> {
+  try {
+    await getAuthenticatedAdmin();
+  } catch (e) {
+    return { message: 'Unauthorized: You must be logged in to delete a service.', success: false };
+  }
+  
   if (!id) {
     return { message: 'Failed to delete service: Missing ID.', success: false };
   }

@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { AdminSidebar } from '@/components/admin/admin-sidebar';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useUser } from '@/firebase'; // Import the useUser hook
 
 export default function AdminDashboardLayout({
   children,
@@ -11,19 +12,17 @@ export default function AdminDashboardLayout({
   children: React.ReactNode;
 }) {
   const router = useRouter();
-  const [isAuth, setIsAuth] = useState(false);
+  const { user, isUserLoading } = useUser(); // Use the hook to get user and loading state
 
   useEffect(() => {
-    // Check for auth status in localStorage
-    const isAuthenticated = localStorage.getItem('isAdminAuthenticated') === 'true';
-    if (!isAuthenticated) {
+    // If the initial user check is complete and there's no user, redirect to login
+    if (!isUserLoading && !user) {
       router.replace('/admin/login');
-    } else {
-      setIsAuth(true);
     }
-  }, [router]);
+  }, [user, isUserLoading, router]);
 
-  if (!isAuth) {
+  // While checking for the user, show a loading state.
+  if (isUserLoading || !user) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="flex items-center space-x-4">
@@ -37,6 +36,7 @@ export default function AdminDashboardLayout({
     );
   }
 
+  // If the user is authenticated, render the admin layout
   return (
     <div className="flex min-h-screen">
       <AdminSidebar />
