@@ -1,12 +1,11 @@
 
 'use client';
 
-import { useActionState, useEffect } from 'react';
+import { useActionState, useEffect, useTransition } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Loader2 } from 'lucide-react';
-import { useFormStatus } from 'react-dom';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -38,10 +37,12 @@ type JobFormProps = {
 };
 
 function SubmitButton({ isEditing }: { isEditing: boolean }) {
-  const { pending } = useFormStatus();
+  // isPending will be derived from useTransition, not useFormStatus
+  const [isPending, _] = useTransition();
+
   return (
-    <Button type="submit" disabled={pending} className="w-full sm:w-auto">
-      {pending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+    <Button type="submit" disabled={isPending} className="w-full sm:w-auto">
+      {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
       {isEditing ? 'Update Job' : 'Create Job'}
     </Button>
   );
@@ -49,12 +50,11 @@ function SubmitButton({ isEditing }: { isEditing: boolean }) {
 
 export function JobForm({ job, onSuccess }: JobFormProps) {
   const { toast } = useToast();
-  
+  const [isPending, startTransition] = useTransition();
+
   const action = job?.id ? updateJob.bind(null, job.id) : createJob;
-  // useActionState is great, but for client-side validation with react-hook-form,
-  // we manually call the action after RHF's validation.
   const [state, formAction] = useActionState<JobFormState, JobFormValues>(
-    action, 
+    action,
     { message: '', success: false, errors: {} }
   );
 
@@ -88,10 +88,14 @@ export function JobForm({ job, onSuccess }: JobFormProps) {
     }
   }, [state, toast, onSuccess]);
 
+  const onSubmit = (data: JobFormValues) => {
+    startTransition(() => {
+      formAction(data);
+    });
+  };
 
   return (
-    // We pass RHF's handleSubmit a function that will call our server action.
-    <form action={handleSubmit(data => formAction(data))} className="space-y-6">
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         <div className="space-y-2">
             <Label htmlFor="title">Title</Label>
             <Controller
@@ -99,7 +103,6 @@ export function JobForm({ job, onSuccess }: JobFormProps) {
                 control={control}
                 render={({ field }) => <Input id="title" placeholder="Senior AI Engineer" {...field} />}
             />
-            {/* Show client-side error first, then server-side */}
             {(errors.title || state.errors?.title) && <p className="text-sm text-destructive">{errors.title?.message || state.errors?.title?.[0]}</p>}
         </div>
 
@@ -143,7 +146,10 @@ export function JobForm({ job, onSuccess }: JobFormProps) {
             />
             {(errors.type || state.errors?.type) && <p className="text-sm text-destructive">{errors.type?.message || state.errors?.type?.[0]}</p>}
         </div>
-      <SubmitButton isEditing={!!job} />
+      <Button type="submit" disabled={isPending} className="w-full sm:w-auto">
+        {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+        {job ? 'Update Job' : 'Create Job'}
+      </Button>
     </form>
   );
 }
