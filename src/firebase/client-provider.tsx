@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo, type ReactNode } from 'react';
+import React, { type ReactNode } from 'react';
 import { FirebaseProvider } from '@/firebase/provider';
 import { initializeFirebase } from '@/firebase';
 
@@ -9,9 +9,9 @@ interface FirebaseClientProviderProps {
 }
 
 export function FirebaseClientProvider({ children }: FirebaseClientProviderProps) {
-  const firebaseServices = useMemo(() => {
-    return initializeFirebase();
-  }, []);
+  // Initialize Firebase services directly. 
+  // Since this provider wraps the root layout, this will run once on the client.
+  const firebaseServices = initializeFirebase();
 
   return (
     <FirebaseProvider
