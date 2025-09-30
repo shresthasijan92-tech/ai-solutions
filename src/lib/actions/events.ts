@@ -2,74 +2,24 @@
 
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
-import { firestore, storage } from '@/firebase/server';
-import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
-import { collection, doc, addDoc, updateDoc, deleteDoc, getDoc, serverTimestamp, Timestamp } from 'firebase/firestore';
-import type { Event } from '../definitions';
+import { firestore } from '@/firebase/server';
+import { collection, doc, addDoc, updateDoc, deleteDoc, serverTimestamp, Timestamp } from 'firebase/firestore';
 
-const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
-const ACCEPTED_IMAGE_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
-
-const fileSchema = z.instanceof(File).refine(
-  (file) => file.size === 0 || file.size <= MAX_FILE_SIZE,
-  `Max image size is 5MB.`
-).refine(
-  (file) => file.size === 0 || ACCEPTED_IMAGE_TYPES.includes(file.type),
-  'Only .jpg, .jpeg, .png and .webp formats are supported.'
-);
-
-const BaseEventSchema = z.object({
+const EventSchema = z.object({
   title: z.string().min(1, 'Title is required'),
   description: z.string().min(1, 'Description is required'),
   location: z.string().min(1, 'Location is required'),
-  date: z.preprocess((arg) => {
-    if (typeof arg === 'string' || arg instanceof Date) return new Date(arg);
-  }, z.date()),
-  featured: z.boolean(),
-  imageFile: fileSchema.optional(),
+  date: z.string().transform((str) => new Date(str)),
+  imageUrl: z.string().url('Invalid URL').optional().or(z.literal('')),
+  featured: z.preprocess((val) => val === 'on', z.boolean()),
 });
 
 
 export type EventFormState = {
   message: string;
-  errors?: Partial<Record<keyof z.infer<typeof BaseEventSchema> | 'imageFile', string[]>>;
+  errors?: Partial<Record<keyof z.infer<typeof EventSchema>, string[]>>;
   success: boolean;
 };
-
-async function uploadImage(file: File): Promise<string> {
-  const fileBuffer = await file.arrayBuffer();
-  const fileName = `events/${Date.now()}-${file.name}`;
-  const storageRef = ref(storage, fileName);
-  await uploadBytes(storageRef, fileBuffer, { contentType: file.type });
-  return getDownloadURL(storageRef);
-}
-
-async function deleteImageFromStorage(imageUrl: string | undefined) {
-  if (!imageUrl || !imageUrl.includes('firebasestorage.googleapis.com')) return;
-  try {
-    const imageRef = ref(storage, imageUrl);
-    await deleteObject(imageRef);
-  } catch (error: any) {
-    if (error.code === 'storage/object-not-found') {
-      console.warn('Image to delete was not found in storage:', imageUrl);
-    } else {
-      console.error("Failed to delete image from storage:", error);
-    }
-  }
-}
-
-function parseFormData(formData: FormData) {
-    const imageFile = formData.get('imageFile');
-    return {
-      title: formData.get('title') as string,
-      description: formData.get('description') as string,
-      location: formData.get('location') as string,
-      date: formData.get('date') as string,
-      featured: formData.get('featured') === 'on',
-      imageFile: imageFile instanceof File && imageFile.size > 0 ? imageFile : undefined,
-    };
-}
-  
 
 function revalidateEventPaths(id?: string) {
   revalidatePath('/admin/events');
@@ -79,8 +29,7 @@ function revalidateEventPaths(id?: string) {
 }
 
 export async function createEvent(prevState: EventFormState, formData: FormData): Promise<EventFormState> {
-  const rawData = parseFormData(formData);
-  const validatedFields = BaseEventSchema.safeParse(rawData);
+  const validatedFields = EventSchema.safeParse(Object.fromEntries(formData.entries()));
 
   if (!validatedFields.success) {
     return {
@@ -90,17 +39,11 @@ export async function createEvent(prevState: EventFormState, formData: FormData)
     };
   }
 
-  const { imageFile, date, ...data } = validatedFields.data;
+  const { date, ...data } = validatedFields.data;
 
   try {
-    let imageUrl: string | undefined = undefined;
-    if (imageFile) {
-      imageUrl = await uploadImage(imageFile);
-    }
-    
     const payload = {
       ...data,
-      imageUrl,
       date: Timestamp.fromDate(date),
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
@@ -119,8 +62,7 @@ export async function updateEvent(prevState: EventFormState, formData: FormData)
   const id = formData.get('id') as string;
   if (!id) return { message: 'Failed to update event: Missing ID.', success: false };
 
-  const rawData = parseFormData(formData);
-  const validatedFields = BaseEventSchema.safeParse(rawData);
+  const validatedFields = EventSchema.safeParse(Object.fromEntries(formData.entries()));
 
   if (!validatedFields.success) {
     return {
@@ -130,32 +72,17 @@ export async function updateEvent(prevState: EventFormState, formData: FormData)
     };
   }
   
-  const { imageFile, date, ...data } = validatedFields.data;
+  const { date, ...data } = validatedFields.data;
   const eventDocRef = doc(firestore, 'events', id);
 
   try {
-    const docSnap = await getDoc(eventDocRef);
-    if (!docSnap.exists()) {
-      return { message: 'Event not found.', success: false };
-    }
-    const existingData = docSnap.data() as Event;
-
-    const payload: Partial<Omit<Event, 'id' | 'date'>> & { date: Timestamp, updatedAt: any, imageUrl?: string } = {
+    const payload = {
       ...data,
       date: Timestamp.fromDate(date),
       updatedAt: serverTimestamp(),
     };
 
-    if (imageFile) {
-      payload.imageUrl = await uploadImage(imageFile);
-      if (existingData.imageUrl) {
-        await deleteImageFromStorage(existingData.imageUrl);
-      }
-    } else {
-      payload.imageUrl = existingData.imageUrl;
-    }
-
-    await updateDoc(eventDocRef, payload as any);
+    await updateDoc(eventDocRef, payload);
     revalidateEventPaths(id);
     return { message: 'Successfully updated event.', success: true };
   } catch (error) {
@@ -167,12 +94,7 @@ export async function updateEvent(prevState: EventFormState, formData: FormData)
 export async function deleteEvent(id: string): Promise<{ message: string; success: boolean }> {
   if (!id) return { message: 'Failed to delete event: Missing ID.', success: false };
   try {
-    const eventDocRef = doc(firestore, 'events', id);
-    const docSnap = await getDoc(eventDocRef);
-    if (docSnap.exists()) {
-      await deleteImageFromStorage(docSnap.data().imageUrl);
-    }
-    await deleteDoc(eventDocRef);
+    await deleteDoc(doc(firestore, 'events', id));
     revalidateEventPaths(id);
     return { message: 'Successfully deleted event.', success: true };
   } catch (error) {

@@ -18,23 +18,13 @@ export type JobFormState = {
   success: boolean;
 };
 
-function parseFormData(formData: FormData) {
-  return {
-    title: formData.get('title'),
-    description: formData.get('description'),
-    location: formData.get('location'),
-    type: formData.get('type'),
-  };
-}
-
 function revalidateJobPaths() {
   revalidatePath('/admin/careers');
   revalidatePath('/careers');
 }
 
 export async function createJob(prevState: JobFormState, formData: FormData): Promise<JobFormState> {
-  const rawData = parseFormData(formData);
-  const validatedFields = JobSchema.safeParse(rawData);
+  const validatedFields = JobSchema.safeParse(Object.fromEntries(formData.entries()));
 
   if (!validatedFields.success) {
     return {
@@ -58,8 +48,7 @@ export async function updateJob(prevState: JobFormState, formData: FormData): Pr
   const id = formData.get('id') as string;
   if (!id) return { message: 'Failed to update job: Missing ID.', success: false };
 
-  const rawData = parseFormData(formData);
-  const validatedFields = JobSchema.safeParse(rawData);
+  const validatedFields = JobSchema.safeParse(Object.fromEntries(formData.entries()));
 
   if (!validatedFields.success) {
     return {

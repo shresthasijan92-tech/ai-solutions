@@ -110,10 +110,9 @@ export function ArticleForm({ article, onSuccess }: ArticleFormProps) {
       </div>
       
       <div className="space-y-2">
-        <Label htmlFor="imageFile">Article Image</Label>
-        <Input id="imageFile" name="imageFile" type="file" accept="image/*" />
-        <p className="text-sm text-muted-foreground">{article?.id ? "Upload a new image to replace the current one." : "An image is required for new articles."}</p>
-        {state.errors?.imageFile && <p className="text-sm text-destructive">{state.errors.imageFile.join(', ')}</p>}
+        <Label htmlFor="imageUrl">Article Image URL</Label>
+        <Input id="imageUrl" name="imageUrl" type="url" placeholder="https://example.com/image.png" defaultValue={article?.imageUrl}/>
+        {state.errors?.imageUrl && <p className="text-sm text-destructive">{state.errors.imageUrl.join(', ')}</p>}
       </div>
 
       <div className="flex items-center space-x-2 rounded-md border p-4">

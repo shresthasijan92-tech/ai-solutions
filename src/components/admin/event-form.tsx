@@ -108,10 +108,9 @@ export function EventForm({ event, onSuccess }: EventFormProps) {
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="imageFile">Event Image</Label>
-        <Input id="imageFile" name="imageFile" type="file" accept="image/*" />
-        <p className="text-sm text-muted-foreground">{event?.id ? "Upload a new image to replace the current one." : "Image is optional."}</p>
-        {state.errors?.imageFile && <p className="text-sm text-destructive">{state.errors.imageFile.join(', ')}</p>}
+        <Label htmlFor="imageUrl">Event Image URL (Optional)</Label>
+        <Input id="imageUrl" name="imageUrl" type="url" placeholder="https://example.com/image.png" defaultValue={event?.imageUrl} />
+        {state.errors?.imageUrl && <p className="text-sm text-destructive">{state.errors.imageUrl.join(', ')}</p>}
       </div>
 
       <div className="flex items-center space-x-2 rounded-md border p-4">

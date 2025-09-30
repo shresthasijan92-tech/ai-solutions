@@ -71,12 +71,9 @@ export function ProjectForm({ project, onSuccess }: ProjectFormProps) {
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="imageFile">Project Image</Label>
-        <Input id="imageFile" name="imageFile" type="file" accept="image/*" />
-        <p className="text-sm text-muted-foreground">
-          {project?.id ? "Upload a new image to replace the existing one." : "An image is required for new projects."}
-        </p>
-        {state.errors?.imageFile && <p className="text-sm text-destructive">{state.errors.imageFile.join(', ')}</p>}
+        <Label htmlFor="imageUrl">Project Image URL</Label>
+        <Input id="imageUrl" name="imageUrl" type="url" placeholder="https://example.com/image.png" defaultValue={project?.imageUrl} required />
+        {state.errors?.imageUrl && <p className="text-sm text-destructive">{state.errors.imageUrl.join(', ')}</p>}
       </div>
 
       <div className="space-y-2">

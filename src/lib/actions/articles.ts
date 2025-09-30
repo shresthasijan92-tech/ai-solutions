@@ -2,77 +2,23 @@
 
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
-import { firestore, storage } from '@/firebase/server';
-import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
-import { collection, doc, addDoc, updateDoc, deleteDoc, getDoc, serverTimestamp, Timestamp } from 'firebase/firestore';
-import type { Article } from '../definitions';
+import { firestore } from '@/firebase/server';
+import { collection, doc, addDoc, updateDoc, deleteDoc, serverTimestamp, Timestamp } from 'firebase/firestore';
 
-const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
-const ACCEPTED_IMAGE_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
-
-const FileSchema = z.instanceof(File)
-  .refine(file => file.size <= MAX_FILE_SIZE, `Max image size is 5MB.`)
-  .refine(
-    file => ACCEPTED_IMAGE_TYPES.includes(file.type),
-    'Only .jpg, .jpeg, .png and .webp formats are supported.'
-  );
-
-const ArticleBaseSchema = z.object({
+const ArticleSchema = z.object({
   title: z.string().min(1, 'Title is required'),
   excerpt: z.string().min(1, 'Excerpt is required'),
   content: z.string().min(1, 'Full article content is required.'),
   publishedAt: z.string().transform((str) => new Date(str)),
-  featured: z.boolean(),
+  imageUrl: z.string().url('Invalid URL').min(1, 'Image URL is required'),
+  featured: z.preprocess((val) => val === 'on', z.boolean()),
 });
-
-const CreateArticleSchema = ArticleBaseSchema.extend({
-  imageFile: FileSchema,
-});
-
-const UpdateArticleSchema = ArticleBaseSchema.extend({
-  imageFile: FileSchema.optional(),
-});
-
 
 export type ArticleFormState = {
   message: string;
-  errors?: Partial<Record<keyof z.infer<typeof ArticleBaseSchema> | 'imageFile', string[]>>;
+  errors?: Partial<Record<keyof z.infer<typeof ArticleSchema>, string[]>>;
   success: boolean;
 };
-
-async function uploadImage(file: File): Promise<string> {
-  const fileBuffer = await file.arrayBuffer();
-  const fileName = `articles/${Date.now()}-${file.name}`;
-  const storageRef = ref(storage, fileName);
-  await uploadBytes(storageRef, fileBuffer, { contentType: file.type });
-  return getDownloadURL(storageRef);
-}
-
-async function deleteImageFromStorage(imageUrl: string | undefined) {
-  if (!imageUrl || !imageUrl.includes('firebasestorage.googleapis.com')) return;
-  try {
-    const imageRef = ref(storage, imageUrl);
-    await deleteObject(imageRef);
-  } catch (error: any) {
-    if (error.code === 'storage/object-not-found') {
-      console.warn('Image to delete was not found in storage:', imageUrl);
-    } else {
-      console.error("Failed to delete image from storage:", error);
-    }
-  }
-}
-
-function parseFormData(formData: FormData) {
-  const imageFile = formData.get('imageFile');
-  return {
-    title: formData.get('title') as string,
-    excerpt: formData.get('excerpt') as string,
-    content: formData.get('content') as string,
-    publishedAt: formData.get('publishedAt') as string,
-    featured: formData.get('featured') === 'on',
-    imageFile: imageFile instanceof File && imageFile.size > 0 ? imageFile : undefined,
-  };
-}
 
 function revalidateArticlePaths(id?: string) {
   revalidatePath('/admin/articles');
@@ -82,17 +28,7 @@ function revalidateArticlePaths(id?: string) {
 }
 
 export async function createArticle(prevState: ArticleFormState, formData: FormData): Promise<ArticleFormState> {
-  const rawData = parseFormData(formData);
-
-  if (!rawData.imageFile) {
-    return {
-      message: 'Failed to create article. Image is required.',
-      errors: { imageFile: ['An image file is required.'] },
-      success: false,
-    };
-  }
-  
-  const validatedFields = CreateArticleSchema.safeParse({ ...rawData, imageFile: rawData.imageFile });
+  const validatedFields = ArticleSchema.safeParse(Object.fromEntries(formData.entries()));
 
   if (!validatedFields.success) {
     return {
@@ -102,14 +38,11 @@ export async function createArticle(prevState: ArticleFormState, formData: FormD
     };
   }
 
-  const { imageFile, publishedAt, ...data } = validatedFields.data;
+  const { publishedAt, ...data } = validatedFields.data;
 
   try {
-    const imageUrl = await uploadImage(imageFile);
-    
     const payload = {
       ...data,
-      imageUrl,
       publishedAt: Timestamp.fromDate(publishedAt),
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
@@ -129,8 +62,7 @@ export async function updateArticle(prevState: ArticleFormState, formData: FormD
   const id = formData.get('id') as string;
   if (!id) return { message: 'Failed to update article: Missing ID.', success: false };
 
-  const rawData = parseFormData(formData);
-  const validatedFields = UpdateArticleSchema.safeParse(rawData);
+  const validatedFields = ArticleSchema.safeParse(Object.fromEntries(formData.entries()));
 
   if (!validatedFields.success) {
     return {
@@ -140,30 +72,15 @@ export async function updateArticle(prevState: ArticleFormState, formData: FormD
     };
   }
 
-  const { imageFile, publishedAt, ...data } = validatedFields.data;
+  const { publishedAt, ...data } = validatedFields.data;
   const articleDocRef = doc(firestore, 'articles', id);
 
   try {
-    const docSnap = await getDoc(articleDocRef);
-    if (!docSnap.exists()) {
-        return { message: 'Article not found.', success: false };
-    }
-    const existingData = docSnap.data() as Article;
-
-    const payload: Partial<Omit<Article, 'id' | 'publishedAt'>> & { publishedAt: Timestamp, updatedAt: any } = {
+    const payload = {
       ...data,
       publishedAt: Timestamp.fromDate(publishedAt),
       updatedAt: serverTimestamp(),
     };
-
-    if (imageFile) {
-      payload.imageUrl = await uploadImage(imageFile);
-      if (existingData.imageUrl) {
-        await deleteImageFromStorage(existingData.imageUrl);
-      }
-    } else {
-      payload.imageUrl = existingData.imageUrl;
-    }
 
     await updateDoc(articleDocRef, payload);
 
@@ -178,12 +95,7 @@ export async function updateArticle(prevState: ArticleFormState, formData: FormD
 export async function deleteArticle(id: string): Promise<{ message: string; success: boolean }> {
   if (!id) return { message: 'Failed to delete article: Missing ID.', success: false };
   try {
-    const articleDocRef = doc(firestore, 'articles', id);
-    const docSnap = await getDoc(articleDocRef);
-    if (docSnap.exists()) {
-        await deleteImageFromStorage(docSnap.data().imageUrl);
-    }
-    await deleteDoc(articleDocRef);
+    await deleteDoc(doc(firestore, 'articles', id));
     revalidateArticlePaths(id);
     return { message: 'Successfully deleted article.', success: true };
   } catch (error) {

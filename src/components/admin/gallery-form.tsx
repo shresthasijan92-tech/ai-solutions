@@ -74,12 +74,9 @@ export function GalleryForm({ image, onSuccess }: GalleryFormProps) {
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="imageFile">Image</Label>
-        <Input id="imageFile" name="imageFile" type="file" accept="image/*" />
-        <p className="text-sm text-muted-foreground">
-          {image?.id ? 'Upload a new image to replace the existing one.' : 'An image file is required.'}
-        </p>
-        {state.errors?.imageFile && <p className="text-sm text-destructive">{state.errors.imageFile.join(', ')}</p>}
+        <Label htmlFor="imageUrl">Image URL</Label>
+        <Input id="imageUrl" name="imageUrl" type="url" placeholder="https://example.com/image.png" defaultValue={image?.imageUrl} required />
+        {state.errors?.imageUrl && <p className="text-sm text-destructive">{state.errors.imageUrl.join(', ')}</p>}
       </div>
 
       <div className="flex items-center space-x-2 rounded-md border p-4">
