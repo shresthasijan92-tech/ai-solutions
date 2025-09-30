@@ -53,7 +53,7 @@ export default function AdminEventsPage() {
               Add Event
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-lg">
+          <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>
                 {editingEvent ? 'Edit Event' : 'Add New Event'}

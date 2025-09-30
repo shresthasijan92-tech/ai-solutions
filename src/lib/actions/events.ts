@@ -15,12 +15,10 @@ import {
   doc,
   addDoc,
   updateDoc,
-  deleteDoc,
   getDoc,
   serverTimestamp,
   Timestamp,
 } from 'firebase/firestore';
-import type { Event } from '../definitions';
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const ACCEPTED_IMAGE_TYPES = [
@@ -30,11 +28,13 @@ const ACCEPTED_IMAGE_TYPES = [
   'image/webp',
 ];
 
-const EventActionSchema = z.object({
+// --- Zod Schemas for Validation ---
+const BaseEventSchema = z.object({
   title: z.string().min(1, 'Title is required'),
   description: z.string().min(1, 'Description is required'),
   location: z.string().min(1, 'Location is required'),
   date: z.coerce.date(),
+  featured: z.boolean(),
   imageFile: z
     .instanceof(File)
     .optional()
@@ -47,17 +47,18 @@ const EventActionSchema = z.object({
         !file || file.size === 0 || ACCEPTED_IMAGE_TYPES.includes(file.type),
       'Only .jpg, .jpeg, .png and .webp formats are supported.'
     ),
-  featured: z.boolean(),
 });
+
+const CreateEventSchema = BaseEventSchema;
+const UpdateEventSchema = BaseEventSchema;
 
 export type EventFormState = {
   message: string;
-  errors?: z.ZodError<
-    z.infer<typeof EventActionSchema>
-  >['formErrors']['fieldErrors'];
+  errors?: Partial<Record<keyof z.infer<typeof BaseEventSchema>, string[]>>;
   success: boolean;
 };
 
+// --- Helper Functions ---
 async function uploadImage(file: File): Promise<string> {
   const fileBuffer = await file.arrayBuffer();
   const fileName = `events/${Date.now()}-${file.name}`;
@@ -75,12 +76,12 @@ async function deleteImageFromStorage(imageUrl: string | undefined) {
     if (error.code === 'storage/object-not-found') {
       console.warn('Image to delete was not found in storage.');
     } else {
-      throw error;
+      console.error("Failed to delete image from storage:", error);
     }
   }
 }
 
-function parseEventFormData(formData: FormData) {
+function parseFormData(formData: FormData) {
   const imageFile = formData.get('imageFile');
   return {
     title: formData.get('title'),
@@ -93,30 +94,30 @@ function parseEventFormData(formData: FormData) {
   };
 }
 
+// --- Server Actions ---
 export async function createEvent(
   prevState: EventFormState,
   formData: FormData
 ): Promise<EventFormState> {
-  const rawData = parseEventFormData(formData);
-  const validatedFields = EventActionSchema.safeParse(rawData);
+  const rawData = parseFormData(formData);
+  const validatedFields = CreateEventSchema.safeParse(rawData);
 
   if (!validatedFields.success) {
     return {
-      message: 'Failed to create event.',
+      message: 'Failed to create event. Please check the form.',
       errors: validatedFields.error.flatten().fieldErrors,
       success: false,
     };
   }
 
-  const { imageFile, date, ...rest } = validatedFields.data;
-  
+  const { imageFile, ...rest } = validatedFields.data;
 
   try {
-    const payload: Omit<Event, 'id' | 'createdAt' | 'updatedAt' | 'date'> & { date: any, createdAt: any, updatedAt: any } = {
-        ...rest,
-        date: Timestamp.fromDate(date),
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
+    const payload: any = {
+      ...rest,
+      date: Timestamp.fromDate(rest.date),
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
     };
 
     if (imageFile) {
@@ -129,7 +130,7 @@ export async function createEvent(
     revalidatePath('/admin/events');
     revalidatePath('/events');
     revalidatePath('/');
-    return { message: 'Successfully created event.', success: true, errors: {} };
+    return { message: 'Successfully created event.', success: true };
   } catch (error) {
     console.error('Create Event Error:', error);
     return { message: 'Failed to create event.', success: false };
@@ -141,41 +142,42 @@ export async function updateEvent(
   formData: FormData
 ): Promise<EventFormState> {
   const id = formData.get('id') as string;
-  if (!id)
+  if (!id) {
     return { message: 'Failed to update event: Missing ID.', success: false };
+  }
 
-  const rawData = parseEventFormData(formData);
-  const validatedFields = EventActionSchema.safeParse(rawData);
+  const rawData = parseFormData(formData);
+  const validatedFields = UpdateEventSchema.safeParse(rawData);
 
   if (!validatedFields.success) {
     return {
-      message: 'Failed to update event.',
+      message: 'Failed to update event. Please check the form.',
       errors: validatedFields.error.flatten().fieldErrors,
       success: false,
     };
   }
-
-  const { imageFile, date, ...rest } = validatedFields.data;
+  
+  const { imageFile, ...rest } = validatedFields.data;
   const eventDocRef = doc(firestore, 'events', id);
 
   try {
     const docSnap = await getDoc(eventDocRef);
     if (!docSnap.exists()) {
-        return { message: 'Event not found.', success: false };
+      return { message: 'Event not found.', success: false };
     }
     const existingData = docSnap.data();
 
-    const payload: Partial<Event> & { date: any, updatedAt: any } = {
-        ...rest,
-        date: Timestamp.fromDate(date),
-        updatedAt: serverTimestamp(),
+    const payload: any = {
+      ...rest,
+      date: Timestamp.fromDate(rest.date),
+      updatedAt: serverTimestamp(),
     };
-    
+
     if (imageFile) {
-        payload.imageUrl = await uploadImage(imageFile);
-        await deleteImageFromStorage(existingData.imageUrl);
+      payload.imageUrl = await uploadImage(imageFile);
+      await deleteImageFromStorage(existingData.imageUrl);
     } else {
-        payload.imageUrl = existingData.imageUrl;
+      payload.imageUrl = existingData.imageUrl;
     }
 
     await updateDoc(eventDocRef, payload);
@@ -184,7 +186,7 @@ export async function updateEvent(
     revalidatePath('/events');
     revalidatePath(`/events/${id}`);
     revalidatePath('/');
-    return { message: 'Successfully updated event.', success: true, errors: {} };
+    return { message: 'Successfully updated event.', success: true };
   } catch (error) {
     console.error('Update Event Error:', error);
     return { message: 'Failed to update event.', success: false };
@@ -219,3 +221,5 @@ export async function deleteEvent(
     return { message: 'Failed to delete event.', success: false };
   }
 }
+
+    
