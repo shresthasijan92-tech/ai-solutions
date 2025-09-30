@@ -4,13 +4,7 @@
 import { useState } from 'react';
 import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ServiceForm } from '@/components/admin/service-form';
 import { ServicesTable } from '@/components/admin/services-table';
 import { useServices } from '@/hooks/use-services';
@@ -42,22 +36,16 @@ export default function AdminServicesPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-headline font-bold">Manage Services</h1>
-          <p className="text-muted-foreground mt-2">
-            Create, update, and delete your company&apos;s services.
-          </p>
+          <p className="text-muted-foreground mt-2">Create, update, and delete your company's services.</p>
         </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button onClick={handleAddClick}>
-              <Plus className="mr-2 h-4 w-4" />
-              Add Service
-            </Button>
-          </DialogTrigger>
+          <Button onClick={handleAddClick}>
+            <Plus className="mr-2 h-4 w-4" />
+            Add Service
+          </Button>
           <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>
-                {editingService ? 'Edit Service' : 'Add New Service'}
-              </DialogTitle>
+              <DialogTitle>{editingService ? 'Edit Service' : 'Add New Service'}</DialogTitle>
             </DialogHeader>
             <div className="py-4">
               <ServiceForm service={editingService} onSuccess={handleSuccess} />
@@ -74,14 +62,12 @@ export default function AdminServicesPage() {
         </div>
       ) : error ? (
         <p className="text-destructive">{error.message}</p>
-      ): services && services.length > 0 ? (
+      ) : services && services.length > 0 ? (
         <ServicesTable services={services} onEdit={handleEditClick} />
       ) : (
         <div className="text-center py-10 border-2 border-dashed rounded-lg">
-            <h3 className="text-xl font-semibold">No Services Found</h3>
-            <p className="text-muted-foreground mt-2">
-                Click the &quot;Add Service&quot; button to create your first one.
-            </p>
+          <h3 className="text-xl font-semibold">No Services Found</h3>
+          <p className="text-muted-foreground mt-2">Click the "Add Service" button to create your first one.</p>
         </div>
       )}
     </div>

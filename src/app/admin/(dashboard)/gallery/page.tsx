@@ -4,13 +4,7 @@
 import { useState } from 'react';
 import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { GalleryForm } from '@/components/admin/gallery-form';
 import { GalleryTable } from '@/components/admin/gallery-table';
 import { useGalleryImages } from '@/hooks/use-gallery-images';
@@ -21,7 +15,6 @@ export default function AdminGalleryPage() {
   const { galleryImages, isLoading, error } = useGalleryImages();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingImage, setEditingImage] = useState<GalleryImage | null>(null);
-
 
   const handleAddClick = () => {
     setEditingImage(null);
@@ -43,22 +36,16 @@ export default function AdminGalleryPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-headline font-bold">Manage Gallery</h1>
-          <p className="text-muted-foreground mt-2">
-            Add, update, and delete your company&apos;s gallery images.
-          </p>
+          <p className="text-muted-foreground mt-2">Add, update, and delete your company's gallery images.</p>
         </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button onClick={handleAddClick}>
-              <Plus className="mr-2 h-4 w-4" />
-              Add Image
-            </Button>
-          </DialogTrigger>
+          <Button onClick={handleAddClick}>
+            <Plus className="mr-2 h-4 w-4" />
+            Add Image
+          </Button>
           <DialogContent className="sm:max-w-lg">
             <DialogHeader>
-              <DialogTitle>
-                {editingImage ? 'Edit Image' : 'Add New Image'}
-              </DialogTitle>
+              <DialogTitle>{editingImage ? 'Edit Image' : 'Add New Image'}</DialogTitle>
             </DialogHeader>
             <div className="py-4">
               <GalleryForm image={editingImage} onSuccess={handleSuccess} />
@@ -68,7 +55,7 @@ export default function AdminGalleryPage() {
       </div>
 
       {isLoading ? (
-         <div className="space-y-2">
+        <div className="space-y-2">
           <Skeleton className="h-10 w-full" />
           <Skeleton className="h-10 w-full" />
           <Skeleton className="h-10 w-full" />
@@ -80,9 +67,7 @@ export default function AdminGalleryPage() {
       ) : (
         <div className="text-center py-10 border-2 border-dashed rounded-lg">
           <h3 className="text-xl font-semibold">No Images Found</h3>
-          <p className="text-muted-foreground mt-2">
-              Click the &quot;Add Image&quot; button to create your first one.
-          </p>
+          <p className="text-muted-foreground mt-2">Click the "Add Image" button to create your first one.</p>
         </div>
       )}
     </div>

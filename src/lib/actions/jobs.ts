@@ -4,14 +4,9 @@
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { firestore } from '@/firebase/server';
-import {
-  collection,
-  doc,
-  addDoc,
-  updateDoc,
-  deleteDoc,
-} from 'firebase/firestore';
+import { collection, doc, addDoc, updateDoc, deleteDoc } from 'firebase/firestore';
 
+// --- Zod Schema for Validation ---
 const JobSchema = z.object({
   title: z.string().min(1, 'Title is required'),
   description: z.string().min(1, 'Description is required'),
@@ -21,40 +16,42 @@ const JobSchema = z.object({
 
 export type JobFormState = {
   message: string;
-  errors?: z.ZodError<z.infer<typeof JobSchema>>['formErrors']['fieldErrors'];
+  errors?: Partial<Record<keyof z.infer<typeof JobSchema>, string[]>>;
   success: boolean;
 };
 
+// --- Helper Function ---
 function parseFormData(formData: FormData) {
-    return {
-        title: formData.get('title'),
-        description: formData.get('description'),
-        location: formData.get('location'),
-        type: formData.get('type'),
-    }
+  return {
+    title: formData.get('title'),
+    description: formData.get('description'),
+    location: formData.get('location'),
+    type: formData.get('type'),
+  };
 }
 
-export async function createJob(
-  prevState: JobFormState,
-  formData: FormData
-): Promise<JobFormState> {
+// --- Reusable Revalidation Function ---
+function revalidateJobPaths() {
+  revalidatePath('/admin/careers');
+  revalidatePath('/careers');
+}
+
+// --- Server Actions ---
+export async function createJob(prevState: JobFormState, formData: FormData): Promise<JobFormState> {
   const rawData = parseFormData(formData);
   const validatedFields = JobSchema.safeParse(rawData);
 
   if (!validatedFields.success) {
     return {
-      message: 'Failed to create job. Invalid data.',
+      message: 'Failed to create job. Please check the form.',
       errors: validatedFields.error.flatten().fieldErrors,
       success: false,
     };
   }
 
   try {
-    const jobsCollection = collection(firestore, 'jobs');
-    await addDoc(jobsCollection, validatedFields.data);
-
-    revalidatePath('/admin/careers');
-    revalidatePath('/careers');
+    await addDoc(collection(firestore, 'jobs'), validatedFields.data);
+    revalidateJobPaths();
     return { message: 'Successfully created job.', success: true };
   } catch (error) {
     console.error("Create Job Error: ", error);
@@ -62,31 +59,24 @@ export async function createJob(
   }
 }
 
-export async function updateJob(
-  prevState: JobFormState,
-  formData: FormData
-): Promise<JobFormState> {
+export async function updateJob(prevState: JobFormState, formData: FormData): Promise<JobFormState> {
   const id = formData.get('id') as string;
-  if (!id) {
-    return { message: 'Failed to update job: Missing ID.', success: false };
-  }
+  if (!id) return { message: 'Failed to update job: Missing ID.', success: false };
+
   const rawData = parseFormData(formData);
   const validatedFields = JobSchema.safeParse(rawData);
 
   if (!validatedFields.success) {
     return {
-      message: 'Failed to update job. Invalid data.',
+      message: 'Failed to update job. Please check the form.',
       errors: validatedFields.error.flatten().fieldErrors,
       success: false,
     };
   }
 
   try {
-    const jobDoc = doc(firestore, 'jobs', id);
-    await updateDoc(jobDoc, validatedFields.data);
-
-    revalidatePath('/admin/careers');
-    revalidatePath('/careers');
+    await updateDoc(doc(firestore, 'jobs', id), validatedFields.data);
+    revalidateJobPaths();
     return { message: 'Successfully updated job.', success: true };
   } catch (error) {
     console.error("Update Job Error: ", error);
@@ -94,17 +84,11 @@ export async function updateJob(
   }
 }
 
-export async function deleteJob(
-  id: string
-): Promise<{ message: string; success: boolean }> {
-  if (!id) {
-    return { message: 'Failed to delete job: Missing ID.', success: false };
-  }
+export async function deleteJob(id: string): Promise<{ message: string; success: boolean }> {
+  if (!id) return { message: 'Failed to delete job: Missing ID.', success: false };
   try {
-    const jobDoc = doc(firestore, 'jobs', id);
-    await deleteDoc(jobDoc);
-    revalidatePath('/admin/careers');
-    revalidatePath('/careers');
+    await deleteDoc(doc(firestore, 'jobs', id));
+    revalidateJobPaths();
     return { message: 'Successfully deleted job.', success: true };
   } catch (error) {
     console.error("Delete Job Error: ", error);

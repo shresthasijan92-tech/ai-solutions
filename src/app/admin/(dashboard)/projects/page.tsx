@@ -4,13 +4,7 @@
 import { useState } from 'react';
 import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ProjectForm } from '@/components/admin/project-form';
 import { ProjectsTable } from '@/components/admin/projects-table';
 import { useProjects } from '@/hooks/use-projects';
@@ -42,22 +36,16 @@ export default function AdminProjectsPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-headline font-bold">Manage Projects</h1>
-          <p className="text-muted-foreground mt-2">
-            Create, update, and delete your company&apos;s projects.
-          </p>
+          <p className="text-muted-foreground mt-2">Create, update, and delete your company's projects.</p>
         </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button onClick={handleAddClick}>
-              <Plus className="mr-2 h-4 w-4" />
-              Add Project
-            </Button>
-          </DialogTrigger>
+          <Button onClick={handleAddClick}>
+            <Plus className="mr-2 h-4 w-4" />
+            Add Project
+          </Button>
           <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>
-                {editingProject ? 'Edit Project' : 'Add New Project'}
-              </DialogTitle>
+              <DialogTitle>{editingProject ? 'Edit Project' : 'Add New Project'}</DialogTitle>
             </DialogHeader>
             <div className="py-4">
               <ProjectForm project={editingProject} onSuccess={handleSuccess} />
@@ -77,11 +65,9 @@ export default function AdminProjectsPage() {
       ) : projects && projects.length > 0 ? (
         <ProjectsTable projects={projects} onEdit={handleEditClick} />
       ) : (
-         <div className="text-center py-10 border-2 border-dashed rounded-lg">
+        <div className="text-center py-10 border-2 border-dashed rounded-lg">
           <h3 className="text-xl font-semibold">No Projects Found</h3>
-          <p className="text-muted-foreground mt-2">
-              Click the &quot;Add Project&quot; button to create your first one.
-          </p>
+          <p className="text-muted-foreground mt-2">Click the "Add Project" button to create your first one.</p>
         </div>
       )}
     </div>

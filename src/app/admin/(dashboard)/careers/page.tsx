@@ -4,13 +4,7 @@
 import { useState } from 'react';
 import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { JobForm } from '@/components/admin/job-form';
 import { JobsTable } from '@/components/admin/jobs-table';
 import { useJobs } from '@/hooks/use-jobs';
@@ -42,22 +36,16 @@ export default function AdminCareersPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-headline font-bold">Manage Careers</h1>
-          <p className="text-muted-foreground mt-2">
-            Create, update, and delete your company&apos;s job listings.
-          </p>
+          <p className="text-muted-foreground mt-2">Create, update, and delete your company's job listings.</p>
         </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button onClick={handleAddClick}>
-              <Plus className="mr-2 h-4 w-4" />
-              Add Job
-            </Button>
-          </DialogTrigger>
+          <Button onClick={handleAddClick}>
+            <Plus className="mr-2 h-4 w-4" />
+            Add Job
+          </Button>
           <DialogContent className="sm:max-w-lg">
             <DialogHeader>
-              <DialogTitle>
-                {editingJob ? 'Edit Job' : 'Add New Job'}
-              </DialogTitle>
+              <DialogTitle>{editingJob ? 'Edit Job' : 'Add New Job'}</DialogTitle>
             </DialogHeader>
             <div className="py-4">
               <JobForm job={editingJob} onSuccess={handleSuccess} />
@@ -67,7 +55,7 @@ export default function AdminCareersPage() {
       </div>
 
       {isLoading ? (
-         <div className="space-y-2">
+        <div className="space-y-2">
           <Skeleton className="h-10 w-full" />
           <Skeleton className="h-10 w-full" />
           <Skeleton className="h-10 w-full" />
@@ -79,9 +67,7 @@ export default function AdminCareersPage() {
       ) : (
         <div className="text-center py-10 border-2 border-dashed rounded-lg">
           <h3 className="text-xl font-semibold">No Jobs Found</h3>
-          <p className="text-muted-foreground mt-2">
-              Click the &quot;Add Job&quot; button to create your first one.
-          </p>
+          <p className="text-muted-foreground mt-2">Click the "Add Job" button to create your first one.</p>
         </div>
       )}
     </div>

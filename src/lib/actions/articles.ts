@@ -4,29 +4,21 @@
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { firestore } from '@/firebase/server';
-import {
-  collection,
-  doc,
-  addDoc,
-  updateDoc,
-  deleteDoc,
-  serverTimestamp,
-  Timestamp,
-} from 'firebase/firestore';
+import { collection, doc, addDoc, updateDoc, deleteDoc, serverTimestamp, Timestamp } from 'firebase/firestore';
 
 // --- Zod Schema for Validation ---
-const ArticleFormSchema = z.object({
+const ArticleSchema = z.object({
   title: z.string().min(1, 'Title is required'),
   excerpt: z.string().min(1, 'Excerpt is required'),
   content: z.string().min(1, 'Full article content is required.'),
   publishedAt: z.coerce.date(),
   featured: z.boolean(),
-  imageUrl: z.string().url('Please enter a valid URL for the image.'),
+  imageUrl: z.string().url('Please enter a valid URL for the article image.'),
 });
 
 export type ArticleFormState = {
   message: string;
-  errors?: Partial<Record<keyof z.infer<typeof ArticleFormSchema>, string[]>>;
+  errors?: Partial<Record<keyof z.infer<typeof ArticleSchema>, string[]>>;
   success: boolean;
 };
 
@@ -42,13 +34,18 @@ function parseFormData(formData: FormData) {
   };
 }
 
+// --- Reusable Revalidation ---
+function revalidateArticlePaths(id?: string) {
+  revalidatePath('/admin/articles');
+  revalidatePath('/blog');
+  if (id) revalidatePath(`/blog/${id}`);
+  revalidatePath('/');
+}
+
 // --- Server Actions ---
-export async function createArticle(
-  prevState: ArticleFormState,
-  formData: FormData
-): Promise<ArticleFormState> {
+export async function createArticle(prevState: ArticleFormState, formData: FormData): Promise<ArticleFormState> {
   const rawData = parseFormData(formData);
-  const validatedFields = ArticleFormSchema.safeParse(rawData);
+  const validatedFields = ArticleSchema.safeParse(rawData);
 
   if (!validatedFields.success) {
     return {
@@ -58,20 +55,17 @@ export async function createArticle(
     };
   }
 
-  const { publishedAt, ...rest } = validatedFields.data;
+  const { publishedAt, ...data } = validatedFields.data;
 
   try {
-    const articlesCollection = collection(firestore, 'articles');
-    await addDoc(articlesCollection, {
-      ...rest,
+    await addDoc(collection(firestore, 'articles'), {
+      ...data,
       publishedAt: Timestamp.fromDate(publishedAt),
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     });
 
-    revalidatePath('/admin/articles');
-    revalidatePath('/blog');
-    revalidatePath('/');
+    revalidateArticlePaths();
     return { message: 'Successfully created article.', success: true };
   } catch (error) {
     console.error('Create Article Error:', error);
@@ -79,17 +73,12 @@ export async function createArticle(
   }
 }
 
-export async function updateArticle(
-  prevState: ArticleFormState,
-  formData: FormData
-): Promise<ArticleFormState> {
+export async function updateArticle(prevState: ArticleFormState, formData: FormData): Promise<ArticleFormState> {
   const id = formData.get('id') as string;
-  if (!id) {
-    return { message: 'Failed to update article: Missing ID.', success: false };
-  }
+  if (!id) return { message: 'Failed to update article: Missing ID.', success: false };
 
   const rawData = parseFormData(formData);
-  const validatedFields = ArticleFormSchema.safeParse(rawData);
+  const validatedFields = ArticleSchema.safeParse(rawData);
 
   if (!validatedFields.success) {
     return {
@@ -99,21 +88,16 @@ export async function updateArticle(
     };
   }
 
-  const articleDocRef = doc(firestore, 'articles', id);
+  const { publishedAt, ...data } = validatedFields.data;
 
   try {
-    const { publishedAt, ...rest } = validatedFields.data;
-
-    await updateDoc(articleDocRef, {
-      ...rest,
+    await updateDoc(doc(firestore, 'articles', id), {
+      ...data,
       publishedAt: Timestamp.fromDate(publishedAt),
       updatedAt: serverTimestamp(),
     });
 
-    revalidatePath('/admin/articles');
-    revalidatePath('/blog');
-    revalidatePath(`/blog/${id}`);
-    revalidatePath('/');
+    revalidateArticlePaths(id);
     return { message: 'Successfully updated article.', success: true };
   } catch (error) {
     console.error('Update Article Error:', error);
@@ -121,22 +105,14 @@ export async function updateArticle(
   }
 }
 
-export async function deleteArticle(
-  id: string
-): Promise<{ message: string; success: boolean }> {
-  if (!id) {
-    return { message: 'Failed to delete article: Missing ID.', success: false };
-  }
+export async function deleteArticle(id: string): Promise<{ message: string; success: boolean }> {
+  if (!id) return { message: 'Failed to delete article: Missing ID.', success: false };
   try {
-    const articleDocRef = doc(firestore, 'articles', id);
-    await deleteDoc(articleDocRef);
-
-    revalidatePath('/admin/articles');
-    revalidatePath('/blog');
-    revalidatePath('/');
+    await deleteDoc(doc(firestore, 'articles', id));
+    revalidateArticlePaths(id);
     return { message: 'Successfully deleted article.', success: true };
   } catch (error) {
-    console.error('Delete Error:', error);
+    console.error('Delete Article Error:', error);
     return { message: 'Failed to delete article.', success: false };
   }
 }
