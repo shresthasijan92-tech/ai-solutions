@@ -1,28 +1,17 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { z } from 'zod';
 import { firestore } from '@/firebase/server';
-import { collection, doc, addDoc, updateDoc, deleteDoc, getDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, doc, addDoc, updateDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
 import type { Service } from '../definitions';
-
-// Base schema for service data, used for both create and update
-const ServiceSchema = z.object({
-  title: z.string().min(1, 'Title is required'),
-  description: z.string().min(1, 'Description is required'),
-  details: z.string().optional(),
-  price: z.string().optional(),
-  benefits: z.array(z.string()).optional(),
-  imageUrl: z.string().url('Invalid URL').optional().or(z.literal('')),
-  featured: z.boolean().default(false),
-});
-
 
 export type ServiceFormState = {
   message: string;
-  errors?: Partial<Record<keyof z.infer<typeof ServiceSchema>, string[]>>;
   success: boolean;
 };
+
+// Simplified Service data type for actions
+type ServiceData = Omit<Service, 'id'>;
 
 function revalidateServicePaths(id?: string) {
   revalidatePath('/admin/services');
@@ -31,20 +20,12 @@ function revalidateServicePaths(id?: string) {
   revalidatePath('/');
 }
 
-export async function createService(data: unknown): Promise<ServiceFormState> {
-  const validatedFields = ServiceSchema.safeParse(data);
-
-  if (!validatedFields.success) {
-    return {
-      message: 'Failed to create service. Invalid fields.',
-      errors: validatedFields.error.flatten().fieldErrors,
-      success: false,
-    };
-  }
-
+export async function createService(data: ServiceData): Promise<ServiceFormState> {
   try {
     const payload = {
-      ...validatedFields.data,
+      ...data,
+      benefits: data.benefits || [],
+      featured: data.featured || false,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     };
@@ -59,27 +40,18 @@ export async function createService(data: unknown): Promise<ServiceFormState> {
   }
 }
 
-export async function updateService(id: string, data: unknown): Promise<ServiceFormState> {
+export async function updateService(id: string, data: ServiceData): Promise<ServiceFormState> {
   if (!id) return { message: 'Failed to update service: Missing ID.', success: false };
-
-  const validatedFields = ServiceSchema.safeParse(data);
-
-  if (!validatedFields.success) {
-    return {
-      message: 'Failed to update service. Invalid fields.',
-      errors: validatedFields.error.flatten().fieldErrors,
-      success: false,
-    };
-  }
-
-  const serviceDocRef = doc(firestore, 'services', id);
 
   try {
     const payload = {
-      ...validatedFields.data,
+      ...data,
+      benefits: data.benefits || [],
+      featured: data.featured || false,
       updatedAt: serverTimestamp(),
     };
 
+    const serviceDocRef = doc(firestore, 'services', id);
     await updateDoc(serviceDocRef, payload);
 
     revalidateServicePaths(id);

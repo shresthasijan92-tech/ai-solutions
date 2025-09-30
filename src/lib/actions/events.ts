@@ -1,25 +1,17 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { z } from 'zod';
 import { firestore } from '@/firebase/server';
 import { collection, doc, addDoc, updateDoc, deleteDoc, serverTimestamp, Timestamp } from 'firebase/firestore';
-
-const EventSchema = z.object({
-  title: z.string().min(1, 'Title is required'),
-  description: z.string().min(1, 'Description is required'),
-  location: z.string().min(1, 'Location is required'),
-  date: z.string().transform((str) => new Date(str)),
-  imageUrl: z.string().url('Invalid URL').optional().or(z.literal('')),
-  featured: z.preprocess((val) => val === 'on', z.boolean()),
-});
-
+import type { Event } from '../definitions';
 
 export type EventFormState = {
   message: string;
-  errors?: Partial<Record<keyof z.infer<typeof EventSchema>, string[]>>;
   success: boolean;
 };
+
+type EventData = Omit<Event, 'id' | 'date'> & { date: string };
+
 
 function revalidateEventPaths(id?: string) {
   revalidatePath('/admin/events');
@@ -28,23 +20,12 @@ function revalidateEventPaths(id?: string) {
   revalidatePath('/');
 }
 
-export async function createEvent(prevState: EventFormState, formData: FormData): Promise<EventFormState> {
-  const validatedFields = EventSchema.safeParse(Object.fromEntries(formData.entries()));
-
-  if (!validatedFields.success) {
-    return {
-      message: 'Failed to create event. Please check the form.',
-      errors: validatedFields.error.flatten().fieldErrors,
-      success: false,
-    };
-  }
-
-  const { date, ...data } = validatedFields.data;
-
+export async function createEvent(data: EventData): Promise<EventFormState> {
   try {
     const payload = {
       ...data,
-      date: Timestamp.fromDate(date),
+      featured: data.featured || false,
+      date: Timestamp.fromDate(new Date(data.date)),
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     };
@@ -58,31 +39,20 @@ export async function createEvent(prevState: EventFormState, formData: FormData)
   }
 }
 
-export async function updateEvent(prevState: EventFormState, formData: FormData): Promise<EventFormState> {
-  const id = formData.get('id') as string;
+export async function updateEvent(id: string, data: EventData): Promise<EventFormState> {
   if (!id) return { message: 'Failed to update event: Missing ID.', success: false };
-
-  const validatedFields = EventSchema.safeParse(Object.fromEntries(formData.entries()));
-
-  if (!validatedFields.success) {
-    return {
-      message: 'Failed to update event. Please check the form.',
-      errors: validatedFields.error.flatten().fieldErrors,
-      success: false,
-    };
-  }
-  
-  const { date, ...data } = validatedFields.data;
-  const eventDocRef = doc(firestore, 'events', id);
 
   try {
     const payload = {
       ...data,
-      date: Timestamp.fromDate(date),
+      featured: data.featured || false,
+      date: Timestamp.fromDate(new Date(data.date)),
       updatedAt: serverTimestamp(),
     };
-
+  
+    const eventDocRef = doc(firestore, 'events', id);
     await updateDoc(eventDocRef, payload);
+    
     revalidateEventPaths(id);
     return { message: 'Successfully updated event.', success: true };
   } catch (error) {

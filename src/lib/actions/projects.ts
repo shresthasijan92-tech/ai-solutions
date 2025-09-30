@@ -1,25 +1,16 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { z } from 'zod';
 import { firestore } from '@/firebase/server';
 import { collection, doc, addDoc, updateDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
-
-const ProjectSchema = z.object({
-  title: z.string().min(1, 'Title is required'),
-  description: z.string().min(1, 'Description is required'),
-  technologies: z.string().transform(val => val.split(',').map(t => t.trim()).filter(Boolean)),
-  caseStudy: z.string().optional(),
-  imageUrl: z.string().url('Invalid URL').min(1, 'Image URL is required'),
-  featured: z.preprocess((val) => val === 'on', z.boolean()),
-});
-
+import type { Project } from '../definitions';
 
 export type ProjectFormState = {
   message: string;
-  errors?: Partial<Record<keyof z.infer<typeof ProjectSchema>, string[]>>;
   success: boolean;
 };
+
+type ProjectData = Omit<Project, 'id'>;
 
 function revalidateProjectPaths(id?: string) {
   revalidatePath('/admin/projects');
@@ -28,20 +19,12 @@ function revalidateProjectPaths(id?: string) {
   revalidatePath('/');
 }
 
-export async function createProject(prevState: ProjectFormState, formData: FormData): Promise<ProjectFormState> {
-  const validatedFields = ProjectSchema.safeParse(Object.fromEntries(formData.entries()));
-
-  if (!validatedFields.success) {
-    return {
-      message: 'Failed to create project. Please check the form.',
-      errors: validatedFields.error.flatten().fieldErrors,
-      success: false,
-    };
-  }
-
+export async function createProject(data: ProjectData): Promise<ProjectFormState> {
   try {
     const payload = {
-      ...validatedFields.data,
+      ...data,
+      technologies: data.technologies || [],
+      featured: data.featured || false,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     };
@@ -56,29 +39,20 @@ export async function createProject(prevState: ProjectFormState, formData: FormD
   }
 }
 
-export async function updateProject(prevState: ProjectFormState, formData: FormData): Promise<ProjectFormState> {
-  const id = formData.get('id') as string;
+export async function updateProject(id: string, data: ProjectData): Promise<ProjectFormState> {
   if (!id) return { message: 'Failed to update project: Missing ID.', success: false };
-
-  const validatedFields = ProjectSchema.safeParse(Object.fromEntries(formData.entries()));
-
-  if (!validatedFields.success) {
-    return {
-      message: 'Failed to update project. Please check the form.',
-      errors: validatedFields.error.flatten().fieldErrors,
-      success: false,
-    };
-  }
-  
-  const projectDocRef = doc(firestore, 'projects', id);
 
   try {
     const payload = {
-      ...validatedFields.data,
+      ...data,
+      technologies: data.technologies || [],
+      featured: data.featured || false,
       updatedAt: serverTimestamp(),
     };
-
+    
+    const projectDocRef = doc(firestore, 'projects', id);
     await updateDoc(projectDocRef, payload);
+
     revalidateProjectPaths(id);
     return { message: 'Successfully updated project.', success: true };
   } catch (error) {
