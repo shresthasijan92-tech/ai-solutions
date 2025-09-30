@@ -16,7 +16,7 @@ const adminNavItems = [
   { href: '/admin/events', label: 'Events', icon: Calendar },
   { href: '/admin/careers', label: 'Careers', icon: BriefcaseBusiness },
   { href: '/admin/feedback', label: 'Feedback', icon: MessageSquare },
-  { href: '/admin/inquiries', label: 'Inquiries', icon: MailQuestion },
+  { href: '/admin/inquiries', label: 'Contacts', icon: MailQuestion },
 ];
 
 export function AdminSidebar() {
