@@ -91,7 +91,7 @@ export async function updateArticle(
 
   const rawData = parseFormData(formData);
   const validatedFields = ArticleFormSchema.safeParse(rawData);
-  
+
   if (!validatedFields.success) {
     return {
       message: 'Failed to update article. Please check the form.',
@@ -99,7 +99,7 @@ export async function updateArticle(
       success: false,
     };
   }
-  
+
   const articleDocRef = doc(firestore, 'articles', id);
 
   try {
@@ -109,13 +109,16 @@ export async function updateArticle(
     }
 
     const { publishedAt, ...rest } = validatedFields.data;
-    
-    const payload: Omit<Partial<Article>, 'id' | 'publishedAt'> & { updatedAt: any, publishedAt: Timestamp } = {
-        ...rest,
-        publishedAt: Timestamp.fromDate(publishedAt),
-        updatedAt: serverTimestamp(),
+
+    const payload: Omit<Partial<Article>, 'id' | 'publishedAt'> & {
+      updatedAt: any;
+      publishedAt: Timestamp;
+    } = {
+      ...rest,
+      publishedAt: Timestamp.fromDate(publishedAt),
+      updatedAt: serverTimestamp(),
     };
-    
+
     await updateDoc(articleDocRef, payload);
 
     revalidatePath('/admin/articles');
