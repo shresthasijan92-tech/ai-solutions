@@ -3,13 +3,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
-import { firestore, storage } from '@/firebase/server';
-import {
-  ref,
-  uploadBytes,
-  getDownloadURL,
-  deleteObject,
-} from 'firebase/storage';
+import { firestore } from '@/firebase/server';
 import {
   collection,
   doc,
@@ -21,96 +15,41 @@ import {
 } from 'firebase/firestore';
 import type { Article } from '../definitions';
 
-const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
-const ACCEPTED_IMAGE_TYPES = [
-  'image/jpeg',
-  'image/jpg',
-  'image/png',
-  'image/webp',
-];
-
 // --- Zod Schemas for Validation ---
-
-// Base schema for fields coming directly from the form
-const ArticleFormInputSchema = z.object({
+const ArticleFormSchema = z.object({
   title: z.string().min(1, 'Title is required'),
   excerpt: z.string().min(1, 'Excerpt is required'),
   content: z.string().min(1, 'Full article content is required.'),
   publishedAt: z.coerce.date(),
   featured: z.boolean(),
-  imageFile: z
-    .instanceof(File)
-    .optional()
-    .refine((file) => !file || file.size === 0 || file.size <= MAX_FILE_SIZE, `Max image size is 5MB.`)
-    .refine(
-      (file) => !file || file.size === 0 || ACCEPTED_IMAGE_TYPES.includes(file.type),
-      'Only .jpg, .jpeg, .png and .webp formats are supported.'
-    ),
+  imageUrl: z.string().url('Please enter a valid URL for the image.'),
 });
-
-
-// Schema for creating: image is required
-const ArticleCreateSchema = ArticleFormInputSchema.extend({
-  imageFile: z
-    .instanceof(File)
-    .refine((file) => file.size > 0, 'An image file is required.'),
-});
-
-// Schema for updating: image is optional
-const ArticleUpdateSchema = ArticleFormInputSchema;
-
 
 export type ArticleFormState = {
   message: string;
-  errors?: Partial<Record<keyof z.infer<typeof ArticleFormInputSchema>, string[]>>;
+  errors?: Partial<Record<keyof z.infer<typeof ArticleFormSchema>, string[]>>;
   success: boolean;
 };
 
 // --- Helper Functions ---
-
-async function uploadImage(file: File): Promise<string> {
-  const fileBuffer = await file.arrayBuffer();
-  const fileName = `articles/${Date.now()}-${file.name}`;
-  const storageRef = ref(storage, fileName);
-  await uploadBytes(storageRef, fileBuffer, { contentType: file.type });
-  return getDownloadURL(storageRef);
-}
-
-async function deleteImageFromStorage(imageUrl: string | undefined) {
-  if (!imageUrl || !imageUrl.includes('firebasestorage')) return;
-  try {
-    const imageRef = ref(storage, imageUrl);
-    await deleteObject(imageRef);
-  } catch (error: any) {
-    if (error.code === 'storage/object-not-found') {
-      console.warn('Image to delete was not found in storage:', imageUrl);
-    } else {
-      console.error('Failed to delete image from storage:', error);
-    }
-  }
-}
-
 function parseFormData(formData: FormData) {
-    const imageFile = formData.get('imageFile');
-    return {
-        title: formData.get('title'),
-        excerpt: formData.get('excerpt'),
-        content: formData.get('content'),
-        publishedAt: formData.get('publishedAt'),
-        featured: formData.get('featured') === 'on',
-        imageFile: imageFile instanceof File && imageFile.size > 0 ? imageFile : undefined,
-    };
+  return {
+    title: formData.get('title'),
+    excerpt: formData.get('excerpt'),
+    content: formData.get('content'),
+    publishedAt: formData.get('publishedAt'),
+    featured: formData.get('featured') === 'on',
+    imageUrl: formData.get('imageUrl'),
+  };
 }
-
 
 // --- Server Actions ---
-
 export async function createArticle(
   prevState: ArticleFormState,
   formData: FormData
 ): Promise<ArticleFormState> {
   const rawData = parseFormData(formData);
-  const validatedFields = ArticleCreateSchema.safeParse(rawData);
+  const validatedFields = ArticleFormSchema.safeParse(rawData);
 
   if (!validatedFields.success) {
     return {
@@ -120,18 +59,15 @@ export async function createArticle(
     };
   }
 
-  const { imageFile, publishedAt, ...rest } = validatedFields.data;
+  const { publishedAt, ...rest } = validatedFields.data;
 
   try {
-    const imageUrl = await uploadImage(imageFile);
-    
     const articlesCollection = collection(firestore, 'articles');
     await addDoc(articlesCollection, {
-        ...rest,
-        imageUrl,
-        publishedAt: Timestamp.fromDate(publishedAt),
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
+      ...rest,
+      publishedAt: Timestamp.fromDate(publishedAt),
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
     });
 
     revalidatePath('/admin/articles');
@@ -154,7 +90,7 @@ export async function updateArticle(
   }
 
   const rawData = parseFormData(formData);
-  const validatedFields = ArticleUpdateSchema.safeParse(rawData);
+  const validatedFields = ArticleFormSchema.safeParse(rawData);
   
   if (!validatedFields.success) {
     return {
@@ -171,22 +107,15 @@ export async function updateArticle(
     if (!docSnap.exists()) {
       return { message: 'Article not found.', success: false };
     }
-    const existingData = docSnap.data() as Article;
 
-    const { imageFile, publishedAt, ...rest } = validatedFields.data;
+    const { publishedAt, ...rest } = validatedFields.data;
     
-    const payload: Omit<Partial<Article>, 'id'> & { updatedAt: any, publishedAt: Timestamp } = {
+    const payload: Omit<Partial<Article>, 'id' | 'publishedAt'> & { updatedAt: any, publishedAt: Timestamp } = {
         ...rest,
         publishedAt: Timestamp.fromDate(publishedAt),
         updatedAt: serverTimestamp(),
-        imageUrl: existingData.imageUrl, // Preserve existing image by default
     };
     
-    if (imageFile) {
-      payload.imageUrl = await uploadImage(imageFile);
-      await deleteImageFromStorage(existingData.imageUrl);
-    }
-
     await updateDoc(articleDocRef, payload);
 
     revalidatePath('/admin/articles');
@@ -208,13 +137,9 @@ export async function deleteArticle(
   }
   try {
     const articleDocRef = doc(firestore, 'articles', id);
-    const docSnap = await getDoc(articleDocRef);
-
-    if (docSnap.exists()) {
-      await deleteImageFromStorage(docSnap.data().imageUrl);
-    }
-
+    // No need to delete from storage as we are using URLs now.
     await deleteDoc(articleDocRef);
+
     revalidatePath('/admin/articles');
     revalidatePath('/blog');
     revalidatePath('/');
