@@ -18,6 +18,7 @@ import {
   getDoc,
   serverTimestamp,
   Timestamp,
+  deleteDoc,
 } from 'firebase/firestore';
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
@@ -29,32 +30,38 @@ const ACCEPTED_IMAGE_TYPES = [
 ];
 
 // --- Zod Schemas for Validation ---
-const BaseEventSchema = z.object({
+const EventBaseSchema = z.object({
   title: z.string().min(1, 'Title is required'),
   description: z.string().min(1, 'Description is required'),
   location: z.string().min(1, 'Location is required'),
   date: z.coerce.date(),
   featured: z.boolean(),
-  imageFile: z
-    .instanceof(File)
-    .optional()
-    .refine(
-      (file) => !file || file.size === 0 || file.size <= MAX_FILE_SIZE,
-      `Max image size is 5MB.`
-    )
-    .refine(
-      (file) =>
-        !file || file.size === 0 || ACCEPTED_IMAGE_TYPES.includes(file.type),
-      'Only .jpg, .jpeg, .png and .webp formats are supported.'
-    ),
 });
 
-const CreateEventSchema = BaseEventSchema;
-const UpdateEventSchema = BaseEventSchema;
+const FileSchema = z
+  .instanceof(File)
+  .optional()
+  .refine(
+    (file) => !file || file.size === 0 || file.size <= MAX_FILE_SIZE,
+    `Max image size is 5MB.`
+  )
+  .refine(
+    (file) =>
+      !file || file.size === 0 || ACCEPTED_IMAGE_TYPES.includes(file.type),
+    'Only .jpg, .jpeg, .png and .webp formats are supported.'
+  );
+
+const CreateEventSchema = EventBaseSchema.extend({
+  imageFile: FileSchema,
+});
+const UpdateEventSchema = EventBaseSchema.extend({
+  imageFile: FileSchema,
+});
+
 
 export type EventFormState = {
   message: string;
-  errors?: Partial<Record<keyof z.infer<typeof BaseEventSchema>, string[]>>;
+  errors?: Partial<Record<keyof z.infer<typeof EventBaseSchema> | 'imageFile', string[]>>;
   success: boolean;
 };
 
@@ -110,12 +117,12 @@ export async function createEvent(
     };
   }
 
-  const { imageFile, ...rest } = validatedFields.data;
+  const { imageFile, date, ...rest } = validatedFields.data;
 
   try {
     const payload: any = {
       ...rest,
-      date: Timestamp.fromDate(rest.date),
+      date: Timestamp.fromDate(date),
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     };
@@ -157,7 +164,7 @@ export async function updateEvent(
     };
   }
   
-  const { imageFile, ...rest } = validatedFields.data;
+  const { imageFile, date, ...rest } = validatedFields.data;
   const eventDocRef = doc(firestore, 'events', id);
 
   try {
@@ -169,15 +176,13 @@ export async function updateEvent(
 
     const payload: any = {
       ...rest,
-      date: Timestamp.fromDate(rest.date),
+      date: Timestamp.fromDate(date),
       updatedAt: serverTimestamp(),
     };
 
     if (imageFile) {
       payload.imageUrl = await uploadImage(imageFile);
       await deleteImageFromStorage(existingData.imageUrl);
-    } else {
-      payload.imageUrl = existingData.imageUrl;
     }
 
     await updateDoc(eventDocRef, payload);
@@ -221,5 +226,3 @@ export async function deleteEvent(
     return { message: 'Failed to delete event.', success: false };
   }
 }
-
-    
