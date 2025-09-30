@@ -26,13 +26,21 @@ export type JobFormState = {
   success: boolean;
 };
 
-// This action is now designed to work with useActionState and react-hook-form
-// It receives validated data directly, not a FormData object
+function parseFormData(formData: FormData) {
+    return {
+        title: formData.get('title'),
+        description: formData.get('description'),
+        location: formData.get('location'),
+        type: formData.get('type'),
+    }
+}
+
 export async function createJob(
   prevState: JobFormState,
-  data: z.infer<typeof JobSchema>
+  formData: FormData
 ): Promise<JobFormState> {
-  const validatedFields = JobSchema.safeParse(data);
+  const rawData = parseFormData(formData);
+  const validatedFields = JobSchema.safeParse(rawData);
 
   if (!validatedFields.success) {
     return {
@@ -44,11 +52,7 @@ export async function createJob(
 
   try {
     const jobsCollection = collection(firestore, 'jobs');
-    await addDoc(jobsCollection, {
-      ...validatedFields.data,
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
-    });
+    await addDoc(jobsCollection, validatedFields.data);
 
     revalidatePath('/admin/careers');
     revalidatePath('/careers');
@@ -59,16 +63,16 @@ export async function createJob(
   }
 }
 
-// This action is now designed to work with useActionState and react-hook-form
 export async function updateJob(
   id: string,
   prevState: JobFormState,
-  data: z.infer<typeof JobSchema>
+  formData: FormData
 ): Promise<JobFormState> {
   if (!id) {
     return { message: 'Failed to update job: Missing ID.', success: false };
   }
-  const validatedFields = JobSchema.safeParse(data);
+  const rawData = parseFormData(formData);
+  const validatedFields = JobSchema.safeParse(rawData);
 
   if (!validatedFields.success) {
     return {
@@ -80,7 +84,7 @@ export async function updateJob(
 
   try {
     const jobDoc = doc(firestore, 'jobs', id);
-    await updateDoc(jobDoc, { ...validatedFields.data, updatedAt: serverTimestamp() });
+    await updateDoc(jobDoc, validatedFields.data);
 
     revalidatePath('/admin/careers');
     revalidatePath('/careers');
