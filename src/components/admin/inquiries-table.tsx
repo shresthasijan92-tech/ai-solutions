@@ -82,10 +82,11 @@ export function InquiriesTable({ inquiries }: InquiriesTableProps) {
               <TableHead>Name</TableHead>
               <TableHead>Company</TableHead>
               <TableHead>Email</TableHead>
-              <TableHead className="w-[50px] text-right">Actions</TableHead>
+              <TableHead className="w-[100px] text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
-          <Accordion asChild type="single" collapsible>
+
+          <Accordion type="single" collapsible asChild>
             <TableBody>
               {inquiries.map((inquiry) => (
                 <AccordionItem value={inquiry.id} asChild key={inquiry.id}>
