@@ -30,6 +30,33 @@ export default function AdminEventsPage() {
     setEditingEvent(null);
   };
 
+  const renderContent = () => {
+    if (isLoading) {
+      return (
+        <div className="space-y-2">
+          <Skeleton className="h-10 w-full" />
+          <Skeleton className="h-10 w-full" />
+          <Skeleton className="h-10 w-full" />
+        </div>
+      );
+    }
+
+    if (error) {
+      return <p className="text-destructive">Error: {error.message}</p>;
+    }
+
+    if (events && events.length > 0) {
+      return <EventsTable events={events} onEdit={handleEditClick} />;
+    }
+
+    return (
+      <div className="text-center py-10 border-2 border-dashed rounded-lg">
+        <h3 className="text-xl font-semibold">No Events Found</h3>
+        <p className="text-muted-foreground mt-2">Click the "Add Event" button to create your first one.</p>
+      </div>
+    );
+  };
+
   return (
     <div className="space-y-8">
       <div className="flex items-center justify-between">
@@ -53,22 +80,7 @@ export default function AdminEventsPage() {
         </Dialog>
       </div>
 
-      {isLoading ? (
-        <div className="space-y-2">
-          <Skeleton className="h-10 w-full" />
-          <Skeleton className="h-10 w-full" />
-          <Skeleton className="h-10 w-full" />
-        </div>
-      ) : error ? (
-        <p className="text-destructive">{error.message}</p>
-      ) : events && events.length > 0 ? (
-        <EventsTable events={events} onEdit={handleEditClick} />
-      ) : (
-        <div className="text-center py-10 border-2 border-dashed rounded-lg">
-          <h3 className="text-xl font-semibold">No Events Found</h3>
-          <p className="text-muted-foreground mt-2">Click the "Add Event" button to create your first one.</p>
-        </div>
-      )}
+      {renderContent()}
     </div>
   );
 }

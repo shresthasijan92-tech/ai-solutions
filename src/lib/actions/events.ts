@@ -11,9 +11,10 @@ import type { Event } from '../definitions';
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const ACCEPTED_IMAGE_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
 
-const FileSchema = z.instanceof(File).optional()
-  .refine(file => !file || file.size === 0 || file.size <= MAX_FILE_SIZE, `Max image size is 5MB.`)
-  .refine(file => !file || file.size === 0 || ACCEPTED_IMAGE_TYPES.includes(file.type), 'Only .jpg, .jpeg, .png and .webp formats are supported.');
+const FileSchema = z.instanceof(File)
+  .optional()
+  .refine(file => !file || file.size <= MAX_FILE_SIZE, `Max image size is 5MB.`)
+  .refine(file => !file || ACCEPTED_IMAGE_TYPES.includes(file.type), 'Only .jpg, .jpeg, .png and .webp formats are supported.');
 
 const EventBaseSchema = z.object({
   title: z.string().min(1, 'Title is required'),
@@ -23,9 +24,8 @@ const EventBaseSchema = z.object({
   featured: z.boolean(),
 });
 
-const EventActionSchema = EventBaseSchema.extend({
-  imageFile: FileSchema,
-});
+const CreateEventSchema = EventBaseSchema.extend({ imageFile: FileSchema });
+const UpdateEventSchema = EventBaseSchema.extend({ imageFile: FileSchema });
 
 
 export type EventFormState = {
@@ -79,7 +79,7 @@ function revalidateEventPaths(id?: string) {
 // --- Server Actions ---
 export async function createEvent(prevState: EventFormState, formData: FormData): Promise<EventFormState> {
   const rawData = parseFormData(formData);
-  const validatedFields = EventActionSchema.safeParse(rawData);
+  const validatedFields = CreateEventSchema.safeParse(rawData);
 
   if (!validatedFields.success) {
     return {
@@ -117,7 +117,7 @@ export async function updateEvent(prevState: EventFormState, formData: FormData)
   if (!id) return { message: 'Failed to update event: Missing ID.', success: false };
 
   const rawData = parseFormData(formData);
-  const validatedFields = EventActionSchema.safeParse(rawData);
+  const validatedFields = UpdateEventSchema.safeParse(rawData);
 
   if (!validatedFields.success) {
     return {
