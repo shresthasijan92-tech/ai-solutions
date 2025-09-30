@@ -21,7 +21,6 @@ import {
   Timestamp,
 } from 'firebase/firestore';
 import type { Event } from '../definitions';
-import { getAuthenticatedAdmin } from '../auth';
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const ACCEPTED_IMAGE_TYPES = [
@@ -98,12 +97,6 @@ export async function createEvent(
   prevState: EventFormState,
   formData: FormData
 ): Promise<EventFormState> {
-  try {
-    await getAuthenticatedAdmin();
-  } catch (e) {
-    return { message: 'Unauthorized: You must be logged in to create an event.', success: false };
-  }
-
   const rawData = parseEventFormData(formData);
   const validatedFields = EventActionSchema.safeParse(rawData);
 
@@ -147,12 +140,6 @@ export async function updateEvent(
   prevState: EventFormState,
   formData: FormData
 ): Promise<EventFormState> {
-  try {
-    await getAuthenticatedAdmin();
-  } catch (e) {
-    return { message: 'Unauthorized: You must be logged in to update an event.', success: false };
-  }
-
   const id = formData.get('id') as string;
   if (!id)
     return { message: 'Failed to update event: Missing ID.', success: false };
@@ -207,12 +194,6 @@ export async function updateEvent(
 export async function deleteEvent(
   id: string
 ): Promise<{ message: string; success: boolean }> {
-  try {
-    await getAuthenticatedAdmin();
-  } catch (e) {
-    return { message: 'Unauthorized: You must be logged in to delete an event.', success: false };
-  }
-
   if (!id) {
     return { message: 'Failed to delete event: Missing ID.', success: false };
   }

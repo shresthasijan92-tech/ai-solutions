@@ -11,7 +11,6 @@ import {
   updateDoc,
   deleteDoc,
 } from 'firebase/firestore';
-import { getAuthenticatedAdmin } from '../auth';
 
 const JobSchema = z.object({
   title: z.string().min(1, 'Title is required'),
@@ -39,12 +38,6 @@ export async function createJob(
   prevState: JobFormState,
   formData: FormData
 ): Promise<JobFormState> {
-  try {
-    await getAuthenticatedAdmin();
-  } catch (e) {
-    return { message: 'Unauthorized: You must be logged in to create a job.', success: false };
-  }
-
   const rawData = parseFormData(formData);
   const validatedFields = JobSchema.safeParse(rawData);
 
@@ -73,12 +66,6 @@ export async function updateJob(
   prevState: JobFormState,
   formData: FormData
 ): Promise<JobFormState> {
-  try {
-    await getAuthenticatedAdmin();
-  } catch (e) {
-    return { message: 'Unauthorized: You must be logged in to update a job.', success: false };
-  }
-
   const id = formData.get('id') as string;
   if (!id) {
     return { message: 'Failed to update job: Missing ID.', success: false };
@@ -110,12 +97,6 @@ export async function updateJob(
 export async function deleteJob(
   id: string
 ): Promise<{ message: string; success: boolean }> {
-  try {
-    await getAuthenticatedAdmin();
-  } catch (e) {
-    return { message: 'Unauthorized: You must be logged in to delete a job.', success: false };
-  }
-
   if (!id) {
     return { message: 'Failed to delete job: Missing ID.', success: false };
   }

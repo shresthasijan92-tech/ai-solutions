@@ -20,7 +20,6 @@ import {
   serverTimestamp,
 } from 'firebase/firestore';
 import type { GalleryImage } from '../definitions';
-import { getAuthenticatedAdmin } from '../auth';
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const ACCEPTED_IMAGE_TYPES = [
@@ -99,12 +98,6 @@ export async function createGalleryImage(
   prevState: GalleryImageFormState,
   formData: FormData
 ): Promise<GalleryImageFormState> {
-  try {
-    await getAuthenticatedAdmin();
-  } catch (e) {
-    return { message: 'Unauthorized: You must be logged in to create a gallery image.', success: false };
-  }
-
   const rawData = parseGalleryFormData(formData);
   const validatedFields = CreateGalleryImageSchema.safeParse(rawData);
 
@@ -146,12 +139,6 @@ export async function updateGalleryImage(
   prevState: GalleryImageFormState,
   formData: FormData
 ): Promise<GalleryImageFormState> {
-  try {
-    await getAuthenticatedAdmin();
-  } catch (e) {
-    return { message: 'Unauthorized: You must be logged in to update a gallery image.', success: false };
-  }
-
   const id = formData.get('id') as string;
   if (!id)
     return { message: 'Failed to update image: Missing ID', success: false };
@@ -205,12 +192,6 @@ export async function updateGalleryImage(
 export async function deleteGalleryImage(
   id: string
 ): Promise<{ message: string; success: boolean }> {
-  try {
-    await getAuthenticatedAdmin();
-  } catch (e) {
-    return { message: 'Unauthorized: You must be logged in to delete a gallery image.', success: false };
-  }
-
   if (!id) {
     return { message: 'Failed to delete gallery image: Missing ID.', success: false };
   }

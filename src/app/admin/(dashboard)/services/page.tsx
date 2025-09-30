@@ -16,11 +16,9 @@ import { ServicesTable } from '@/components/admin/services-table';
 import { useServices } from '@/hooks/use-services';
 import { type Service } from '@/lib/definitions';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useUser } from '@/firebase';
 
 export default function AdminServicesPage() {
-  const { isUserLoading } = useUser();
-  const { services, isLoading: areServicesLoading, error } = useServices(!isUserLoading);
+  const { services, isLoading, error } = useServices();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingService, setEditingService] = useState<Service | null>(null);
 
@@ -38,8 +36,6 @@ export default function AdminServicesPage() {
     setIsDialogOpen(false);
     setEditingService(null);
   };
-
-  const showLoading = isUserLoading || areServicesLoading;
 
   return (
     <div className="space-y-8">
@@ -70,7 +66,7 @@ export default function AdminServicesPage() {
         </Dialog>
       </div>
 
-      {showLoading ? (
+      {isLoading ? (
         <div className="space-y-2">
           <Skeleton className="h-10 w-full" />
           <Skeleton className="h-10 w-full" />

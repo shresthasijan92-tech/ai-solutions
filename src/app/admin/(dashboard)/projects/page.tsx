@@ -16,11 +16,9 @@ import { ProjectsTable } from '@/components/admin/projects-table';
 import { useProjects } from '@/hooks/use-projects';
 import { type Project } from '@/lib/definitions';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useUser } from '@/firebase';
 
 export default function AdminProjectsPage() {
-  const { isUserLoading } = useUser();
-  const { projects, isLoading: areProjectsLoading, error } = useProjects(!isUserLoading);
+  const { projects, isLoading, error } = useProjects();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
 
@@ -38,8 +36,6 @@ export default function AdminProjectsPage() {
     setIsDialogOpen(false);
     setEditingProject(null);
   };
-  
-  const showLoading = isUserLoading || areProjectsLoading;
 
   return (
     <div className="space-y-8">
@@ -70,7 +66,7 @@ export default function AdminProjectsPage() {
         </Dialog>
       </div>
 
-      {showLoading ? (
+      {isLoading ? (
         <div className="space-y-2">
           <Skeleton className="h-10 w-full" />
           <Skeleton className="h-10 w-full" />

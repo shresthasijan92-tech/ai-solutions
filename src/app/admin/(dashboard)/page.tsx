@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -6,22 +7,16 @@ import { useServices } from '@/hooks/use-services';
 import { useProjects } from '@/hooks/use-projects';
 import { useTestimonials } from '@/hooks/use-testimonials';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useUser } from '@/firebase';
 
 export default function AdminDashboardPage() {
-  const { isUserLoading: isAuthLoading } = useUser();
   const { services, isLoading: isLoadingServices } = useServices();
   const { projects, isLoading: isLoadingProjects } = useProjects();
-  // Only enable the testimonials hook once we know the auth state is ready.
-  const { testimonials, isLoading: isLoadingTestimonials } = useTestimonials(!isAuthLoading);
-
-  // Prevent calculation until auth state and data are ready
-  const pendingFeedbackCount = !isAuthLoading && testimonials ? testimonials.length : 0;
+  const { testimonials, isLoading: isLoadingTestimonials } = useTestimonials();
 
   const stats = [
     { title: 'Total Services', value: services?.length ?? 0, icon: Briefcase, isLoading: isLoadingServices },
     { title: 'Total Projects', value: projects?.length ?? 0, icon: FileText, isLoading: isLoadingProjects },
-    { title: 'Total Feedback', value: pendingFeedbackCount, icon: MessageSquare, isLoading: isAuthLoading || isLoadingTestimonials },
+    { title: 'Total Feedback', value: testimonials?.length ?? 0, icon: MessageSquare, isLoading: isLoadingTestimonials },
   ];
 
   return (

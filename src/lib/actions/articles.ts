@@ -13,7 +13,6 @@ import {
   serverTimestamp,
   Timestamp,
 } from 'firebase/firestore';
-import { getAuthenticatedAdmin } from '../auth';
 
 // --- Zod Schema for Validation ---
 const ArticleFormSchema = z.object({
@@ -48,12 +47,6 @@ export async function createArticle(
   prevState: ArticleFormState,
   formData: FormData
 ): Promise<ArticleFormState> {
-  try {
-    await getAuthenticatedAdmin();
-  } catch (e) {
-    return { message: 'Unauthorized: You must be logged in to create an article.', success: false };
-  }
-
   const rawData = parseFormData(formData);
   const validatedFields = ArticleFormSchema.safeParse(rawData);
 
@@ -90,12 +83,6 @@ export async function updateArticle(
   prevState: ArticleFormState,
   formData: FormData
 ): Promise<ArticleFormState> {
-  try {
-    await getAuthenticatedAdmin();
-  } catch (e) {
-    return { message: 'Unauthorized: You must be logged in to update an article.', success: false };
-  }
-  
   const id = formData.get('id') as string;
   if (!id) {
     return { message: 'Failed to update article: Missing ID.', success: false };
@@ -137,12 +124,6 @@ export async function updateArticle(
 export async function deleteArticle(
   id: string
 ): Promise<{ message: string; success: boolean }> {
-  try {
-    await getAuthenticatedAdmin();
-  } catch (e) {
-    return { message: 'Unauthorized: You must be logged in to delete an article.', success: false };
-  }
-
   if (!id) {
     return { message: 'Failed to delete article: Missing ID.', success: false };
   }

@@ -16,11 +16,9 @@ import { GalleryTable } from '@/components/admin/gallery-table';
 import { useGalleryImages } from '@/hooks/use-gallery-images';
 import { type GalleryImage } from '@/lib/definitions';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useUser } from '@/firebase';
 
 export default function AdminGalleryPage() {
-  const { isUserLoading } = useUser();
-  const { galleryImages, isLoading: areImagesLoading, error } = useGalleryImages(!isUserLoading);
+  const { galleryImages, isLoading, error } = useGalleryImages();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingImage, setEditingImage] = useState<GalleryImage | null>(null);
 
@@ -39,8 +37,6 @@ export default function AdminGalleryPage() {
     setIsDialogOpen(false);
     setEditingImage(null);
   };
-
-  const showLoading = isUserLoading || areImagesLoading;
 
   return (
     <div className="space-y-8">
@@ -71,7 +67,7 @@ export default function AdminGalleryPage() {
         </Dialog>
       </div>
 
-      {showLoading ? (
+      {isLoading ? (
          <div className="space-y-2">
           <Skeleton className="h-10 w-full" />
           <Skeleton className="h-10 w-full" />

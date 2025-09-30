@@ -4,13 +4,9 @@
 import { useTestimonials } from '@/hooks/use-testimonials';
 import { TestimonialsTable } from '@/components/admin/testimonials-table';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useUser } from '@/firebase';
 
 export default function AdminFeedbackPage() {
-  const { isUserLoading } = useUser();
-  const { testimonials, isLoading: areTestimonialsLoading, error } = useTestimonials(!isUserLoading);
-
-  const showLoading = isUserLoading || areTestimonialsLoading;
+  const { testimonials, isLoading, error } = useTestimonials();
 
   return (
     <div className="space-y-8">
@@ -21,7 +17,7 @@ export default function AdminFeedbackPage() {
         </p>
       </div>
 
-        {showLoading ? (
+        {isLoading ? (
           <div className="space-y-2">
             <Skeleton className="h-10 w-full" />
             <Skeleton className="h-10 w-full" />

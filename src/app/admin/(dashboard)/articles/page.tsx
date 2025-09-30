@@ -16,11 +16,9 @@ import { ArticlesTable } from '@/components/admin/articles-table';
 import { useArticles } from '@/hooks/use-articles';
 import { type Article } from '@/lib/definitions';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useUser } from '@/firebase';
 
 export default function AdminArticlesPage() {
-  const { isUserLoading } = useUser();
-  const { articles, isLoading: areArticlesLoading, error } = useArticles(!isUserLoading);
+  const { articles, isLoading, error } = useArticles();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingArticle, setEditingArticle] = useState<Article | null>(null);
 
@@ -38,8 +36,6 @@ export default function AdminArticlesPage() {
     setIsDialogOpen(false);
     setEditingArticle(null);
   };
-  
-  const showLoading = isUserLoading || areArticlesLoading;
 
   return (
     <div className="space-y-8">
@@ -70,7 +66,7 @@ export default function AdminArticlesPage() {
         </Dialog>
       </div>
 
-      {showLoading ? (
+      {isLoading ? (
         <div className="space-y-2">
           <Skeleton className="h-10 w-full" />
           <Skeleton className="h-10 w-full" />

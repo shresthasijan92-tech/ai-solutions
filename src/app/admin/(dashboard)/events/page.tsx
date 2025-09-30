@@ -16,11 +16,9 @@ import { EventsTable } from '@/components/admin/events-table';
 import { useEvents } from '@/hooks/use-events';
 import { type Event } from '@/lib/definitions';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useUser } from '@/firebase';
 
 export default function AdminEventsPage() {
-  const { isUserLoading } = useUser();
-  const { events, isLoading: areEventsLoading, error } = useEvents(!isUserLoading);
+  const { events, isLoading, error } = useEvents();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingEvent, setEditingEvent] = useState<Event | null>(null);
 
@@ -38,8 +36,6 @@ export default function AdminEventsPage() {
     setIsDialogOpen(false);
     setEditingEvent(null);
   };
-
-  const showLoading = isUserLoading || areEventsLoading;
 
   return (
     <div className="space-y-8">
@@ -70,7 +66,7 @@ export default function AdminEventsPage() {
         </Dialog>
       </div>
 
-       {showLoading ? (
+       {isLoading ? (
          <div className="space-y-2">
           <Skeleton className="h-10 w-full" />
           <Skeleton className="h-10 w-full" />
