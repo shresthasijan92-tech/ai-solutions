@@ -1,13 +1,12 @@
 'use client';
 
-import { useEffect, useState, useTransition } from 'react';
+import { useTransition } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
@@ -28,7 +27,7 @@ const FormSchema = z.object({
   price: z.string().optional(),
   benefits: z.string().optional(), // Handled as a string, then split
   featured: z.boolean().default(false),
-  imageFile: z.any().optional(), // File handling is separate
+  imageFile: z.any().optional(),
 });
 
 type FormValues = z.infer<typeof FormSchema>;

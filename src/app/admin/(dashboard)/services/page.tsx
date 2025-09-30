@@ -30,6 +30,30 @@ export default function AdminServicesPage() {
     setEditingService(null);
   };
 
+  const renderContent = () => {
+    if (isLoading) {
+      return (
+        <div className="space-y-2">
+          <Skeleton className="h-10 w-full" />
+          <Skeleton className="h-10 w-full" />
+          <Skeleton className="h-10 w-full" />
+        </div>
+      );
+    }
+    if (error) {
+      return <p className="text-destructive">{error.message}</p>;
+    }
+    if (services && services.length > 0) {
+      return <ServicesTable services={services} onEdit={handleEditClick} />;
+    }
+    return (
+      <div className="text-center py-10 border-2 border-dashed rounded-lg">
+        <h3 className="text-xl font-semibold">No Services Found</h3>
+        <p className="text-muted-foreground mt-2">Click the "Add Service" button to create your first one.</p>
+      </div>
+    );
+  };
+
   return (
     <div className="space-y-8">
       <div className="flex items-center justify-between">
@@ -52,23 +76,8 @@ export default function AdminServicesPage() {
           </DialogContent>
         </Dialog>
       </div>
-
-      {isLoading ? (
-        <div className="space-y-2">
-          <Skeleton className="h-10 w-full" />
-          <Skeleton className="h-10 w-full" />
-          <Skeleton className="h-10 w-full" />
-        </div>
-      ) : error ? (
-        <p className="text-destructive">{error.message}</p>
-      ) : services && services.length > 0 ? (
-        <ServicesTable services={services} onEdit={handleEditClick} />
-      ) : (
-        <div className="text-center py-10 border-2 border-dashed rounded-lg">
-          <h3 className="text-xl font-semibold">No Services Found</h3>
-          <p className="text-muted-foreground mt-2">Click the "Add Service" button to create your first one.</p>
-        </div>
-      )}
+      
+      {renderContent()}
     </div>
   );
 }
