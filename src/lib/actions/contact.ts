@@ -1,8 +1,9 @@
 'use server';
 
+import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
-// In a real application, you would use a library like nodemailer to send an email.
-// For this demo, we'll just log the message to the console.
+import { firestore } from '@/firebase/server';
+import { collection, addDoc, doc, deleteDoc, Timestamp } from 'firebase/firestore';
 
 const ContactFormSchema = z.object({
   fullName: z.string(),
@@ -18,6 +19,11 @@ export type ContactFormState = {
   success: boolean;
 };
 
+function revalidateInquiryPaths() {
+    revalidatePath('/admin/inquiries');
+    revalidatePath('/contact');
+}
+
 export async function sendContactMessage(
   data: z.infer<typeof ContactFormSchema>
 ): Promise<ContactFormState> {
@@ -31,11 +37,13 @@ export async function sendContactMessage(
   }
 
   try {
-    // Here you would implement your email sending logic.
-    console.log('New contact message received:');
-    console.log(validatedFields.data);
+    await addDoc(collection(firestore, 'contacts'), {
+        ...validatedFields.data,
+        submittedAt: Timestamp.now(),
+    });
+
+    revalidateInquiryPaths();
     
-    // Simulate a successful email send.
     return {
       message: "We've received your message and will get back to you shortly.",
       success: true,
@@ -45,6 +53,24 @@ export async function sendContactMessage(
     return {
       message: 'There was an error sending your message. Please try again later.',
       success: false,
+    };
+  }
+}
+
+export async function deleteInquiry(id: string): Promise<{ success: boolean; message: string }> {
+  if (!id) {
+    return { success: false, message: 'Failed to delete inquiry: Missing ID.' };
+  }
+
+  try {
+    await deleteDoc(doc(firestore, 'contacts', id));
+    revalidateInquiryPaths();
+    return { success: true, message: `Inquiry has been deleted.` };
+  } catch (error: any) {
+    console.error('Error deleting inquiry:', error);
+    return {
+      success: false,
+      message: `Failed to delete inquiry due to a server error.`,
     };
   }
 }

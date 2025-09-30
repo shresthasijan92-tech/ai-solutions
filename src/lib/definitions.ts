@@ -82,7 +82,8 @@ export type Contact = {
   fullName: string;
   email: string;
   companyName: string;
+  country: string;
   contactNumber?: string;
   projectDetails: string;
-  submittedAt: string;
+  submittedAt: Timestamp | Date | string;
 };
