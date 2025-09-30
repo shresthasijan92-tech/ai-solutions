@@ -10,27 +10,36 @@ import type { Event } from '../definitions';
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const ACCEPTED_IMAGE_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
 
-const FileSchema = z.instanceof(File)
-  .refine(file => file.size <= MAX_FILE_SIZE, `Max image size is 5MB.`)
-  .refine(
-    file => ACCEPTED_IMAGE_TYPES.includes(file.type),
-    'Only .jpg, .jpeg, .png and .webp formats are supported.'
-  );
+const fileSchema = z.instanceof(File).refine(
+  (file) => file.size === 0 || file.size <= MAX_FILE_SIZE,
+  `Max image size is 5MB.`
+).refine(
+  (file) => file.size === 0 || ACCEPTED_IMAGE_TYPES.includes(file.type),
+  'Only .jpg, .jpeg, .png and .webp formats are supported.'
+);
 
-const EventBaseSchema = z.object({
+const BaseEventSchema = z.object({
   title: z.string().min(1, 'Title is required'),
   description: z.string().min(1, 'Description is required'),
   location: z.string().min(1, 'Location is required'),
-  date: z.string().transform((str) => new Date(str)),
+  date: z.preprocess((arg) => {
+    if (typeof arg === 'string' || arg instanceof Date) return new Date(arg);
+  }, z.date()),
   featured: z.boolean(),
 });
 
-const CreateEventSchema = EventBaseSchema.extend({ imageFile: FileSchema.optional() });
-const UpdateEventSchema = EventBaseSchema.extend({ imageFile: FileSchema.optional() });
+const CreateEventSchema = BaseEventSchema.extend({
+  imageFile: fileSchema.optional(),
+});
+
+const UpdateEventSchema = BaseEventSchema.extend({
+  imageFile: fileSchema.optional(),
+});
+
 
 export type EventFormState = {
   message: string;
-  errors?: Partial<Record<keyof z.infer<typeof EventBaseSchema> | 'imageFile', string[]>>;
+  errors?: Partial<Record<keyof z.infer<typeof BaseEventSchema> | 'imageFile', string[]>>;
   success: boolean;
 };
 
@@ -57,16 +66,17 @@ async function deleteImageFromStorage(imageUrl: string | undefined) {
 }
 
 function parseFormData(formData: FormData) {
-  const imageFile = formData.get('imageFile');
-  return {
-    title: formData.get('title') as string,
-    description: formData.get('description') as string,
-    location: formData.get('location') as string,
-    date: formData.get('date') as string,
-    featured: formData.get('featured') === 'on',
-    imageFile: imageFile instanceof File && imageFile.size > 0 ? imageFile : undefined,
-  };
+    const imageFile = formData.get('imageFile');
+    return {
+      title: formData.get('title') as string,
+      description: formData.get('description') as string,
+      location: formData.get('location') as string,
+      date: formData.get('date') as string,
+      featured: formData.get('featured') === 'on',
+      imageFile: imageFile instanceof File && imageFile.size > 0 ? imageFile : undefined,
+    };
 }
+  
 
 function revalidateEventPaths(id?: string) {
   revalidatePath('/admin/events');
@@ -120,6 +130,7 @@ export async function updateEvent(prevState: EventFormState, formData: FormData)
   const validatedFields = UpdateEventSchema.safeParse(rawData);
 
   if (!validatedFields.success) {
+    console.log(validatedFields.error.flatten().fieldErrors);
     return {
       message: 'Failed to update event. Please check the form.',
       errors: validatedFields.error.flatten().fieldErrors,
@@ -137,7 +148,7 @@ export async function updateEvent(prevState: EventFormState, formData: FormData)
     }
     const existingData = docSnap.data() as Event;
 
-    const payload: Partial<Omit<Event, 'id' | 'date'>> & { date: Timestamp, updatedAt: any } = {
+    const payload: Partial<Omit<Event, 'id' | 'date'>> & { date: Timestamp, updatedAt: any, imageUrl?: string } = {
       ...data,
       date: Timestamp.fromDate(date),
       updatedAt: serverTimestamp(),
@@ -152,7 +163,7 @@ export async function updateEvent(prevState: EventFormState, formData: FormData)
       payload.imageUrl = existingData.imageUrl;
     }
 
-    await updateDoc(eventDocRef, payload);
+    await updateDoc(eventDocRef, payload as any);
     revalidateEventPaths(id);
     return { message: 'Successfully updated event.', success: true };
   } catch (error) {
