@@ -2,9 +2,8 @@
 
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
-import { firestore, storage } from '@/firebase/server';
-import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
-import { collection, doc, addDoc, updateDoc, deleteDoc, getDoc, serverTimestamp } from 'firebase/firestore';
+import { firestore } from '@/firebase/server';
+import { collection, doc, addDoc, updateDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
 import type { Service } from '../definitions';
 
 // This is a simplified schema for the data object, NOT for FormData.
@@ -15,7 +14,7 @@ const ServiceSchema = z.object({
   price: z.string().optional(),
   benefits: z.array(z.string()).optional(),
   featured: z.boolean(),
-  imageUrl: z.string().optional(), // imageUrl is now part of the data object
+  imageUrl: z.string().url('Invalid URL').optional().or(z.literal('')),
 });
 
 export type ServiceFormState = {
@@ -23,21 +22,6 @@ export type ServiceFormState = {
   errors?: Partial<Record<keyof z.infer<typeof ServiceSchema>, string[]>>;
   success: boolean;
 };
-
-// This function is no longer used for form parsing but kept for reference if needed elsewhere.
-async function deleteImageFromStorage(imageUrl: string | undefined) {
-  if (!imageUrl || !imageUrl.includes('firebasestorage.googleapis.com')) return;
-  try {
-    const imageRef = ref(storage, imageUrl);
-    await deleteObject(imageRef);
-  } catch (error: any) {
-    if (error.code === 'storage/object-not-found') {
-      console.warn('Image to delete was not found in storage:', imageUrl);
-    } else {
-      console.error("Failed to delete image from storage:", error);
-    }
-  }
-}
 
 function revalidateServicePaths(id?: string) {
   revalidatePath('/admin/services');
@@ -112,10 +96,6 @@ export async function deleteService(id: string): Promise<{ message: string; succ
   if (!id) return { message: 'Failed to delete service: Missing ID.', success: false };
   try {
     const serviceDocRef = doc(firestore, 'services', id);
-    const docSnap = await getDoc(serviceDocRef);
-    if (docSnap.exists()) {
-      await deleteImageFromStorage(docSnap.data().imageUrl);
-    }
     await deleteDoc(serviceDocRef);
     revalidateServicePaths(id);
     return { message: 'Successfully deleted service.', success: true };
@@ -123,36 +103,4 @@ export async function deleteService(id: string): Promise<{ message: string; succ
     console.error('Delete Service Error:', error);
     return { message: 'Failed to delete service.', success: false };
   }
-}
-
-// New separate function to handle image uploads
-export async function uploadServiceImage(formData: FormData): Promise<{ success: boolean, imageUrl?: string, message: string }> {
-    const imageFile = formData.get('imageFile') as File | null;
-    
-    if (!imageFile || imageFile.size === 0) {
-        return { success: false, message: 'No image file provided.' };
-    }
-
-    // Basic validation
-    const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
-    const ACCEPTED_IMAGE_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
-
-    if (imageFile.size > MAX_FILE_SIZE) {
-        return { success: false, message: 'Max image size is 5MB.' };
-    }
-    if (!ACCEPTED_IMAGE_TYPES.includes(imageFile.type)) {
-        return { success: false, message: 'Only .jpg, .jpeg, .png and .webp formats are supported.' };
-    }
-
-    try {
-        const fileBuffer = await imageFile.arrayBuffer();
-        const fileName = `services/${Date.now()}-${imageFile.name}`;
-        const storageRef = ref(storage, fileName);
-        await uploadBytes(storageRef, fileBuffer, { contentType: imageFile.type });
-        const downloadUrl = await getDownloadURL(storageRef);
-        return { success: true, imageUrl: downloadUrl, message: 'Image uploaded successfully.' };
-    } catch (error) {
-        console.error('Image Upload Error:', error);
-        return { success: false, message: 'Failed to upload image.' };
-    }
 }

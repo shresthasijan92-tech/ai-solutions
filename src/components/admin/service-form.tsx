@@ -11,7 +11,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { type Service } from '@/lib/definitions';
-import { createService, updateService, uploadServiceImage } from '@/lib/actions/services';
+import { createService, updateService } from '@/lib/actions/services';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 
 type ServiceFormProps = {
@@ -27,7 +27,7 @@ const FormSchema = z.object({
   price: z.string().optional(),
   benefits: z.string().optional(), // Handled as a string, then split
   featured: z.boolean().default(false),
-  imageFile: z.any().optional(),
+  imageUrl: z.string().url('Please enter a valid URL.').optional().or(z.literal('')),
 });
 
 type FormValues = z.infer<typeof FormSchema>;
@@ -45,37 +45,19 @@ export function ServiceForm({ service, onSuccess }: ServiceFormProps) {
       price: service?.price || '',
       benefits: service?.benefits?.join(', ') || '',
       featured: service?.featured || false,
-      imageFile: undefined,
+      imageUrl: service?.imageUrl || '',
     },
   });
 
   const onSubmit = (values: FormValues) => {
     startTransition(async () => {
-      let imageUrl = service?.imageUrl;
-      const { imageFile, benefits, ...otherData } = values;
-
-      // 1. Handle image upload if a new file is provided
-      if (imageFile && imageFile.length > 0) {
-        const imageFormData = new FormData();
-        imageFormData.append('imageFile', imageFile[0]);
-
-        const uploadResult = await uploadServiceImage(imageFormData);
-
-        if (!uploadResult.success || !uploadResult.imageUrl) {
-          toast({ variant: 'destructive', title: 'Error', description: uploadResult.message });
-          return;
-        }
-        imageUrl = uploadResult.imageUrl;
-      }
-
-      // 2. Prepare the data for Firestore
+      // 1. Prepare the data for Firestore
       const serviceData = {
-        ...otherData,
-        benefits: benefits ? benefits.split(',').map(b => b.trim()).filter(Boolean) : [],
-        imageUrl: imageUrl || '',
+        ...values,
+        benefits: values.benefits ? values.benefits.split(',').map(b => b.trim()).filter(Boolean) : [],
       };
 
-      // 3. Call the create or update server action
+      // 2. Call the create or update server action
       const result = service?.id
         ? await updateService(service.id, serviceData)
         : await createService(serviceData);
@@ -136,15 +118,13 @@ export function ServiceForm({ service, onSuccess }: ServiceFormProps) {
             </FormItem>
         )} />
 
-        <FormField control={form.control} name="imageFile" render={({ field }) => (
+        <FormField control={form.control} name="imageUrl" render={({ field }) => (
             <FormItem>
-              <FormLabel>Service Image</FormLabel>
+              <FormLabel>Service Image URL</FormLabel>
               <FormControl>
-                <Input type="file" accept="image/*" onChange={(e) => field.onChange(e.target.files)} />
+                <Input type="text" placeholder="https://picsum.photos/seed/s1/600/400" {...field} />
               </FormControl>
-              <p className="text-sm text-muted-foreground">
-                {service?.id ? "Upload a new image to replace the current one." : "Image is optional."}
-              </p>
+               <p className="text-sm text-muted-foreground">Image is optional. Paste a valid image URL.</p>
               <FormMessage />
             </FormItem>
           )} />
