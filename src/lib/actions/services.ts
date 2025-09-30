@@ -11,25 +11,24 @@ import {
   serverTimestamp,
 } from 'firebase/firestore';
 import { z } from 'zod';
-import type { Service } from '../definitions';
 
 const ServiceSchema = z.object({
   title: z.string().min(1, 'Title is required'),
   description: z.string().min(1, 'Description is required'),
   details: z.string().optional(),
   price: z.string().optional(),
-  imageUrl: z.string().url().optional().or(z.literal('')),
   benefits: z.preprocess(
-    (val) => (typeof val === 'string' && val ? val.split(',').map((s) => s.trim()) : []),
+    (val) => (typeof val === 'string' && val ? val.split(',').map((s) => s.trim()).filter(Boolean) : []),
     z.array(z.string())
   ),
-  featured: z.preprocess((val) => val === true, z.boolean()),
+  imageUrl: z.string().url('Please enter a valid URL').optional().or(z.literal('')),
+  featured: z.boolean().default(false),
 });
 
 export type ServiceFormState = {
   message: string;
   success: boolean;
-  errors?: z.ZodError<z.infer<typeof ServiceSchema>>['formErrors']['fieldErrors'];
+  errors?: z.infer<typeof ServiceSchema>;
 };
 
 type ServiceData = z.infer<typeof ServiceSchema>;

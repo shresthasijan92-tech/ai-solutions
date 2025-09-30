@@ -11,7 +11,6 @@ import {
   serverTimestamp,
 } from 'firebase/firestore';
 import { z } from 'zod';
-import type { Project } from '../definitions';
 
 const ProjectSchema = z.object({
   title: z.string().min(1, 'Title is required'),
@@ -19,10 +18,10 @@ const ProjectSchema = z.object({
   caseStudy: z.string().optional(),
   imageUrl: z.string().url('A valid image URL is required.'),
   technologies: z.preprocess(
-    (val) => (typeof val === 'string' && val ? val.split(',').map((s) => s.trim()) : []),
+    (val) => (typeof val === 'string' && val ? val.split(',').map((s) => s.trim()).filter(Boolean) : []),
     z.array(z.string()).min(1, 'At least one technology is required.')
   ),
-  featured: z.preprocess((val) => val === true, z.boolean()),
+  featured: z.boolean().default(false),
 });
 
 export type ProjectFormState = {

@@ -3,14 +3,25 @@
 import { revalidatePath } from 'next/cache';
 import { firestore } from '@/firebase/server';
 import { collection, doc, addDoc, updateDoc, deleteDoc, serverTimestamp, Timestamp } from 'firebase/firestore';
+import { z } from 'zod';
 import type { Article } from '../definitions';
+
+const ArticleSchema = z.object({
+  title: z.string().min(1, 'Title is required'),
+  excerpt: z.string().min(1, 'Excerpt is required'),
+  content: z.string().min(1, 'Content is required'),
+  publishedAt: z.date(),
+  imageUrl: z.string().url('A valid image URL is required.'),
+  featured: z.boolean().default(false),
+});
 
 export type ArticleFormState = {
   message: string;
   success: boolean;
+  errors?: z.ZodError<z.infer<typeof ArticleSchema>>['formErrors']['fieldErrors'];
 };
 
-type ArticleData = Omit<Article, 'id' | 'publishedAt'> & { publishedAt: string };
+type ArticleData = z.infer<typeof ArticleSchema>;
 
 function revalidateArticlePaths(id?: string) {
   revalidatePath('/admin/articles');
@@ -20,11 +31,20 @@ function revalidateArticlePaths(id?: string) {
 }
 
 export async function createArticle(data: ArticleData): Promise<ArticleFormState> {
+  const validatedFields = ArticleSchema.safeParse(data);
+
+  if (!validatedFields.success) {
+    return {
+      message: 'Invalid form data.',
+      errors: validatedFields.error.flatten().fieldErrors,
+      success: false,
+    };
+  }
+
   try {
     const payload = {
-      ...data,
-      featured: data.featured || false,
-      publishedAt: Timestamp.fromDate(new Date(data.publishedAt)),
+      ...validatedFields.data,
+      publishedAt: Timestamp.fromDate(validatedFields.data.publishedAt),
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     };
@@ -42,11 +62,20 @@ export async function createArticle(data: ArticleData): Promise<ArticleFormState
 export async function updateArticle(id: string, data: ArticleData): Promise<ArticleFormState> {
   if (!id) return { message: 'Failed to update article: Missing ID.', success: false };
 
+  const validatedFields = ArticleSchema.safeParse(data);
+
+  if (!validatedFields.success) {
+    return {
+      message: 'Invalid form data.',
+      errors: validatedFields.error.flatten().fieldErrors,
+      success: false,
+    };
+  }
+  
   try {
     const payload = {
-      ...data,
-      featured: data.featured || false,
-      publishedAt: Timestamp.fromDate(new Date(data.publishedAt)),
+      ...validatedFields.data,
+      publishedAt: Timestamp.fromDate(validatedFields.data.publishedAt),
       updatedAt: serverTimestamp(),
     };
 

@@ -1,7 +1,9 @@
 'use client';
 
-import { useActionState, useEffect } from 'react';
-import { useFormStatus } from 'react-dom';
+import { useTransition } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,80 +12,130 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { type Job } from '@/lib/definitions';
-import { createJob, updateJob, type JobFormState } from '@/lib/actions/jobs';
+import { createJob, updateJob } from '@/lib/actions/jobs';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormMessage,
+} from '@/components/ui/form';
+
+const JobFormSchema = z.object({
+  title: z.string().min(1, 'Title is required'),
+  description: z.string().min(1, 'Description is required'),
+  location: z.string().min(1, 'Location is required'),
+  type: z.enum(['Full-time', 'Part-time', 'Contract']),
+});
+
+type JobFormValues = z.infer<typeof JobFormSchema>;
 
 type JobFormProps = {
   job?: Job | null;
   onSuccess: () => void;
 };
 
-function SubmitButton({ isEditing }: { isEditing: boolean }) {
-  const { pending } = useFormStatus();
-  return (
-    <Button type="submit" disabled={pending} className="w-full sm:w-auto">
-      {pending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-      {isEditing ? 'Update Job' : 'Create Job'}
-    </Button>
-  );
-}
-
 export function JobForm({ job, onSuccess }: JobFormProps) {
   const { toast } = useToast();
-  const action = job?.id ? updateJob : createJob;
-  const [state, formAction] = useActionState<JobFormState, FormData>(action, {
-    message: '',
-    success: false,
-    errors: {},
+  const [isPending, startTransition] = useTransition();
+
+  const form = useForm<JobFormValues>({
+    resolver: zodResolver(JobFormSchema),
+    defaultValues: {
+      title: job?.title || '',
+      description: job?.description || '',
+      location: job?.location || '',
+      type: job?.type || 'Full-time',
+    },
   });
   
-  useEffect(() => {
-    if (state.message) {
-      if (state.success) {
-        toast({ title: 'Success!', description: state.message });
+  const onSubmit = (data: JobFormValues) => {
+    startTransition(async () => {
+      const action = job?.id ? updateJob.bind(null, job.id) : createJob;
+      const result = await action(data);
+
+      if (result.success) {
+        toast({ title: 'Success!', description: result.message });
         onSuccess();
       } else {
-        toast({ variant: 'destructive', title: 'Error', description: state.message });
+        toast({ variant: 'destructive', title: 'Error', description: result.message });
       }
-    }
-  }, [state, toast, onSuccess]);
+    });
+  };
 
   return (
-    <form action={formAction} className="space-y-6">
-      {job?.id && <input type="hidden" name="id" value={job.id} />}
-      <div className="space-y-2">
-        <Label htmlFor="title">Title</Label>
-        <Input id="title" name="title" placeholder="Senior AI Engineer" defaultValue={job?.title} required />
-        {state.errors?.title && <p className="text-sm text-destructive">{state.errors.title.join(', ')}</p>}
-      </div>
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <FormField
+          control={form.control}
+          name="title"
+          render={({ field }) => (
+            <FormItem>
+              <Label>Title</Label>
+              <FormControl>
+                <Input placeholder="Senior AI Engineer" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
-      <div className="space-y-2">
-        <Label htmlFor="description">Description</Label>
-        <Textarea id="description" name="description" placeholder="A short description of the job" defaultValue={job?.description} required />
-        {state.errors?.description && <p className="text-sm text-destructive">{state.errors.description.join(', ')}</p>}
-      </div>
+        <FormField
+          control={form.control}
+          name="description"
+          render={({ field }) => (
+            <FormItem>
+              <Label>Description</Label>
+              <FormControl>
+                <Textarea placeholder="A short description of the job" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
-      <div className="space-y-2">
-        <Label htmlFor="location">Location</Label>
-        <Input id="location" name="location" placeholder="Remote" defaultValue={job?.location} required />
-        {state.errors?.location && <p className="text-sm text-destructive">{state.errors.location.join(', ')}</p>}
-      </div>
+        <FormField
+          control={form.control}
+          name="location"
+          render={({ field }) => (
+            <FormItem>
+              <Label>Location</Label>
+              <FormControl>
+                <Input placeholder="Remote" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
-      <div className="space-y-2">
-        <Label>Job Type</Label>
-        <Select name="type" defaultValue={job?.type || 'Full-time'}>
-          <SelectTrigger>
-            <SelectValue placeholder="Select a job type" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="Full-time">Full-time</SelectItem>
-            <SelectItem value="Part-time">Part-time</SelectItem>
-            <SelectItem value="Contract">Contract</SelectItem>
-          </SelectContent>
-        </Select>
-        {state.errors?.type && <p className="text-sm text-destructive">{state.errors.type.join(', ')}</p>}
-      </div>
+        <FormField
+          control={form.control}
+          name="type"
+          render={({ field }) => (
+            <FormItem>
+              <Label>Job Type</Label>
+              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a job type" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="Full-time">Full-time</SelectItem>
+                  <SelectItem value="Part-time">Part-time</SelectItem>
+                  <SelectItem value="Contract">Contract</SelectItem>
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
-      <SubmitButton isEditing={!!job?.id} />
-    </form>
+        <Button type="submit" disabled={isPending} className="w-full sm:w-auto">
+          {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          {job?.id ? 'Update Job' : 'Create Job'}
+        </Button>
+      </form>
+    </Form>
   );
 }

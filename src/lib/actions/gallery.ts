@@ -3,14 +3,24 @@
 import { revalidatePath } from 'next/cache';
 import { firestore } from '@/firebase/server';
 import { collection, doc, addDoc, updateDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
-import type { GalleryImage } from '../definitions';
+import { z } from 'zod';
+import type { GalleryImage, GalleryCategory } from '../definitions';
+
+const GalleryImageSchema = z.object({
+  title: z.string().min(1, 'Title is required'),
+  imageUrl: z.string().url('A valid image URL is required'),
+  category: z.enum(["Events", "Tech Solutions", "Team Collaboration"]),
+  featured: z.boolean().default(false),
+});
+
 
 export type GalleryImageFormState = {
   message: string;
   success: boolean;
+  errors?: z.ZodError<z.infer<typeof GalleryImageSchema>>['formErrors']['fieldErrors'];
 };
 
-type GalleryImageData = Omit<GalleryImage, 'id'>;
+type GalleryImageData = z.infer<typeof GalleryImageSchema>;
 
 function revalidateGalleryPaths() {
   revalidatePath('/admin/gallery');
@@ -19,10 +29,19 @@ function revalidateGalleryPaths() {
 }
 
 export async function createGalleryImage(data: GalleryImageData): Promise<GalleryImageFormState> {
+  const validatedFields = GalleryImageSchema.safeParse(data);
+
+  if (!validatedFields.success) {
+    return {
+      message: 'Invalid form data.',
+      errors: validatedFields.error.flatten().fieldErrors,
+      success: false,
+    };
+  }
+
   try {
     const payload = {
-      ...data,
-      featured: data.featured || false,
+      ...validatedFields.data,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     };
@@ -40,10 +59,19 @@ export async function createGalleryImage(data: GalleryImageData): Promise<Galler
 export async function updateGalleryImage(id: string, data: GalleryImageData): Promise<GalleryImageFormState> {
   if (!id) return { message: 'Failed to update image: Missing ID.', success: false };
 
+  const validatedFields = GalleryImageSchema.safeParse(data);
+
+  if (!validatedFields.success) {
+    return {
+      message: 'Invalid form data.',
+      errors: validatedFields.error.flatten().fieldErrors,
+      success: false,
+    };
+  }
+
   try {
     const payload = {
-       ...data,
-      featured: data.featured || false,
+       ...validatedFields.data,
       updatedAt: serverTimestamp(),
     };
 

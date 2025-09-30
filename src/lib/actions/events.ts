@@ -3,15 +3,25 @@
 import { revalidatePath } from 'next/cache';
 import { firestore } from '@/firebase/server';
 import { collection, doc, addDoc, updateDoc, deleteDoc, serverTimestamp, Timestamp } from 'firebase/firestore';
-import type { Event } from '../definitions';
+import { z } from 'zod';
+
+const EventSchema = z.object({
+  title: z.string().min(1, 'Title is required'),
+  description: z.string().min(1, 'Description is required'),
+  location: z.string().min(1, 'Location is required'),
+  date: z.date({ required_error: 'Event date is required.' }),
+  imageUrl: z.string().url('A valid image URL is required').optional().or(z.literal('')),
+  featured: z.boolean().default(false),
+});
+
 
 export type EventFormState = {
   message: string;
   success: boolean;
+  errors?: z.ZodError<z.infer<typeof EventSchema>>['formErrors']['fieldErrors'];
 };
 
-type EventData = Omit<Event, 'id' | 'date'> & { date: string };
-
+type EventData = z.infer<typeof EventSchema>;
 
 function revalidateEventPaths(id?: string) {
   revalidatePath('/admin/events');
@@ -21,11 +31,20 @@ function revalidateEventPaths(id?: string) {
 }
 
 export async function createEvent(data: EventData): Promise<EventFormState> {
+  const validatedFields = EventSchema.safeParse(data);
+
+  if (!validatedFields.success) {
+    return {
+      message: 'Invalid form data.',
+      errors: validatedFields.error.flatten().fieldErrors,
+      success: false,
+    };
+  }
+
   try {
     const payload = {
-      ...data,
-      featured: data.featured || false,
-      date: Timestamp.fromDate(new Date(data.date)),
+      ...validatedFields.data,
+      date: Timestamp.fromDate(validatedFields.data.date),
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     };
@@ -42,11 +61,20 @@ export async function createEvent(data: EventData): Promise<EventFormState> {
 export async function updateEvent(id: string, data: EventData): Promise<EventFormState> {
   if (!id) return { message: 'Failed to update event: Missing ID.', success: false };
 
+  const validatedFields = EventSchema.safeParse(data);
+
+  if (!validatedFields.success) {
+    return {
+      message: 'Invalid form data.',
+      errors: validatedFields.error.flatten().fieldErrors,
+      success: false,
+    };
+  }
+
   try {
     const payload = {
-      ...data,
-      featured: data.featured || false,
-      date: Timestamp.fromDate(new Date(data.date)),
+      ...validatedFields.data,
+      date: Timestamp.fromDate(validatedFields.data.date),
       updatedAt: serverTimestamp(),
     };
   

@@ -3,14 +3,23 @@
 import { revalidatePath } from 'next/cache';
 import { firestore } from '@/firebase/server';
 import { collection, doc, addDoc, updateDoc, deleteDoc } from 'firebase/firestore';
-import type { Job } from '../definitions';
+import { z } from 'zod';
+
+const JobSchema = z.object({
+  title: z.string().min(1, 'Title is required'),
+  description: z.string().min(1, 'Description is required'),
+  location: z.string().min(1, 'Location is required'),
+  type: z.enum(['Full-time', 'Part-time', 'Contract']),
+});
+
 
 export type JobFormState = {
   message: string;
   success: boolean;
+  errors?: z.ZodError<z.infer<typeof JobSchema>>['formErrors']['fieldErrors'];
 };
 
-type JobData = Omit<Job, 'id'>;
+type JobData = z.infer<typeof JobSchema>;
 
 function revalidateJobPaths() {
   revalidatePath('/admin/careers');
@@ -18,8 +27,18 @@ function revalidateJobPaths() {
 }
 
 export async function createJob(data: JobData): Promise<JobFormState> {
+  const validatedFields = JobSchema.safeParse(data);
+
+  if (!validatedFields.success) {
+    return {
+      message: 'Invalid form data.',
+      errors: validatedFields.error.flatten().fieldErrors,
+      success: false,
+    };
+  }
+
   try {
-    await addDoc(collection(firestore, 'jobs'), data);
+    await addDoc(collection(firestore, 'jobs'), validatedFields.data);
     revalidateJobPaths();
     return { message: 'Successfully created job.', success: true };
   } catch (error) {
@@ -31,8 +50,18 @@ export async function createJob(data: JobData): Promise<JobFormState> {
 export async function updateJob(id: string, data: JobData): Promise<JobFormState> {
   if (!id) return { message: 'Failed to update job: Missing ID.', success: false };
 
+  const validatedFields = JobSchema.safeParse(data);
+
+  if (!validatedFields.success) {
+    return {
+      message: 'Invalid form data.',
+      errors: validatedFields.error.flatten().fieldErrors,
+      success: false,
+    };
+  }
+
   try {
-    await updateDoc(doc(firestore, 'jobs', id), data);
+    await updateDoc(doc(firestore, 'jobs', id), validatedFields.data);
     revalidateJobPaths();
     return { message: 'Successfully updated job.', success: true };
   } catch (error) {

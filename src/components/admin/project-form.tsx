@@ -1,8 +1,11 @@
 'use client';
 
-import { useActionState, useEffect } from 'react';
-import { useFormStatus } from 'react-dom';
+import { useTransition } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import { Loader2 } from 'lucide-react';
+
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -10,85 +13,159 @@ import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { type Project } from '@/lib/definitions';
-import { createProject, updateProject, type ProjectFormState } from '@/lib/actions/projects';
+import { createProject, updateProject } from '@/lib/actions/projects';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormMessage,
+} from '@/components/ui/form';
+
+const ProjectFormSchema = z.object({
+  title: z.string().min(1, 'Title is required'),
+  description: z.string().min(1, 'Description is required'),
+  caseStudy: z.string().optional(),
+  imageUrl: z.string().url('A valid image URL is required.'),
+  technologies: z.string().min(1, 'At least one technology is required.'),
+  featured: z.boolean().default(false),
+});
+
+type ProjectFormValues = z.infer<typeof ProjectFormSchema>;
 
 type ProjectFormProps = {
   project?: Project | null;
   onSuccess: () => void;
 };
 
-function SubmitButton({ isEditing }: { isEditing: boolean }) {
-  const { pending } = useFormStatus();
-  return (
-    <Button type="submit" disabled={pending} className="w-full sm:w-auto">
-      {pending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-      {isEditing ? 'Save Changes' : 'Create Project'}
-    </Button>
-  );
-}
-
 export function ProjectForm({ project, onSuccess }: ProjectFormProps) {
   const { toast } = useToast();
-  const action = project?.id ? updateProject : createProject;
+  const [isPending, startTransition] = useTransition();
 
-  const [state, formAction] = useActionState<ProjectFormState, FormData>(action, {
-    message: '',
-    success: false,
-    errors: {},
+  const form = useForm<ProjectFormValues>({
+    resolver: zodResolver(ProjectFormSchema),
+    defaultValues: {
+      title: project?.title || '',
+      description: project?.description || '',
+      caseStudy: project?.caseStudy || '',
+      imageUrl: project?.imageUrl || '',
+      technologies: project?.technologies?.join(', ') || '',
+      featured: project?.featured || false,
+    },
   });
 
-  useEffect(() => {
-    if (state.message) {
-      if (state.success) {
-        toast({ title: 'Success!', description: state.message });
+  const onSubmit = (data: ProjectFormValues) => {
+    startTransition(async () => {
+      const action = project?.id ? updateProject.bind(null, project.id) : createProject;
+      
+      const result = await action(data);
+
+      if (result.success) {
+        toast({ title: 'Success!', description: result.message });
         onSuccess();
       } else {
-        toast({ variant: 'destructive', title: 'Error', description: state.message });
+        toast({ variant: 'destructive', title: 'Error', description: result.message });
       }
-    }
-  }, [state, toast, onSuccess]);
+    });
+  };
 
   return (
-    <form action={formAction} className="space-y-6">
-      {project?.id && <input type="hidden" name="id" value={project.id} />}
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <FormField
+          control={form.control}
+          name="title"
+          render={({ field }) => (
+            <FormItem>
+              <Label>Title</Label>
+              <FormControl>
+                <Input placeholder="E-commerce Recommendation Engine" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
-      <div className="space-y-2">
-        <Label htmlFor="title">Title</Label>
-        <Input id="title" name="title" placeholder="E-commerce Recommendation Engine" defaultValue={project?.title} required />
-        {state.errors?.title && <p className="text-sm text-destructive">{state.errors.title.join(', ')}</p>}
-      </div>
+        <FormField
+          control={form.control}
+          name="description"
+          render={({ field }) => (
+            <FormItem>
+              <Label>Description</Label>
+              <FormControl>
+                <Textarea placeholder="A short description of the project" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        
+        <FormField
+          control={form.control}
+          name="caseStudy"
+          render={({ field }) => (
+            <FormItem>
+              <Label>Case Study Content (Optional)</Label>
+              <FormControl>
+                <Textarea placeholder="The full case study content for the project page." {...field} rows={10} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
-      <div className="space-y-2">
-        <Label htmlFor="description">Description</Label>
-        <Textarea id="description" name="description" placeholder="A short description of the project" defaultValue={project?.description} required />
-        {state.errors?.description && <p className="text-sm text-destructive">{state.errors.description.join(', ')}</p>}
-      </div>
-      
-      <div className="space-y-2">
-        <Label htmlFor="caseStudy">Case Study Content (Optional)</Label>
-        <Textarea id="caseStudy" name="caseStudy" placeholder="The full case study content for the project page." defaultValue={project?.caseStudy ?? ''} rows={10} />
-        {state.errors?.caseStudy && <p className="text-sm text-destructive">{state.errors.caseStudy.join(', ')}</p>}
-      </div>
+        <FormField
+          control={form.control}
+          name="imageUrl"
+          render={({ field }) => (
+            <FormItem>
+              <Label>Project Image URL</Label>
+              <FormControl>
+                <Input placeholder="https://example.com/image.png" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
-      <div className="space-y-2">
-        <Label htmlFor="imageUrl">Project Image URL</Label>
-        <Input id="imageUrl" name="imageUrl" type="url" placeholder="https://example.com/image.png" defaultValue={project?.imageUrl} required />
-        {state.errors?.imageUrl && <p className="text-sm text-destructive">{state.errors.imageUrl.join(', ')}</p>}
-      </div>
+        <FormField
+          control={form.control}
+          name="technologies"
+          render={({ field }) => (
+            <FormItem>
+              <Label>Technologies</Label>
+              <FormControl>
+                <Input placeholder="Python, TensorFlow, Firebase" {...field} />
+              </FormControl>
+              <p className="text-sm text-muted-foreground">Enter a comma-separated list of technologies.</p>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
-      <div className="space-y-2">
-        <Label htmlFor="technologies">Technologies</Label>
-        <Input id="technologies" name="technologies" placeholder="Python, TensorFlow, Firebase" defaultValue={project?.technologies?.join(', ')} required />
-        <p className="text-sm text-muted-foreground">Enter a comma-separated list of technologies.</p>
-        {state.errors?.technologies && <p className="text-sm text-destructive">{state.errors.technologies.join(', ')}</p>}
-      </div>
+        <FormField
+          control={form.control}
+          name="featured"
+          render={({ field }) => (
+            <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+              <FormControl>
+                <Checkbox
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                />
+              </FormControl>
+              <div className="space-y-1 leading-none">
+                <Label>Feature on homepage</Label>
+              </div>
+            </FormItem>
+          )}
+        />
 
-      <div className="flex items-center space-x-2 rounded-md border p-4">
-        <Checkbox id="featured" name="featured" defaultChecked={project?.featured} />
-        <Label htmlFor="featured" className="text-sm font-medium leading-none">Feature on homepage</Label>
-      </div>
-
-      <SubmitButton isEditing={!!project?.id} />
-    </form>
+        <Button type="submit" disabled={isPending} className="w-full sm:w-auto">
+          {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          {project?.id ? 'Save Changes' : 'Create Project'}
+        </Button>
+      </form>
+    </Form>
   );
 }

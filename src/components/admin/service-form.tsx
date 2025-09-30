@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useTransition } from 'react';
+import { useTransition } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -27,7 +27,7 @@ const ServiceFormSchema = z.object({
   description: z.string().min(1, 'Description is required'),
   details: z.string().optional(),
   price: z.string().optional(),
-  benefits: z.string().transform(val => val ? val.split(',').map(s => s.trim()).filter(Boolean) : []),
+  benefits: z.string().optional(),
   imageUrl: z.string().url('Please enter a valid URL').optional().or(z.literal('')),
   featured: z.boolean().default(false),
 });
@@ -59,7 +59,13 @@ export function ServiceForm({ service, onSuccess }: ServiceFormProps) {
   const onSubmit = (data: ServiceFormValues) => {
     startTransition(async () => {
       const action = service?.id ? updateService.bind(null, service.id) : createService;
-      const result = await action(data);
+      
+      const payload = {
+        ...data,
+        imageUrl: data.imageUrl || '',
+      };
+
+      const result = await action(payload);
 
       if (result.success) {
         toast({ title: 'Success!', description: result.message });
@@ -153,6 +159,7 @@ export function ServiceForm({ service, onSuccess }: ServiceFormProps) {
               <FormControl>
                 <Input placeholder="https://example.com/image.png" {...field} />
               </FormControl>
+               <p className="text-sm text-muted-foreground">Image is optional.</p>
               <FormMessage />
             </FormItem>
           )}

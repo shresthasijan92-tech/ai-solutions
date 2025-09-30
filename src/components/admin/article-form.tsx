@@ -1,7 +1,9 @@
 'use client';
 
-import { useActionState, useEffect, useState } from 'react';
-import { useFormStatus } from 'react-dom';
+import { useTransition } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import { Calendar as CalendarIcon, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { Timestamp } from 'firebase/firestore';
@@ -15,8 +17,27 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { useToast } from '@/hooks/use-toast';
 import { type Article } from '@/lib/definitions';
-import { createArticle, updateArticle, type ArticleFormState } from '@/lib/actions/articles';
+import { createArticle, updateArticle } from '@/lib/actions/articles';
 import { cn } from '@/lib/utils';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormMessage,
+} from '@/components/ui/form';
+
+
+const ArticleFormSchema = z.object({
+  title: z.string().min(1, 'Title is required'),
+  excerpt: z.string().min(1, 'Excerpt is required'),
+  content: z.string().min(1, 'Content is required'),
+  publishedAt: z.date({ required_error: 'Published date is required.' }),
+  imageUrl: z.string().url('A valid image URL is required.'),
+  featured: z.boolean().default(false),
+});
+
+type ArticleFormValues = z.infer<typeof ArticleFormSchema>;
 
 type ArticleFormProps = {
   article?: Article | null;
@@ -29,98 +50,161 @@ const toDate = (timestamp: string | Timestamp | Date | null | undefined): Date =
   return new Date(timestamp);
 };
 
-function SubmitButton({ isEditing }: { isEditing: boolean }) {
-  const { pending } = useFormStatus();
-  return (
-    <Button type="submit" disabled={pending} className="w-full sm:w-auto">
-      {pending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-      {isEditing ? 'Save Changes' : 'Create Article'}
-    </Button>
-  );
-}
 
 export function ArticleForm({ article, onSuccess }: ArticleFormProps) {
   const { toast } = useToast();
-  const action = article?.id ? updateArticle : createArticle;
+  const [isPending, startTransition] = useTransition();
 
-  const [state, formAction] = useActionState<ArticleFormState, FormData>(action, {
-    message: '',
-    success: false,
-    errors: {},
+  const form = useForm<ArticleFormValues>({
+    resolver: zodResolver(ArticleFormSchema),
+    defaultValues: {
+      title: article?.title || '',
+      excerpt: article?.excerpt || '',
+      content: article?.content || '',
+      publishedAt: article?.publishedAt ? toDate(article.publishedAt) : new Date(),
+      imageUrl: article?.imageUrl || '',
+      featured: article?.featured || false,
+    }
   });
 
-  const [selectedDate, setSelectedDate] = useState<Date>(
-    article?.publishedAt ? toDate(article.publishedAt) : new Date()
-  );
+  const onSubmit = (data: ArticleFormValues) => {
+    startTransition(async () => {
+      const action = article?.id ? updateArticle.bind(null, article.id) : createArticle;
+      const result = await action(data);
 
-  useEffect(() => {
-    if (state.message) {
-      if (state.success) {
-        toast({ title: 'Success!', description: state.message });
+      if (result.success) {
+        toast({ title: 'Success!', description: result.message });
         onSuccess();
       } else {
-        toast({ variant: 'destructive', title: 'Error', description: state.message });
+        toast({ variant: 'destructive', title: 'Error', description: result.message });
       }
-    }
-  }, [state, toast, onSuccess]);
-
-  useEffect(() => {
-    if (article?.publishedAt) {
-      setSelectedDate(toDate(article.publishedAt));
-    }
-  }, [article]);
+    });
+  };
 
   return (
-    <form action={formAction} className="space-y-6">
-      {article?.id && <input type="hidden" name="id" value={article.id} />}
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <FormField
+          control={form.control}
+          name="title"
+          render={({ field }) => (
+            <FormItem>
+              <Label>Title</Label>
+              <FormControl>
+                <Input placeholder="The Generative AI Revolution" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
-      <div className="space-y-2">
-        <Label htmlFor="title">Title</Label>
-        <Input id="title" name="title" placeholder="The Generative AI Revolution" defaultValue={article?.title} required />
-        {state.errors?.title && <p className="text-sm text-destructive">{state.errors.title.join(', ')}</p>}
-      </div>
+        <FormField
+          control={form.control}
+          name="excerpt"
+          render={({ field }) => (
+            <FormItem>
+              <Label>Excerpt</Label>
+              <FormControl>
+                <Textarea placeholder="A short summary of the article" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        
+        <FormField
+          control={form.control}
+          name="content"
+          render={({ field }) => (
+            <FormItem>
+              <Label>Full Content</Label>
+              <FormControl>
+                <Textarea placeholder="The full content of the article." rows={10} {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
-      <div className="space-y-2">
-        <Label htmlFor="excerpt">Excerpt</Label>
-        <Textarea id="excerpt" name="excerpt" placeholder="A short summary of the article" defaultValue={article?.excerpt} required />
-        {state.errors?.excerpt && <p className="text-sm text-destructive">{state.errors.excerpt.join(', ')}</p>}
-      </div>
+        <FormField
+          control={form.control}
+          name="publishedAt"
+          render={({ field }) => (
+            <FormItem className="flex flex-col">
+              <Label>Published Date</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <FormControl>
+                    <Button
+                      variant={"outline"}
+                      className={cn(
+                        "w-[240px] pl-3 text-left font-normal",
+                        !field.value && "text-muted-foreground"
+                      )}
+                    >
+                      {field.value ? (
+                        format(field.value, "PPP")
+                      ) : (
+                        <span>Pick a date</span>
+                      )}
+                      <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                    </Button>
+                  </FormControl>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={field.value}
+                    onSelect={field.onChange}
+                    disabled={(date) =>
+                      date > new Date() || date < new Date("1900-01-01")
+                    }
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
-      <div className="space-y-2">
-        <Label htmlFor="content">Full Content</Label>
-        <Textarea id="content" name="content" placeholder="The full content of the article." defaultValue={article?.content} rows={10} required />
-        {state.errors?.content && <p className="text-sm text-destructive">{state.errors.content.join(', ')}</p>}
-      </div>
+        <FormField
+          control={form.control}
+          name="imageUrl"
+          render={({ field }) => (
+            <FormItem>
+              <Label>Article Image URL</Label>
+              <FormControl>
+                <Input placeholder="https://example.com/image.png" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        
+        <FormField
+          control={form.control}
+          name="featured"
+          render={({ field }) => (
+            <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+              <FormControl>
+                <Checkbox
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                />
+              </FormControl>
+              <div className="space-y-1 leading-none">
+                <Label>Feature on homepage</Label>
+              </div>
+            </FormItem>
+          )}
+        />
 
-      <div className="space-y-2">
-        <Label>Published Date</Label>
-        <input type="hidden" name="publishedAt" value={selectedDate.toISOString()} />
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button variant={'outline'} className={cn('w-[240px] justify-start text-left font-normal', !selectedDate && 'text-muted-foreground')}>
-              <CalendarIcon className="mr-2 h-4 w-4" />
-              {selectedDate ? format(selectedDate, 'PPP') : <span>Pick a date</span>}
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-auto p-0">
-            <Calendar mode="single" selected={selectedDate} onSelect={(date) => setSelectedDate(date || new Date())} initialFocus />
-          </PopoverContent>
-        </Popover>
-        {state.errors?.publishedAt && <p className="text-sm text-destructive">{state.errors.publishedAt.join(', ')}</p>}
-      </div>
-      
-      <div className="space-y-2">
-        <Label htmlFor="imageUrl">Article Image URL</Label>
-        <Input id="imageUrl" name="imageUrl" type="url" placeholder="https://example.com/image.png" defaultValue={article?.imageUrl}/>
-        {state.errors?.imageUrl && <p className="text-sm text-destructive">{state.errors.imageUrl.join(', ')}</p>}
-      </div>
-
-      <div className="flex items-center space-x-2 rounded-md border p-4">
-        <Checkbox id="featured" name="featured" defaultChecked={article?.featured} />
-        <Label htmlFor="featured" className="text-sm font-medium leading-none">Feature on homepage</Label>
-      </div>
-
-      <SubmitButton isEditing={!!article?.id} />
-    </form>
+        <Button type="submit" disabled={isPending} className="w-full sm:w-auto">
+          {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          {article?.id ? 'Save Changes' : 'Create Article'}
+        </Button>
+      </form>
+    </Form>
   );
 }
