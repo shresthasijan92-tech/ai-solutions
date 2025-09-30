@@ -31,29 +31,13 @@ const ACCEPTED_IMAGE_TYPES = [
 
 // --- Zod Schemas for Validation ---
 
-// Base schema for common fields
-const ArticleBaseSchema = z.object({
+// Base schema for fields coming directly from the form
+const ArticleFormInputSchema = z.object({
   title: z.string().min(1, 'Title is required'),
   excerpt: z.string().min(1, 'Excerpt is required'),
   content: z.string().min(1, 'Full article content is required.'),
   publishedAt: z.coerce.date(),
   featured: z.boolean(),
-});
-
-// Schema for creating: image is required
-const ArticleCreateSchema = ArticleBaseSchema.extend({
-  imageFile: z
-    .instanceof(File)
-    .refine((file) => file.size > 0, 'An image file is required.')
-    .refine((file) => file.size <= MAX_FILE_SIZE, `Max image size is 5MB.`)
-    .refine(
-      (file) => ACCEPTED_IMAGE_TYPES.includes(file.type),
-      'Only .jpg, .jpeg, .png and .webp formats are supported.'
-    ),
-});
-
-// Schema for updating: image is optional
-const ArticleUpdateSchema = ArticleBaseSchema.extend({
   imageFile: z
     .instanceof(File)
     .optional()
@@ -64,9 +48,21 @@ const ArticleUpdateSchema = ArticleBaseSchema.extend({
     ),
 });
 
+
+// Schema for creating: image is required
+const ArticleCreateSchema = ArticleFormInputSchema.extend({
+  imageFile: z
+    .instanceof(File)
+    .refine((file) => file.size > 0, 'An image file is required.'),
+});
+
+// Schema for updating: image is optional
+const ArticleUpdateSchema = ArticleFormInputSchema;
+
+
 export type ArticleFormState = {
   message: string;
-  errors?: Partial<Record<keyof z.infer<typeof ArticleBaseSchema>, string[]>>;
+  errors?: Partial<Record<keyof z.infer<typeof ArticleFormInputSchema>, string[]>>;
   success: boolean;
 };
 
@@ -94,21 +90,26 @@ async function deleteImageFromStorage(imageUrl: string | undefined) {
   }
 }
 
+function parseFormData(formData: FormData) {
+    const imageFile = formData.get('imageFile');
+    return {
+        title: formData.get('title'),
+        excerpt: formData.get('excerpt'),
+        content: formData.get('content'),
+        publishedAt: formData.get('publishedAt'),
+        featured: formData.get('featured') === 'on',
+        imageFile: imageFile instanceof File && imageFile.size > 0 ? imageFile : undefined,
+    };
+}
+
+
 // --- Server Actions ---
 
 export async function createArticle(
   prevState: ArticleFormState,
   formData: FormData
 ): Promise<ArticleFormState> {
-  const rawData = {
-    title: formData.get('title'),
-    excerpt: formData.get('excerpt'),
-    content: formData.get('content'),
-    publishedAt: formData.get('publishedAt'),
-    featured: formData.get('featured') === 'on',
-    imageFile: formData.get('imageFile'),
-  };
-
+  const rawData = parseFormData(formData);
   const validatedFields = ArticleCreateSchema.safeParse(rawData);
 
   if (!validatedFields.success) {
@@ -152,17 +153,9 @@ export async function updateArticle(
     return { message: 'Failed to update article: Missing ID.', success: false };
   }
 
-  const rawData = {
-    title: formData.get('title'),
-    excerpt: formData.get('excerpt'),
-    content: formData.get('content'),
-    publishedAt: formData.get('publishedAt'),
-    featured: formData.get('featured') === 'on',
-    imageFile: formData.get('imageFile'),
-  };
-  
+  const rawData = parseFormData(formData);
   const validatedFields = ArticleUpdateSchema.safeParse(rawData);
-
+  
   if (!validatedFields.success) {
     return {
       message: 'Failed to update article. Please check the form.',
@@ -186,11 +179,10 @@ export async function updateArticle(
         ...rest,
         publishedAt: Timestamp.fromDate(publishedAt),
         updatedAt: serverTimestamp(),
-        // Preserve existing image by default
-        imageUrl: existingData.imageUrl,
+        imageUrl: existingData.imageUrl, // Preserve existing image by default
     };
     
-    if (imageFile && imageFile.size > 0) {
+    if (imageFile) {
       payload.imageUrl = await uploadImage(imageFile);
       await deleteImageFromStorage(existingData.imageUrl);
     }
