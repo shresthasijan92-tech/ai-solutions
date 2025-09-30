@@ -26,13 +26,6 @@ const BaseEventSchema = z.object({
     if (typeof arg === 'string' || arg instanceof Date) return new Date(arg);
   }, z.date()),
   featured: z.boolean(),
-});
-
-const CreateEventSchema = BaseEventSchema.extend({
-  imageFile: fileSchema.optional(),
-});
-
-const UpdateEventSchema = BaseEventSchema.extend({
   imageFile: fileSchema.optional(),
 });
 
@@ -87,7 +80,7 @@ function revalidateEventPaths(id?: string) {
 
 export async function createEvent(prevState: EventFormState, formData: FormData): Promise<EventFormState> {
   const rawData = parseFormData(formData);
-  const validatedFields = CreateEventSchema.safeParse(rawData);
+  const validatedFields = BaseEventSchema.safeParse(rawData);
 
   if (!validatedFields.success) {
     return {
@@ -127,10 +120,9 @@ export async function updateEvent(prevState: EventFormState, formData: FormData)
   if (!id) return { message: 'Failed to update event: Missing ID.', success: false };
 
   const rawData = parseFormData(formData);
-  const validatedFields = UpdateEventSchema.safeParse(rawData);
+  const validatedFields = BaseEventSchema.safeParse(rawData);
 
   if (!validatedFields.success) {
-    console.log(validatedFields.error.flatten().fieldErrors);
     return {
       message: 'Failed to update event. Please check the form.',
       errors: validatedFields.error.flatten().fieldErrors,

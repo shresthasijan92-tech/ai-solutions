@@ -1,150 +1,104 @@
 'use client';
 
-import { useTransition } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
+import { useActionState, useEffect } from 'react';
+import { useFormStatus } from 'react-dom';
 import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { type Service } from '@/lib/definitions';
-import { createService, updateService } from '@/lib/actions/services';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { createService, updateService, type ServiceFormState } from '@/lib/actions/services';
 
 type ServiceFormProps = {
   service?: Service | null;
   onSuccess: () => void;
 };
 
-// Client-side validation schema
-const FormSchema = z.object({
-  title: z.string().min(1, 'Title is required'),
-  description: z.string().min(1, 'Description is required'),
-  details: z.string().optional(),
-  price: z.string().optional(),
-  benefits: z.string().optional(), // Handled as a string, then split
-  featured: z.boolean().default(false),
-  imageUrl: z.string().url('Please enter a valid URL.').optional().or(z.literal('')),
-});
-
-type FormValues = z.infer<typeof FormSchema>;
+function SubmitButton({ isEditing }: { isEditing: boolean }) {
+  const { pending } = useFormStatus();
+  return (
+    <Button type="submit" disabled={pending} className="w-full sm:w-auto">
+      {pending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+      {isEditing ? 'Save Changes' : 'Create Service'}
+    </Button>
+  );
+}
 
 export function ServiceForm({ service, onSuccess }: ServiceFormProps) {
   const { toast } = useToast();
-  const [isPending, startTransition] = useTransition();
+  const action = service?.id ? updateService : createService;
 
-  const form = useForm<FormValues>({
-    resolver: zodResolver(FormSchema),
-    defaultValues: {
-      title: service?.title || '',
-      description: service?.description || '',
-      details: service?.details || '',
-      price: service?.price || '',
-      benefits: service?.benefits?.join(', ') || '',
-      featured: service?.featured || false,
-      imageUrl: service?.imageUrl || '',
-    },
+  const [state, formAction] = useActionState<ServiceFormState, FormData>(action, {
+    message: '',
+    success: false,
+    errors: {},
   });
 
-  const onSubmit = (values: FormValues) => {
-    startTransition(async () => {
-      // 1. Prepare the data for Firestore
-      const serviceData = {
-        ...values,
-        benefits: values.benefits ? values.benefits.split(',').map(b => b.trim()).filter(Boolean) : [],
-      };
-
-      // 2. Call the create or update server action
-      const result = service?.id
-        ? await updateService(service.id, serviceData)
-        : await createService(serviceData);
-      
-      if (result.success) {
-        toast({ title: 'Success!', description: result.message });
+  useEffect(() => {
+    if (state.message) {
+      if (state.success) {
+        toast({ title: 'Success!', description: state.message });
         onSuccess();
       } else {
-        // Handle potential validation errors from the server
-        const errorMsg = result.errors ? Object.values(result.errors).flat().join(' ') : result.message;
-        toast({ variant: 'destructive', title: 'Error', description: errorMsg || 'An unknown error occurred.' });
+        const errorMsg = state.message || 'An unknown error occurred.';
+        toast({ variant: 'destructive', title: 'Error', description: errorMsg });
       }
-    });
-  };
+    }
+  }, [state, toast, onSuccess]);
   
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        
-        <FormField control={form.control} name="title" render={({ field }) => (
-          <FormItem>
-            <FormLabel>Title</FormLabel>
-            <FormControl><Input placeholder="AI Strategy Consulting" {...field} /></FormControl>
-            <FormMessage />
-          </FormItem>
-        )} />
+    <form action={formAction} className="space-y-6">
+      {service?.id && <input type="hidden" name="id" value={service.id} />}
+      
+      <div className="space-y-2">
+        <Label htmlFor="title">Title</Label>
+        <Input id="title" name="title" placeholder="AI Strategy Consulting" defaultValue={service?.title} required />
+        {state.errors?.title && <p className="text-sm text-destructive">{state.errors.title.join(', ')}</p>}
+      </div>
 
-        <FormField control={form.control} name="description" render={({ field }) => (
-          <FormItem>
-            <FormLabel>Description</FormLabel>
-            <FormControl><Textarea placeholder="A short description of the service" {...field} /></FormControl>
-            <FormMessage />
-          </FormItem>
-        )} />
+      <div className="space-y-2">
+        <Label htmlFor="description">Short Description</Label>
+        <Textarea id="description" name="description" placeholder="A short description of the service for the card view." defaultValue={service?.description} required />
+        {state.errors?.description && <p className="text-sm text-destructive">{state.errors.description.join(', ')}</p>}
+      </div>
 
-        <FormField control={form.control} name="details" render={({ field }) => (
-          <FormItem>
-            <FormLabel>Details (for Dialog)</FormLabel>
-            <FormControl><Textarea placeholder="A more detailed description..." rows={5} {...field} /></FormControl>
-            <FormMessage />
-          </FormItem>
-        )} />
-        
-        <FormField control={form.control} name="benefits" render={({ field }) => (
-            <FormItem>
-                <FormLabel>Key Benefits</FormLabel>
-                <FormControl><Input placeholder="Benefit 1, Benefit 2, Benefit 3" {...field} /></FormControl>
-                <p className="text-sm text-muted-foreground">Enter a comma-separated list of key benefits.</p>
-                <FormMessage />
-            </FormItem>
-        )} />
+      <div className="space-y-2">
+        <Label htmlFor="details">Full Details (for Dialog)</Label>
+        <Textarea id="details" name="details" placeholder="A more detailed description that will appear in the 'Learn More' dialog." defaultValue={service?.details} rows={5} />
+        {state.errors?.details && <p className="text-sm text-destructive">{state.errors.details.join(', ')}</p>}
+      </div>
+      
+      <div className="space-y-2">
+        <Label htmlFor="benefits">Key Benefits</Label>
+        <Input id="benefits" name="benefits" placeholder="Benefit 1, Benefit 2, Benefit 3" defaultValue={service?.benefits?.join(', ')} />
+        <p className="text-sm text-muted-foreground">Enter a comma-separated list of key benefits.</p>
+        {state.errors?.benefits && <p className="text-sm text-destructive">{state.errors.benefits.join(', ')}</p>}
+      </div>
 
-        <FormField control={form.control} name="price" render={({ field }) => (
-            <FormItem>
-                <FormLabel>Price</FormLabel>
-                <FormControl><Input placeholder="Starting at $5,000" {...field} /></FormControl>
-                <FormMessage />
-            </FormItem>
-        )} />
+      <div className="space-y-2">
+        <Label htmlFor="price">Price</Label>
+        <Input id="price" name="price" placeholder="Starting at $5,000" defaultValue={service?.price} />
+        {state.errors?.price && <p className="text-sm text-destructive">{state.errors.price.join(', ')}</p>}
+      </div>
 
-        <FormField control={form.control} name="imageUrl" render={({ field }) => (
-            <FormItem>
-              <FormLabel>Service Image URL</FormLabel>
-              <FormControl>
-                <Input type="text" placeholder="https://picsum.photos/seed/s1/600/400" {...field} />
-              </FormControl>
-               <p className="text-sm text-muted-foreground">Image is optional. Paste a valid image URL.</p>
-              <FormMessage />
-            </FormItem>
-          )} />
-        
-        <FormField control={form.control} name="featured" render={({ field }) => (
-          <FormItem className="flex flex-row items-center space-x-3 space-y-0 rounded-md border p-4">
-            <FormControl>
-              <Checkbox checked={field.value} onCheckedChange={field.onChange} />
-            </FormControl>
-            <div className="space-y-1 leading-none">
-              <FormLabel>Feature on homepage</FormLabel>
-            </div>
-          </FormItem>
-        )} />
+      <div className="space-y-2">
+        <Label htmlFor="imageFile">Service Image</Label>
+        <Input id="imageFile" name="imageFile" type="file" accept="image/*" />
+        <p className="text-sm text-muted-foreground">
+          {service?.id ? "Upload a new image to replace the current one (optional)." : "Image is optional."}
+        </p>
+        {state.errors?.imageUrl && <p className="text-sm text-destructive">{state.errors.imageUrl.join(', ')}</p>}
+      </div>
+      
+      <div className="flex items-center space-x-2 rounded-md border p-4">
+        <Checkbox id="featured" name="featured" defaultChecked={service?.featured} />
+        <Label htmlFor="featured" className="text-sm font-medium leading-none">Feature on homepage</Label>
+      </div>
 
-        <Button type="submit" disabled={isPending} className="w-full sm:w-auto">
-          {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          {service?.id ? 'Save Changes' : 'Create Service'}
-        </Button>
-      </form>
-    </Form>
+      <SubmitButton isEditing={!!service?.id} />
+    </form>
   );
 }
