@@ -10,7 +10,6 @@ import { useEvents } from '@/hooks/use-events';
 import { useGalleryImages } from '@/hooks/use-gallery-images';
 import { useJobs } from '@/hooks/use-jobs';
 import { Skeleton } from '@/components/ui/skeleton';
-import { HomepageSuggestions } from '@/components/admin/homepage-suggestions';
 
 export default function AdminDashboardPage() {
   const { services, isLoading: isLoadingServices } = useServices();
@@ -52,14 +51,6 @@ export default function AdminDashboardPage() {
           </Card>
         ))}
       </div>
-
-       <div>
-        <h2 className="text-2xl font-headline font-bold mb-4">Homepage AI Suggestions</h2>
-        <p className="text-muted-foreground mb-4">
-            Select the content types you are featuring on your homepage to get AI-powered layout and design suggestions.
-        </p>
-        <HomepageSuggestions />
-       </div>
     </div>
   );
 }
