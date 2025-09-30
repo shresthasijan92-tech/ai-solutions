@@ -7,26 +7,32 @@ import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage
 import { collection, doc, addDoc, updateDoc, deleteDoc, getDoc, serverTimestamp, Timestamp } from 'firebase/firestore';
 import type { Article } from '../definitions';
 
-// --- Zod Validation Schemas ---
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const ACCEPTED_IMAGE_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
 
-const FileSchema = z.instanceof(File).optional()
-  .refine(file => !file || file.size === 0 || file.size <= MAX_FILE_SIZE, `Max image size is 5MB.`)
-  .refine(file => !file || file.size === 0 || ACCEPTED_IMAGE_TYPES.includes(file.type), 'Only .jpg, .jpeg, .png and .webp formats are supported.');
+const FileSchema = z.instanceof(File)
+  .refine(file => file.size <= MAX_FILE_SIZE, `Max image size is 5MB.`)
+  .refine(
+    file => ACCEPTED_IMAGE_TYPES.includes(file.type),
+    'Only .jpg, .jpeg, .png and .webp formats are supported.'
+  );
 
 const ArticleBaseSchema = z.object({
   title: z.string().min(1, 'Title is required'),
   excerpt: z.string().min(1, 'Excerpt is required'),
   content: z.string().min(1, 'Full article content is required.'),
-  publishedAt: z.coerce.date(),
+  publishedAt: z.string().transform((str) => new Date(str)),
   featured: z.boolean(),
 });
 
 const CreateArticleSchema = ArticleBaseSchema.extend({
-  imageFile: FileSchema.refine(file => file && file.size > 0, "An image file is required for new articles."),
+  imageFile: FileSchema,
 });
-const UpdateArticleSchema = ArticleBaseSchema.extend({ imageFile: FileSchema });
+
+const UpdateArticleSchema = ArticleBaseSchema.extend({
+  imageFile: FileSchema.optional(),
+});
+
 
 export type ArticleFormState = {
   message: string;
@@ -34,7 +40,6 @@ export type ArticleFormState = {
   success: boolean;
 };
 
-// --- Helper Functions ---
 async function uploadImage(file: File): Promise<string> {
   const fileBuffer = await file.arrayBuffer();
   const fileName = `articles/${Date.now()}-${file.name}`;
@@ -60,16 +65,15 @@ async function deleteImageFromStorage(imageUrl: string | undefined) {
 function parseFormData(formData: FormData) {
   const imageFile = formData.get('imageFile');
   return {
-    title: formData.get('title'),
-    excerpt: formData.get('excerpt'),
-    content: formData.get('content'),
-    publishedAt: formData.get('publishedAt'),
+    title: formData.get('title') as string,
+    excerpt: formData.get('excerpt') as string,
+    content: formData.get('content') as string,
+    publishedAt: formData.get('publishedAt') as string,
     featured: formData.get('featured') === 'on',
     imageFile: imageFile instanceof File && imageFile.size > 0 ? imageFile : undefined,
   };
 }
 
-// --- Reusable Revalidation ---
 function revalidateArticlePaths(id?: string) {
   revalidatePath('/admin/articles');
   revalidatePath('/blog');
@@ -77,10 +81,18 @@ function revalidateArticlePaths(id?: string) {
   revalidatePath('/');
 }
 
-// --- Server Actions ---
 export async function createArticle(prevState: ArticleFormState, formData: FormData): Promise<ArticleFormState> {
   const rawData = parseFormData(formData);
-  const validatedFields = CreateArticleSchema.safeParse(rawData);
+
+  if (!rawData.imageFile) {
+    return {
+      message: 'Failed to create article. Image is required.',
+      errors: { imageFile: ['An image file is required.'] },
+      success: false,
+    };
+  }
+  
+  const validatedFields = CreateArticleSchema.safeParse({ ...rawData, imageFile: rawData.imageFile });
 
   if (!validatedFields.success) {
     return {
@@ -95,13 +107,15 @@ export async function createArticle(prevState: ArticleFormState, formData: FormD
   try {
     const imageUrl = await uploadImage(imageFile);
     
-    await addDoc(collection(firestore, 'articles'), {
+    const payload = {
       ...data,
       imageUrl,
       publishedAt: Timestamp.fromDate(publishedAt),
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
-    });
+    };
+
+    await addDoc(collection(firestore, 'articles'), payload);
 
     revalidateArticlePaths();
     return { message: 'Successfully created article.', success: true };
@@ -147,6 +161,8 @@ export async function updateArticle(prevState: ArticleFormState, formData: FormD
       if (existingData.imageUrl) {
         await deleteImageFromStorage(existingData.imageUrl);
       }
+    } else {
+      payload.imageUrl = existingData.imageUrl;
     }
 
     await updateDoc(articleDocRef, payload);

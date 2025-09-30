@@ -7,24 +7,25 @@ import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage
 import { collection, doc, addDoc, updateDoc, deleteDoc, getDoc, serverTimestamp } from 'firebase/firestore';
 import type { Service } from '../definitions';
 
-// --- Zod Validation Schemas ---
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const ACCEPTED_IMAGE_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
 
-const FileSchema = z.instanceof(File).optional()
+const FileSchema = z.instanceof(File)
+  .optional()
   .refine(file => !file || file.size === 0 || file.size <= MAX_FILE_SIZE, `Max image size is 5MB.`)
   .refine(file => !file || file.size === 0 || ACCEPTED_IMAGE_TYPES.includes(file.type), 'Only .jpg, .jpeg, .png and .webp formats are supported.');
 
 const ServiceBaseSchema = z.object({
   title: z.string().min(1, 'Title is required'),
   description: z.string().min(1, 'Description is required'),
-  benefits: z.array(z.string().trim()).optional(),
-  price: z.string().optional(),
   details: z.string().optional(),
+  price: z.string().optional(),
+  benefits: z.array(z.string()).optional(),
   featured: z.boolean(),
 });
 
-const ServiceActionSchema = ServiceBaseSchema.extend({ imageFile: FileSchema });
+const CreateServiceSchema = ServiceBaseSchema.extend({ imageFile: FileSchema });
+const UpdateServiceSchema = ServiceBaseSchema.extend({ imageFile: FileSchema });
 
 export type ServiceFormState = {
   message: string;
@@ -32,7 +33,6 @@ export type ServiceFormState = {
   success: boolean;
 };
 
-// --- Helper Functions ---
 async function uploadImage(file: File): Promise<string> {
   const fileBuffer = await file.arrayBuffer();
   const fileName = `services/${Date.now()}-${file.name}`;
@@ -57,18 +57,18 @@ async function deleteImageFromStorage(imageUrl: string | undefined) {
 
 function parseFormData(formData: FormData) {
   const imageFile = formData.get('imageFile');
+  const benefits = formData.get('benefits') as string;
   return {
     title: formData.get('title') as string,
     description: formData.get('description') as string,
-    details: formData.get('details') as string,
-    price: formData.get('price') as string,
-    benefits: (formData.get('benefits') as string)?.split(',').map(b => b.trim()).filter(Boolean) ?? [],
+    details: (formData.get('details') as string) || undefined,
+    price: (formData.get('price') as string) || undefined,
+    benefits: benefits ? benefits.split(',').map(b => b.trim()).filter(Boolean) : [],
     featured: formData.get('featured') === 'on',
     imageFile: imageFile instanceof File && imageFile.size > 0 ? imageFile : undefined,
   };
 }
 
-// --- Reusable Revalidation Function ---
 function revalidateServicePaths(id?: string) {
   revalidatePath('/admin/services');
   revalidatePath('/services');
@@ -76,10 +76,9 @@ function revalidateServicePaths(id?: string) {
   revalidatePath('/');
 }
 
-// --- Server Actions ---
 export async function createService(prevState: ServiceFormState, formData: FormData): Promise<ServiceFormState> {
   const rawData = parseFormData(formData);
-  const validatedFields = ServiceActionSchema.safeParse(rawData);
+  const validatedFields = CreateServiceSchema.safeParse(rawData);
 
   if (!validatedFields.success) {
     return {
@@ -92,21 +91,20 @@ export async function createService(prevState: ServiceFormState, formData: FormD
   const { imageFile, ...data } = validatedFields.data;
 
   try {
-    let imageUrl = '';
+    let imageUrl: string | undefined = undefined;
     if (imageFile) {
-        imageUrl = await uploadImage(imageFile);
+      imageUrl = await uploadImage(imageFile);
     }
 
-    await addDoc(collection(firestore, 'services'), {
+    const payload = {
       ...data,
-      benefits: data.benefits ?? [],
-      price: data.price ?? '',
-      details: data.details ?? '',
       imageUrl,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
-    });
-    
+    };
+
+    await addDoc(collection(firestore, 'services'), payload);
+
     revalidateServicePaths();
     return { message: 'Successfully created service.', success: true };
   } catch (error) {
@@ -120,7 +118,7 @@ export async function updateService(prevState: ServiceFormState, formData: FormD
   if (!id) return { message: 'Failed to update service: Missing ID.', success: false };
 
   const rawData = parseFormData(formData);
-  const validatedFields = ServiceActionSchema.safeParse(rawData);
+  const validatedFields = UpdateServiceSchema.safeParse(rawData);
 
   if (!validatedFields.success) {
     return {
@@ -140,11 +138,8 @@ export async function updateService(prevState: ServiceFormState, formData: FormD
     }
     const existingData = docSnap.data() as Service;
 
-    const payload: Partial<Service> & { updatedAt: any } = {
+    const payload: Partial<Omit<Service, 'id'>> & { updatedAt: any } = {
       ...data,
-      benefits: data.benefits ?? [],
-      price: data.price ?? '',
-      details: data.details ?? '',
       updatedAt: serverTimestamp(),
     };
 
@@ -153,9 +148,12 @@ export async function updateService(prevState: ServiceFormState, formData: FormD
       if (existingData.imageUrl) {
         await deleteImageFromStorage(existingData.imageUrl);
       }
+    } else {
+      payload.imageUrl = existingData.imageUrl;
     }
 
     await updateDoc(serviceDocRef, payload);
+
     revalidateServicePaths(id);
     return { message: 'Successfully updated service.', success: true };
   } catch (error) {

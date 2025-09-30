@@ -7,13 +7,15 @@ import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage
 import { collection, doc, addDoc, updateDoc, deleteDoc, getDoc, serverTimestamp } from 'firebase/firestore';
 import type { GalleryImage } from '../definitions';
 
-// --- Zod Validation Schemas ---
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const ACCEPTED_IMAGE_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
 
-const FileSchema = z.instanceof(File).optional()
-  .refine(file => !file || file.size === 0 || file.size <= MAX_FILE_SIZE, `Max image size is 5MB.`)
-  .refine(file => !file || file.size === 0 || ACCEPTED_IMAGE_TYPES.includes(file.type), 'Only .jpg, .jpeg, .png and .webp formats are supported.');
+const FileSchema = z.instanceof(File)
+  .refine(file => file.size <= MAX_FILE_SIZE, `Max image size is 5MB.`)
+  .refine(
+    file => ACCEPTED_IMAGE_TYPES.includes(file.type),
+    'Only .jpg, .jpeg, .png and .webp formats are supported.'
+  );
 
 const GalleryImageBaseSchema = z.object({
   title: z.string().min(1, 'Title is required'),
@@ -22,9 +24,9 @@ const GalleryImageBaseSchema = z.object({
 });
 
 const CreateGalleryImageSchema = GalleryImageBaseSchema.extend({
-  imageFile: FileSchema.refine(file => file && file.size > 0, "An image file is required."),
+  imageFile: FileSchema,
 });
-const UpdateGalleryImageSchema = GalleryImageBaseSchema.extend({ imageFile: FileSchema });
+const UpdateGalleryImageSchema = GalleryImageBaseSchema.extend({ imageFile: FileSchema.optional() });
 
 export type GalleryImageFormState = {
   message: string;
@@ -32,7 +34,6 @@ export type GalleryImageFormState = {
   success: boolean;
 };
 
-// --- Helper Functions ---
 async function uploadImage(file: File): Promise<string> {
   const fileBuffer = await file.arrayBuffer();
   const fileName = `gallery/${Date.now()}-${file.name}`;
@@ -65,17 +66,24 @@ function parseFormData(formData: FormData) {
   };
 }
 
-// --- Reusable Revalidation Function ---
 function revalidateGalleryPaths() {
   revalidatePath('/admin/gallery');
   revalidatePath('/gallery');
   revalidatePath('/');
 }
 
-// --- Server Actions ---
 export async function createGalleryImage(prevState: GalleryImageFormState, formData: FormData): Promise<GalleryImageFormState> {
   const rawData = parseFormData(formData);
-  const validatedFields = CreateGalleryImageSchema.safeParse(rawData);
+  
+  if (!rawData.imageFile) {
+    return {
+      message: 'Failed to create gallery image. Image is required.',
+      errors: { imageFile: ['An image file is required.'] },
+      success: false,
+    };
+  }
+
+  const validatedFields = CreateGalleryImageSchema.safeParse({ ...rawData, imageFile: rawData.imageFile });
 
   if (!validatedFields.success) {
     return {
@@ -139,6 +147,8 @@ export async function updateGalleryImage(prevState: GalleryImageFormState, formD
       if (existingData.imageUrl) {
         await deleteImageFromStorage(existingData.imageUrl);
       }
+    } else {
+      payload.imageUrl = existingData.imageUrl;
     }
 
     await updateDoc(galleryDocRef, payload);

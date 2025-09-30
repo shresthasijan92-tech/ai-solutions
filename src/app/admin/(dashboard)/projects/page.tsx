@@ -53,7 +53,7 @@ export default function AdminProjectsPage() {
         </Dialog>
       </div>
 
-      {isLoading ? (
+       {isLoading ? (
         <div className="space-y-2">
           <Skeleton className="h-10 w-full" />
           <Skeleton className="h-10 w-full" />

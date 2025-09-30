@@ -7,26 +7,32 @@ import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage
 import { collection, doc, addDoc, updateDoc, deleteDoc, getDoc, serverTimestamp } from 'firebase/firestore';
 import type { Project } from '../definitions';
 
-// --- Zod Validation Schemas ---
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const ACCEPTED_IMAGE_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
 
-const FileSchema = z.instanceof(File).optional()
-  .refine(file => !file || file.size === 0 || file.size <= MAX_FILE_SIZE, `Max image size is 5MB.`)
-  .refine(file => !file || file.size === 0 || ACCEPTED_IMAGE_TYPES.includes(file.type), 'Only .jpg, .jpeg, .png and .webp formats are supported.');
+const FileSchema = z.instanceof(File)
+  .refine(file => file.size <= MAX_FILE_SIZE, `Max image size is 5MB.`)
+  .refine(
+    file => ACCEPTED_IMAGE_TYPES.includes(file.type),
+    'Only .jpg, .jpeg, .png and .webp formats are supported.'
+  );
 
 const ProjectBaseSchema = z.object({
   title: z.string().min(1, 'Title is required'),
   description: z.string().min(1, 'Description is required'),
-  technologies: z.array(z.string().trim()).min(1, 'At least one technology is required'),
-  featured: z.boolean(),
+  technologies: z.array(z.string()).min(1, 'At least one technology is required'),
   caseStudy: z.string().optional(),
+  featured: z.boolean(),
 });
 
 const CreateProjectSchema = ProjectBaseSchema.extend({
-  imageFile: FileSchema.refine(file => file && file.size > 0, "An image file is required for new projects."),
+  imageFile: FileSchema,
 });
-const UpdateProjectSchema = ProjectBaseSchema.extend({ imageFile: FileSchema });
+
+const UpdateProjectSchema = ProjectBaseSchema.extend({
+  imageFile: FileSchema.optional(),
+});
+
 
 export type ProjectFormState = {
   message: string;
@@ -34,7 +40,6 @@ export type ProjectFormState = {
   success: boolean;
 };
 
-// --- Helper Functions ---
 async function uploadImage(file: File): Promise<string> {
   const fileBuffer = await file.arrayBuffer();
   const fileName = `projects/${Date.now()}-${file.name}`;
@@ -59,17 +64,17 @@ async function deleteImageFromStorage(imageUrl: string | undefined) {
 
 function parseFormData(formData: FormData) {
   const imageFile = formData.get('imageFile');
+  const technologies = formData.get('technologies') as string;
   return {
     title: formData.get('title') as string,
     description: formData.get('description') as string,
-    technologies: (formData.get('technologies') as string)?.split(',').map(t => t.trim()).filter(Boolean) ?? [],
-    featured: formData.get('featured') === 'on',
+    technologies: technologies ? technologies.split(',').map(t => t.trim()).filter(Boolean) : [],
     caseStudy: (formData.get('caseStudy') as string) || undefined,
+    featured: formData.get('featured') === 'on',
     imageFile: imageFile instanceof File && imageFile.size > 0 ? imageFile : undefined,
   };
 }
 
-// --- Reusable Revalidation Function ---
 function revalidateProjectPaths(id?: string) {
   revalidatePath('/admin/projects');
   revalidatePath('/projects');
@@ -77,10 +82,18 @@ function revalidateProjectPaths(id?: string) {
   revalidatePath('/');
 }
 
-// --- Server Actions ---
 export async function createProject(prevState: ProjectFormState, formData: FormData): Promise<ProjectFormState> {
   const rawData = parseFormData(formData);
-  const validatedFields = CreateProjectSchema.safeParse(rawData);
+  
+  if (!rawData.imageFile) {
+    return {
+      message: 'Failed to create project. Image is required.',
+      errors: { imageFile: ['An image file is required.'] },
+      success: false,
+    };
+  }
+
+  const validatedFields = CreateProjectSchema.safeParse({ ...rawData, imageFile: rawData.imageFile });
 
   if (!validatedFields.success) {
     return {
@@ -94,13 +107,14 @@ export async function createProject(prevState: ProjectFormState, formData: FormD
 
   try {
     const imageUrl = await uploadImage(imageFile);
-    await addDoc(collection(firestore, 'projects'), {
+    const payload = {
       ...data,
-      caseStudy: data.caseStudy ?? '',
       imageUrl,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
-    });
+    };
+
+    await addDoc(collection(firestore, 'projects'), payload);
 
     revalidateProjectPaths();
     return { message: 'Successfully created project.', success: true };
@@ -135,9 +149,8 @@ export async function updateProject(prevState: ProjectFormState, formData: FormD
     }
     const existingData = docSnap.data() as Project;
 
-    const payload: Partial<Project> & { updatedAt: any } = {
+    const payload: Partial<Omit<Project, 'id'>> & { updatedAt: any } = {
       ...data,
-      caseStudy: data.caseStudy ?? '',
       updatedAt: serverTimestamp(),
     };
 
@@ -146,6 +159,8 @@ export async function updateProject(prevState: ProjectFormState, formData: FormD
       if (existingData.imageUrl) {
         await deleteImageFromStorage(existingData.imageUrl);
       }
+    } else {
+      payload.imageUrl = existingData.imageUrl;
     }
 
     await updateDoc(projectDocRef, payload);

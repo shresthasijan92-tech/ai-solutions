@@ -24,8 +24,13 @@ export default function AdminFeedbackPage() {
         </div>
       ) : error ? (
         <p className="text-destructive">{error.message}</p>
+      ) : testimonials && testimonials.length > 0 ? (
+        <TestimonialsTable testimonials={testimonials} />
       ) : (
-        <TestimonialsTable testimonials={testimonials || []} />
+         <div className="text-center py-10 border-2 border-dashed rounded-lg">
+          <h3 className="text-xl font-semibold">No Testimonials Found</h3>
+          <p className="text-muted-foreground mt-2">No feedback has been submitted by users yet.</p>
+        </div>
       )}
     </div>
   );

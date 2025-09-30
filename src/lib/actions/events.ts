@@ -7,26 +7,26 @@ import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage
 import { collection, doc, addDoc, updateDoc, deleteDoc, getDoc, serverTimestamp, Timestamp } from 'firebase/firestore';
 import type { Event } from '../definitions';
 
-// --- Zod Validation Schemas ---
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const ACCEPTED_IMAGE_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
 
 const FileSchema = z.instanceof(File)
-  .optional()
-  .refine(file => !file || file.size <= MAX_FILE_SIZE, `Max image size is 5MB.`)
-  .refine(file => !file || ACCEPTED_IMAGE_TYPES.includes(file.type), 'Only .jpg, .jpeg, .png and .webp formats are supported.');
+  .refine(file => file.size <= MAX_FILE_SIZE, `Max image size is 5MB.`)
+  .refine(
+    file => ACCEPTED_IMAGE_TYPES.includes(file.type),
+    'Only .jpg, .jpeg, .png and .webp formats are supported.'
+  );
 
 const EventBaseSchema = z.object({
   title: z.string().min(1, 'Title is required'),
   description: z.string().min(1, 'Description is required'),
   location: z.string().min(1, 'Location is required'),
-  date: z.coerce.date(),
+  date: z.string().transform((str) => new Date(str)),
   featured: z.boolean(),
 });
 
-const CreateEventSchema = EventBaseSchema.extend({ imageFile: FileSchema });
-const UpdateEventSchema = EventBaseSchema.extend({ imageFile: FileSchema });
-
+const CreateEventSchema = EventBaseSchema.extend({ imageFile: FileSchema.optional() });
+const UpdateEventSchema = EventBaseSchema.extend({ imageFile: FileSchema.optional() });
 
 export type EventFormState = {
   message: string;
@@ -34,7 +34,6 @@ export type EventFormState = {
   success: boolean;
 };
 
-// --- Helper Functions ---
 async function uploadImage(file: File): Promise<string> {
   const fileBuffer = await file.arrayBuffer();
   const fileName = `events/${Date.now()}-${file.name}`;
@@ -76,7 +75,6 @@ function revalidateEventPaths(id?: string) {
   revalidatePath('/');
 }
 
-// --- Server Actions ---
 export async function createEvent(prevState: EventFormState, formData: FormData): Promise<EventFormState> {
   const rawData = parseFormData(formData);
   const validatedFields = CreateEventSchema.safeParse(rawData);
@@ -92,18 +90,20 @@ export async function createEvent(prevState: EventFormState, formData: FormData)
   const { imageFile, date, ...data } = validatedFields.data;
 
   try {
-    let imageUrl = '';
+    let imageUrl: string | undefined = undefined;
     if (imageFile) {
       imageUrl = await uploadImage(imageFile);
     }
     
-    await addDoc(collection(firestore, 'events'), {
-        ...data,
-        imageUrl,
-        date: Timestamp.fromDate(date),
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-    });
+    const payload = {
+      ...data,
+      imageUrl,
+      date: Timestamp.fromDate(date),
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    };
+
+    await addDoc(collection(firestore, 'events'), payload);
     revalidateEventPaths();
     return { message: 'Successfully created event.', success: true };
   } catch (error) {
@@ -137,7 +137,7 @@ export async function updateEvent(prevState: EventFormState, formData: FormData)
     }
     const existingData = docSnap.data() as Event;
 
-    const payload: Partial<Omit<Event, 'id'>> & { updatedAt: any } = {
+    const payload: Partial<Omit<Event, 'id' | 'date'>> & { date: Timestamp, updatedAt: any } = {
       ...data,
       date: Timestamp.fromDate(date),
       updatedAt: serverTimestamp(),
@@ -148,6 +148,8 @@ export async function updateEvent(prevState: EventFormState, formData: FormData)
       if (existingData.imageUrl) {
         await deleteImageFromStorage(existingData.imageUrl);
       }
+    } else {
+      payload.imageUrl = existingData.imageUrl;
     }
 
     await updateDoc(eventDocRef, payload);
