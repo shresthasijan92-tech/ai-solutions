@@ -24,8 +24,16 @@ const EventBaseSchema = z.object({
   featured: z.boolean(),
 });
 
-const CreateEventSchema = EventBaseSchema.extend({ imageFile: FileSchema });
-const UpdateEventSchema = EventBaseSchema.extend({ imageFile: FileSchema });
+// For creation, image is optional
+const CreateEventSchema = EventBaseSchema.extend({
+  imageFile: FileSchema,
+});
+
+// For updates, image is also optional
+const UpdateEventSchema = EventBaseSchema.extend({
+  imageFile: FileSchema,
+});
+
 
 export type EventFormState = {
   message: string;
@@ -138,11 +146,13 @@ export async function updateEvent(prevState: EventFormState, formData: FormData)
     }
     const existingData = docSnap.data() as Event;
 
-    const payload: Partial<Omit<Event, 'id' | 'date'>> & { date: Timestamp; updatedAt: any } = {
+    const payload: Partial<Omit<Event, 'id' | 'date'>> & { date?: Timestamp; updatedAt: any } = {
       ...data,
-      date: Timestamp.fromDate(date),
       updatedAt: serverTimestamp(),
     };
+    if(date) {
+        payload.date = Timestamp.fromDate(date)
+    }
 
     if (imageFile) {
       payload.imageUrl = await uploadImage(imageFile);
