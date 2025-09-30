@@ -41,6 +41,35 @@ export default function AdminArticlesPage() {
   
   const showLoading = isUserLoading || areArticlesLoading;
 
+  const renderContent = () => {
+    if (showLoading) {
+      return (
+        <div className="space-y-2">
+          <Skeleton className="h-10 w-full" />
+          <Skeleton className="h-10 w-full" />
+          <Skeleton className="h-10 w-full" />
+        </div>
+      );
+    }
+
+    if (error) {
+      return <p className="text-destructive">{error.message}</p>;
+    }
+
+    if (!articles || articles.length === 0) {
+      return (
+        <div className="text-center py-10 border-2 border-dashed rounded-lg">
+          <h3 className="text-xl font-semibold">No Articles Found</h3>
+          <p className="text-muted-foreground mt-2">
+              Click the &quot;Add Article&quot; button to create your first one.
+          </p>
+        </div>
+      );
+    }
+    
+    return <ArticlesTable articles={articles} onEdit={handleEditClick} />;
+  }
+
   return (
     <div className="space-y-8">
       <div className="flex items-center justify-between">
@@ -70,24 +99,7 @@ export default function AdminArticlesPage() {
         </Dialog>
       </div>
 
-      {showLoading ? (
-        <div className="space-y-2">
-          <Skeleton className="h-10 w-full" />
-          <Skeleton className="h-10 w-full" />
-          <Skeleton className="h-10 w-full" />
-        </div>
-      ) : error ? (
-        <p className="text-destructive">{error.message}</p>
-      ) : articles && articles.length > 0 ? (
-        <ArticlesTable articles={articles} onEdit={handleEditClick} />
-      ) : (
-        <div className="text-center py-10 border-2 border-dashed rounded-lg">
-          <h3 className="text-xl font-semibold">No Articles Found</h3>
-          <p className="text-muted-foreground mt-2">
-              Click the &quot;Add Article&quot; button to create your first one.
-          </p>
-        </div>
-      )}
+      {renderContent()}
     </div>
   );
 }

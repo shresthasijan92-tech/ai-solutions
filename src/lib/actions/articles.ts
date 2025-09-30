@@ -29,7 +29,9 @@ const ACCEPTED_IMAGE_TYPES = [
   'image/webp',
 ];
 
-// Base schema without file requirement, using coerce for dates from FormData
+// --- Zod Schemas for Validation ---
+
+// Base schema for common fields
 const ArticleBaseSchema = z.object({
   title: z.string().min(1, 'Title is required'),
   excerpt: z.string().min(1, 'Excerpt is required'),
@@ -38,37 +40,29 @@ const ArticleBaseSchema = z.object({
   featured: z.boolean(),
 });
 
-// Schema for creating, where image is required
+// Schema for creating: image is required
 const ArticleCreateSchema = ArticleBaseSchema.extend({
   imageFile: z
     .instanceof(File)
     .refine((file) => file.size > 0, 'An image file is required.')
-    .refine(
-      (file) => file.size <= MAX_FILE_SIZE,
-      `Max image size is 5MB.`
-    )
+    .refine((file) => file.size <= MAX_FILE_SIZE, `Max image size is 5MB.`)
     .refine(
       (file) => ACCEPTED_IMAGE_TYPES.includes(file.type),
       'Only .jpg, .jpeg, .png and .webp formats are supported.'
     ),
 });
 
-// Schema for updating, where image is optional
+// Schema for updating: image is optional
 const ArticleUpdateSchema = ArticleBaseSchema.extend({
   imageFile: z
     .instanceof(File)
     .optional()
+    .refine((file) => !file || file.size === 0 || file.size <= MAX_FILE_SIZE, `Max image size is 5MB.`)
     .refine(
-      (file) => !file || file.size <= MAX_FILE_SIZE,
-      `Max image size is 5MB.`
-    )
-    .refine(
-      (file) =>
-        !file || file.size === 0 || ACCEPTED_IMAGE_TYPES.includes(file.type),
+      (file) => !file || file.size === 0 || ACCEPTED_IMAGE_TYPES.includes(file.type),
       'Only .jpg, .jpeg, .png and .webp formats are supported.'
     ),
 });
-
 
 export type ArticleFormState = {
   message: string;
@@ -100,26 +94,21 @@ async function deleteImageFromStorage(imageUrl: string | undefined) {
   }
 }
 
-function parseFormData(formData: FormData) {
-    const imageFile = formData.get('imageFile');
-    return {
-      title: formData.get('title'),
-      excerpt: formData.get('excerpt'),
-      content: formData.get('content'),
-      publishedAt: formData.get('publishedAt'),
-      featured: formData.get('featured') === 'on',
-      imageFile: imageFile instanceof File && imageFile.size > 0 ? imageFile : undefined,
-    };
-}
-
-
 // --- Server Actions ---
 
 export async function createArticle(
   prevState: ArticleFormState,
   formData: FormData
 ): Promise<ArticleFormState> {
-  const rawData = parseFormData(formData);
+  const rawData = {
+    title: formData.get('title'),
+    excerpt: formData.get('excerpt'),
+    content: formData.get('content'),
+    publishedAt: formData.get('publishedAt'),
+    featured: formData.get('featured') === 'on',
+    imageFile: formData.get('imageFile'),
+  };
+
   const validatedFields = ArticleCreateSchema.safeParse(rawData);
 
   if (!validatedFields.success) {
@@ -163,11 +152,18 @@ export async function updateArticle(
     return { message: 'Failed to update article: Missing ID.', success: false };
   }
 
-  const rawData = parseFormData(formData);
+  const rawData = {
+    title: formData.get('title'),
+    excerpt: formData.get('excerpt'),
+    content: formData.get('content'),
+    publishedAt: formData.get('publishedAt'),
+    featured: formData.get('featured') === 'on',
+    imageFile: formData.get('imageFile'),
+  };
+  
   const validatedFields = ArticleUpdateSchema.safeParse(rawData);
 
   if (!validatedFields.success) {
-    console.log(validatedFields.error.flatten().fieldErrors);
     return {
       message: 'Failed to update article. Please check the form.',
       errors: validatedFields.error.flatten().fieldErrors,
@@ -190,13 +186,13 @@ export async function updateArticle(
         ...rest,
         publishedAt: Timestamp.fromDate(publishedAt),
         updatedAt: serverTimestamp(),
+        // Preserve existing image by default
+        imageUrl: existingData.imageUrl,
     };
     
-    if (imageFile) {
+    if (imageFile && imageFile.size > 0) {
       payload.imageUrl = await uploadImage(imageFile);
       await deleteImageFromStorage(existingData.imageUrl);
-    } else {
-        payload.imageUrl = existingData.imageUrl;
     }
 
     await updateDoc(articleDocRef, payload);
