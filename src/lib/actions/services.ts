@@ -7,46 +7,24 @@ import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage
 import { collection, doc, addDoc, updateDoc, deleteDoc, getDoc, serverTimestamp } from 'firebase/firestore';
 import type { Service } from '../definitions';
 
-const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
-const ACCEPTED_IMAGE_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
-
-const fileSchema = z.instanceof(File, { message: 'Image is required.' })
-  .refine((file) => file.size <= MAX_FILE_SIZE, `Max image size is 5MB.`)
-  .refine(
-    (file) => ACCEPTED_IMAGE_TYPES.includes(file.type),
-    'Only .jpg, .jpeg, .png and .webp formats are supported.'
-  );
-
-const ServiceBaseSchema = z.object({
+// This is a simplified schema for the data object, NOT for FormData.
+const ServiceSchema = z.object({
   title: z.string().min(1, 'Title is required'),
   description: z.string().min(1, 'Description is required'),
   details: z.string().optional(),
   price: z.string().optional(),
   benefits: z.array(z.string()).optional(),
   featured: z.boolean(),
-});
-
-const CreateServiceSchema = ServiceBaseSchema.extend({
-  imageFile: fileSchema.optional(),
-});
-const UpdateServiceSchema = ServiceBaseSchema.extend({
-    imageFile: fileSchema.optional(),
+  imageUrl: z.string().optional(), // imageUrl is now part of the data object
 });
 
 export type ServiceFormState = {
   message: string;
-  errors?: Partial<Record<keyof z.infer<typeof ServiceBaseSchema> | 'imageFile', string[]>>;
+  errors?: Partial<Record<keyof z.infer<typeof ServiceSchema>, string[]>>;
   success: boolean;
 };
 
-async function uploadImage(file: File): Promise<string> {
-  const fileBuffer = await file.arrayBuffer();
-  const fileName = `services/${Date.now()}-${file.name}`;
-  const storageRef = ref(storage, fileName);
-  await uploadBytes(storageRef, fileBuffer, { contentType: file.type });
-  return getDownloadURL(storageRef);
-}
-
+// This function is no longer used for form parsing but kept for reference if needed elsewhere.
 async function deleteImageFromStorage(imageUrl: string | undefined) {
   if (!imageUrl || !imageUrl.includes('firebasestorage.googleapis.com')) return;
   try {
@@ -61,20 +39,6 @@ async function deleteImageFromStorage(imageUrl: string | undefined) {
   }
 }
 
-function parseFormData(formData: FormData) {
-  const imageFile = formData.get('imageFile');
-  const benefits = formData.get('benefits') as string;
-  return {
-    title: formData.get('title') as string,
-    description: formData.get('description') as string,
-    details: (formData.get('details') as string) || undefined,
-    price: (formData.get('price') as string) || undefined,
-    benefits: benefits ? benefits.split(',').map(b => b.trim()).filter(Boolean) : [],
-    featured: formData.get('featured') === 'on',
-    imageFile: imageFile instanceof File && imageFile.size > 0 ? imageFile : undefined,
-  };
-}
-
 function revalidateServicePaths(id?: string) {
   revalidatePath('/admin/services');
   revalidatePath('/services');
@@ -82,29 +46,21 @@ function revalidateServicePaths(id?: string) {
   revalidatePath('/');
 }
 
-export async function createService(prevState: ServiceFormState, formData: FormData): Promise<ServiceFormState> {
-  const rawData = parseFormData(formData);
-  const validatedFields = CreateServiceSchema.safeParse(rawData);
+// Simplified createService that accepts a plain object
+export async function createService(data: z.infer<typeof ServiceSchema>): Promise<ServiceFormState> {
+  const validatedFields = ServiceSchema.safeParse(data);
 
   if (!validatedFields.success) {
     return {
-      message: 'Failed to create service. Please check the form.',
+      message: 'Failed to create service. Invalid data.',
       errors: validatedFields.error.flatten().fieldErrors,
       success: false,
     };
   }
 
-  const { imageFile, ...data } = validatedFields.data;
-
   try {
-    let imageUrl: string | undefined = undefined;
-    if (imageFile) {
-      imageUrl = await uploadImage(imageFile);
-    }
-
     const payload = {
-      ...data,
-      imageUrl,
+      ...validatedFields.data,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     };
@@ -119,44 +75,27 @@ export async function createService(prevState: ServiceFormState, formData: FormD
   }
 }
 
-export async function updateService(prevState: ServiceFormState, formData: FormData): Promise<ServiceFormState> {
-  const id = formData.get('id') as string;
+// Simplified updateService that accepts a plain object
+export async function updateService(id: string, data: z.infer<typeof ServiceSchema>): Promise<ServiceFormState> {
   if (!id) return { message: 'Failed to update service: Missing ID.', success: false };
 
-  const rawData = parseFormData(formData);
-  const validatedFields = UpdateServiceSchema.safeParse(rawData);
+  const validatedFields = ServiceSchema.safeParse(data);
 
   if (!validatedFields.success) {
     return {
-      message: 'Failed to update service. Please check the form.',
+      message: 'Failed to update service. Invalid data.',
       errors: validatedFields.error.flatten().fieldErrors,
       success: false,
     };
   }
   
-  const { imageFile, ...data } = validatedFields.data;
   const serviceDocRef = doc(firestore, 'services', id);
 
   try {
-    const docSnap = await getDoc(serviceDocRef);
-    if (!docSnap.exists()) {
-      return { message: 'Service not found.', success: false };
-    }
-    const existingData = docSnap.data() as Service;
-
     const payload: Partial<Omit<Service, 'id'>> & { updatedAt: any } = {
-      ...data,
+      ...validatedFields.data,
       updatedAt: serverTimestamp(),
     };
-
-    if (imageFile) {
-      payload.imageUrl = await uploadImage(imageFile);
-      if (existingData.imageUrl) {
-        await deleteImageFromStorage(existingData.imageUrl);
-      }
-    } else {
-      payload.imageUrl = existingData.imageUrl;
-    }
 
     await updateDoc(serviceDocRef, payload);
 
@@ -167,6 +106,7 @@ export async function updateService(prevState: ServiceFormState, formData: FormD
     return { message: 'Failed to update service.', success: false };
   }
 }
+
 
 export async function deleteService(id: string): Promise<{ message: string; success: boolean }> {
   if (!id) return { message: 'Failed to delete service: Missing ID.', success: false };
@@ -183,4 +123,36 @@ export async function deleteService(id: string): Promise<{ message: string; succ
     console.error('Delete Service Error:', error);
     return { message: 'Failed to delete service.', success: false };
   }
+}
+
+// New separate function to handle image uploads
+export async function uploadServiceImage(formData: FormData): Promise<{ success: boolean, imageUrl?: string, message: string }> {
+    const imageFile = formData.get('imageFile') as File | null;
+    
+    if (!imageFile || imageFile.size === 0) {
+        return { success: false, message: 'No image file provided.' };
+    }
+
+    // Basic validation
+    const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+    const ACCEPTED_IMAGE_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+
+    if (imageFile.size > MAX_FILE_SIZE) {
+        return { success: false, message: 'Max image size is 5MB.' };
+    }
+    if (!ACCEPTED_IMAGE_TYPES.includes(imageFile.type)) {
+        return { success: false, message: 'Only .jpg, .jpeg, .png and .webp formats are supported.' };
+    }
+
+    try {
+        const fileBuffer = await imageFile.arrayBuffer();
+        const fileName = `services/${Date.now()}-${imageFile.name}`;
+        const storageRef = ref(storage, fileName);
+        await uploadBytes(storageRef, fileBuffer, { contentType: imageFile.type });
+        const downloadUrl = await getDownloadURL(storageRef);
+        return { success: true, imageUrl: downloadUrl, message: 'Image uploaded successfully.' };
+    } catch (error) {
+        console.error('Image Upload Error:', error);
+        return { success: false, message: 'Failed to upload image.' };
+    }
 }
