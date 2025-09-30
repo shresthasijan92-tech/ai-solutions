@@ -9,6 +9,14 @@ import {
 } from 'firebase/firestore';
 import type { Testimonial } from './definitions';
 
+// Helper function to safely convert Firestore Timestamps
+const toISOStringIfTimestamp = (value: any): string | any => {
+  if (value instanceof Timestamp) {
+    return value.toDate().toISOString();
+  }
+  return value;
+};
+
 export async function getTestimonials(): Promise<Testimonial[]> {
   try {
     const testimonialsCol = collection(firestore, 'testimonials');
@@ -17,14 +25,14 @@ export async function getTestimonials(): Promise<Testimonial[]> {
     const testimonialsSnapshot = await getDocs(q);
     const testimonialsList = testimonialsSnapshot.docs.map((doc) => {
       const data = doc.data();
-      const createdAt =
-          data.createdAt instanceof Timestamp
-            ? data.createdAt.toDate().toISOString()
-            : data.createdAt;
+      const testimonialData = {
+        ...data,
+        createdAt: toISOStringIfTimestamp(data.createdAt),
+      };
+
       return {
         id: doc.id,
-        ...data,
-        createdAt
+        ...testimonialData,
       } as Testimonial;
     });
     return testimonialsList;

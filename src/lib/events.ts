@@ -11,6 +11,14 @@ import {
 } from 'firebase/firestore';
 import type { Event } from './definitions';
 
+// Helper function to safely convert Firestore Timestamps
+const toISOStringIfTimestamp = (value: any): string | any => {
+  if (value instanceof Timestamp) {
+    return value.toDate().toISOString();
+  }
+  return value;
+};
+
 export async function getEvents(): Promise<Event[]> {
   try {
     const eventsCol = collection(firestore, 'events');
@@ -18,14 +26,15 @@ export async function getEvents(): Promise<Event[]> {
     const eventsSnapshot = await getDocs(q);
     const eventsList = eventsSnapshot.docs.map((doc) => {
       const data = doc.data();
-      const eventDate =
-        data.date instanceof Timestamp
-            ? data.date.toDate().toISOString()
-            : data.date;
+      const eventData = {
+        ...data,
+        date: toISOStringIfTimestamp(data.date),
+        createdAt: toISOStringIfTimestamp(data.createdAt),
+        updatedAt: toISOStringIfTimestamp(data.updatedAt),
+      };
       return {
         id: doc.id,
-        ...data,
-        date: eventDate,
+        ...eventData,
       } as Event;
     });
     return eventsList;
@@ -45,15 +54,16 @@ export async function getEvent(id: string): Promise<Event | null> {
     }
 
     const data = docSnap.data();
-    const eventDate =
-      data.date instanceof Timestamp
-        ? data.date.toDate().toISOString()
-        : data.date;
+    const eventData = {
+        ...data,
+        date: toISOStringIfTimestamp(data.date),
+        createdAt: toISOStringIfTimestamp(data.createdAt),
+        updatedAt: toISOStringIfTimestamp(data.updatedAt),
+    };
 
     return {
       id: docSnap.id,
-      ...data,
-      date: eventDate,
+      ...eventData,
     } as Event;
   } catch (error) {
     console.error(`Error fetching event ${id} from Firestore:`, error);

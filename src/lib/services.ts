@@ -1,7 +1,15 @@
 'use server';
 import { firestore } from '@/firebase/server';
-import { collection, getDocs, query } from 'firebase/firestore';
+import { collection, getDocs, query, Timestamp } from 'firebase/firestore';
 import type { Service } from './definitions';
+
+// Helper function to safely convert Firestore Timestamps
+const toISOStringIfTimestamp = (value: any): string | any => {
+  if (value instanceof Timestamp) {
+    return value.toDate().toISOString();
+  }
+  return value;
+};
 
 export async function getServices(): Promise<Service[]> {
   try {
@@ -14,9 +22,17 @@ export async function getServices(): Promise<Service[]> {
     }
 
     const servicesList = servicesSnapshot.docs.map((doc) => {
+      const data = doc.data();
+      // Ensure all potential timestamp fields are converted
+      const serviceData = {
+        ...data,
+        createdAt: toISOStringIfTimestamp(data.createdAt),
+        updatedAt: toISOStringIfTimestamp(data.updatedAt),
+      };
+      
       return {
         id: doc.id,
-        ...doc.data()
+        ...serviceData
       } as Service;
     });
     return servicesList;

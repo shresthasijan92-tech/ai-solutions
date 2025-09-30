@@ -11,6 +11,15 @@ import {
 } from 'firebase/firestore';
 import type { Article } from './definitions';
 
+// Helper function to safely convert Firestore Timestamps
+const toISOStringIfTimestamp = (value: any): string | any => {
+  if (value instanceof Timestamp) {
+    return value.toDate().toISOString();
+  }
+  return value;
+};
+
+
 export async function getArticles(): Promise<Article[]> {
   try {
     const articlesCol = collection(firestore, 'articles');
@@ -18,15 +27,16 @@ export async function getArticles(): Promise<Article[]> {
     const articlesSnapshot = await getDocs(q);
     const articlesList = articlesSnapshot.docs.map((doc) => {
       const data = doc.data();
-      const publishedAt =
-        data.publishedAt instanceof Timestamp
-          ? data.publishedAt.toDate().toISOString()
-          : data.publishedAt;
+      const articleData = {
+        ...data,
+        publishedAt: toISOStringIfTimestamp(data.publishedAt),
+        createdAt: toISOStringIfTimestamp(data.createdAt),
+        updatedAt: toISOStringIfTimestamp(data.updatedAt),
+      };
 
       return {
         id: doc.id,
-        ...data,
-        publishedAt,
+        ...articleData,
       } as Article;
     });
     return articlesList;
@@ -46,15 +56,16 @@ export async function getArticle(id: string): Promise<Article | null> {
     }
 
     const data = docSnap.data();
-    const publishedAt =
-      data.publishedAt instanceof Timestamp
-        ? data.publishedAt.toDate().toISOString()
-        : data.publishedAt;
+    const articleData = {
+      ...data,
+      publishedAt: toISOStringIfTimestamp(data.publishedAt),
+      createdAt: toISOStringIfTimestamp(data.createdAt),
+      updatedAt: toISOStringIfTimestamp(data.updatedAt),
+    };
 
     return {
       id: docSnap.id,
-      ...data,
-      publishedAt,
+      ...articleData,
     } as Article;
   } catch (error) {
     console.error(`Error fetching article ${id} from Firestore:`, error);

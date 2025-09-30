@@ -16,6 +16,8 @@ export type Service = {
   price?: string;
   details?: string;
   featured: boolean;
+  createdAt?: string | Date;
+  updatedAt?: string | Date;
 };
 
 export type Project = {
