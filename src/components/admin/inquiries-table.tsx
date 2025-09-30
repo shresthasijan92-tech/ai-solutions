@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Table,
   TableBody,
@@ -25,7 +25,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { useState } from 'react';
 import { cn } from '@/lib/utils';
 
 
@@ -137,9 +136,9 @@ export function InquiriesTable({ inquiries }: InquiriesTableProps) {
                                             <p>{inquiry.contactNumber || 'Not provided'}</p>
                                             </div>
                                             <div className="col-span-2">
-                                            <p className="font-semibold">Project Details</p>
+                                            <p className="font-semibold">Message</p>
                                             <p className="whitespace-pre-wrap">
-                                                {inquiry.projectDetails}
+                                                {inquiry.message}
                                             </p>
                                             </div>
                                         </div>

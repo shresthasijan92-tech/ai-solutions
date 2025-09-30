@@ -26,7 +26,7 @@ const ContactFormSchema = z.object({
   companyName: z.string().min(1, 'Company name is required'),
   country: z.string().min(1, 'Country is required'),
   contactNumber: z.string().optional(),
-  projectDetails: z.string().min(10, 'Please provide some details about your project (min. 10 characters)'),
+  message: z.string().min(10, 'Please provide a message with at least 10 characters.'),
 });
 
 type ContactFormValues = z.infer<typeof ContactFormSchema>;
@@ -43,7 +43,7 @@ export function ContactForm() {
       companyName: '',
       country: '',
       contactNumber: '',
-      projectDetails: '',
+      message: '',
     },
   });
 
@@ -137,13 +137,13 @@ export function ContactForm() {
         />
         <FormField
           control={form.control}
-          name="projectDetails"
+          name="message"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Project Details</FormLabel>
+              <FormLabel>Message</FormLabel>
               <FormControl>
                 <Textarea
-                  placeholder="Tell us a little bit about your project..."
+                  placeholder="Your message..."
                   className="resize-none"
                   {...field}
                 />

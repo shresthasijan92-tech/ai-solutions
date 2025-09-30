@@ -11,7 +11,7 @@ const ContactFormSchema = z.object({
   companyName: z.string().min(1, 'Company name is required'),
   country: z.string().min(1, 'Country is required'),
   contactNumber: z.string().optional(),
-  projectDetails: z.string(),
+  message: z.string(),
 });
 
 export type ContactFormState = {
