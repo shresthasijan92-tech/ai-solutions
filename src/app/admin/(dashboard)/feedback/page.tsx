@@ -16,17 +16,17 @@ export default function AdminFeedbackPage() {
         </p>
       </div>
 
-        {isLoading ? (
-          <div className="space-y-2">
-            <Skeleton className="h-10 w-full" />
-            <Skeleton className="h-10 w-full" />
-            <Skeleton className="h-10 w-full" />
-          </div>
-        ) : error ? (
-          <p className="text-destructive">{error.message}</p>
-        ) : (
-          <TestimonialsTable testimonials={testimonials || []} />
-        )}
+      {isLoading ? (
+        <div className="space-y-2">
+          <Skeleton className="h-10 w-full" />
+          <Skeleton className="h-10 w-full" />
+          <Skeleton className="h-10 w-full" />
+        </div>
+      ) : error ? (
+        <p className="text-destructive">{error.message}</p>
+      ) : (
+        <TestimonialsTable testimonials={testimonials || []} />
+      )}
     </div>
   );
 }
