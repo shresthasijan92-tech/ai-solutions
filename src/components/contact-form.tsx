@@ -24,6 +24,7 @@ const ContactFormSchema = z.object({
   fullName: z.string().min(1, 'Full name is required'),
   email: z.string().email('Invalid email address'),
   companyName: z.string().min(1, 'Company name is required'),
+  country: z.string().min(1, 'Country is required'),
   contactNumber: z.string().optional(),
   projectDetails: z.string().min(10, 'Please provide some details about your project (min. 10 characters)'),
 });
@@ -40,6 +41,7 @@ export function ContactForm() {
       fullName: '',
       email: '',
       companyName: '',
+      country: '',
       contactNumber: '',
       projectDetails: '',
     },
@@ -102,6 +104,19 @@ export function ContactForm() {
               <FormLabel>Company Name</FormLabel>
               <FormControl>
                 <Input placeholder="Your Company Inc." {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+         <FormField
+          control={form.control}
+          name="country"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Country</FormLabel>
+              <FormControl>
+                <Input placeholder="United Kingdom" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
