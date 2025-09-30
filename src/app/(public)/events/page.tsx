@@ -5,6 +5,15 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { MapPin, Calendar, ArrowRight } from 'lucide-react';
 import { events as mockEvents } from '@/lib/mock-data';
+import { Timestamp } from 'firebase/firestore';
+
+const toDate = (timestamp: string | Timestamp | Date): Date => {
+  if (timestamp instanceof Timestamp) {
+    return timestamp.toDate();
+  }
+  return new Date(timestamp);
+}
+
 
 export default async function EventsPage() {
   const eventsFromDb = await getEvents();
@@ -43,7 +52,7 @@ export default async function EventsPage() {
                 </h3>
                 <div className="flex items-center text-sm text-muted-foreground mb-2">
                     <Calendar className="h-4 w-4 mr-2" />
-                    {new Date(event.date).toLocaleDateString('en-US', {
+                    {toDate(event.date).toLocaleDateString('en-US', {
                         year: 'numeric',
                         month: 'long',
                         day: 'numeric',

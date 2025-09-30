@@ -7,17 +7,17 @@ import {
   Timestamp,
   doc,
   getDoc,
+  orderBy
 } from 'firebase/firestore';
 import type { Article } from './definitions';
 
 export async function getArticles(): Promise<Article[]> {
   try {
     const articlesCol = collection(firestore, 'articles');
-    const q = query(articlesCol);
+    const q = query(articlesCol, orderBy('publishedAt', 'desc'));
     const articlesSnapshot = await getDocs(q);
     const articlesList = articlesSnapshot.docs.map((doc) => {
       const data = doc.data();
-      // Ensure publishedAt is converted to a serializable format (ISO string)
       const publishedAt =
         data.publishedAt instanceof Timestamp
           ? data.publishedAt.toDate().toISOString()
@@ -25,12 +25,8 @@ export async function getArticles(): Promise<Article[]> {
 
       return {
         id: doc.id,
-        title: data.title,
-        excerpt: data.excerpt,
-        content: data.content,
-        imageUrl: data.imageUrl,
-        publishedAt: publishedAt,
-        featured: data.featured || false,
+        ...data,
+        publishedAt,
       } as Article;
     });
     return articlesList;
@@ -57,12 +53,8 @@ export async function getArticle(id: string): Promise<Article | null> {
 
     return {
       id: docSnap.id,
-      title: data.title,
-      excerpt: data.excerpt,
-      content: data.content,
-      imageUrl: data.imageUrl,
-      publishedAt: publishedAt,
-      featured: data.featured || false,
+      ...data,
+      publishedAt,
     } as Article;
   } catch (error) {
     console.error(`Error fetching article ${id} from Firestore:`, error);

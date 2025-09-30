@@ -11,7 +11,7 @@ export async function FeaturedGallery() {
   
   const imagesToDisplay = featuredImagesFromDb.length > 0 
     ? featuredImagesFromDb.slice(0, 4) 
-    : mockGalleryImages.filter(i => ["Team Collaboration", "Office Environment", "AI Conference Talk", "Data Insights"].includes(i.title)).slice(0, 4);
+    : mockGalleryImages.filter(i => i.featured).slice(0, 4);
 
   if (imagesToDisplay.length === 0) {
     return null;

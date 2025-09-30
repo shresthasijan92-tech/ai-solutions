@@ -7,27 +7,25 @@ import {
   doc,
   getDoc,
   Timestamp,
+  orderBy
 } from 'firebase/firestore';
 import type { Event } from './definitions';
 
 export async function getEvents(): Promise<Event[]> {
   try {
     const eventsCol = collection(firestore, 'events');
-    const q = query(eventsCol);
+    const q = query(eventsCol, orderBy('date', 'desc'));
     const eventsSnapshot = await getDocs(q);
     const eventsList = eventsSnapshot.docs.map((doc) => {
       const data = doc.data();
+      const eventDate =
+        data.date instanceof Timestamp
+            ? data.date.toDate().toISOString()
+            : data.date;
       return {
         id: doc.id,
-        title: data.title,
-        date:
-          data.date instanceof Timestamp
-            ? data.date.toDate().toISOString()
-            : data.date,
-        location: data.location,
-        description: data.description,
-        featured: data.featured || false,
-        imageUrl: data.imageUrl,
+        ...data,
+        date: eventDate,
       } as Event;
     });
     return eventsList;
@@ -54,12 +52,8 @@ export async function getEvent(id: string): Promise<Event | null> {
 
     return {
       id: docSnap.id,
-      title: data.title,
+      ...data,
       date: eventDate,
-      location: data.location,
-      description: data.description,
-      featured: data.featured || false,
-      imageUrl: data.imageUrl,
     } as Event;
   } catch (error) {
     console.error(`Error fetching event ${id} from Firestore:`, error);

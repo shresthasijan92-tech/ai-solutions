@@ -1,26 +1,43 @@
-
 'use client';
 
-import { useMemo } from 'react';
-import { collection, query, orderBy } from 'firebase/firestore';
-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { useState, useEffect, useMemo } from 'react';
+import { collection, query, onSnapshot, orderBy, type DocumentData, type FirestoreError } from 'firebase/firestore';
+import { useFirestore } from '@/firebase';
 import type { Event } from '@/lib/definitions';
 
-export function useEvents(enabled = true) {
+export function useEvents() {
+  const [events, setEvents] = useState<Event[] | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<FirestoreError | null>(null);
   const firestore = useFirestore();
-  const eventsCol = useMemoFirebase(
-    () => (firestore ? collection(firestore, 'events') : null),
-    [firestore]
-  );
-  const eventsQuery = useMemoFirebase(
-    () => {
-      if (!eventsCol || !enabled) return null;
-      return query(eventsCol, orderBy('date', 'desc'));
-    },
-    [eventsCol, enabled]
-  );
 
-  const { data: events, isLoading, error } = useCollection<Event>(eventsQuery);
+  const eventsQuery = useMemo(() => {
+    if (!firestore) return null;
+    return query(collection(firestore, 'events'), orderBy('date', 'desc'));
+  }, [firestore]);
+
+
+  useEffect(() => {
+    if (!eventsQuery) {
+        setIsLoading(false);
+        return;
+    };
+
+    const unsubscribe = onSnapshot(eventsQuery, 
+      (snapshot) => {
+        const data: Event[] = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Event));
+        setEvents(data);
+        setIsLoading(false);
+      },
+      (err) => {
+        console.error("Error fetching events:", err);
+        setError(err);
+        setIsLoading(false);
+      }
+    );
+
+    return () => unsubscribe();
+  }, [eventsQuery]);
 
   return { events, isLoading, error };
 }

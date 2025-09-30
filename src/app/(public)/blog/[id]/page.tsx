@@ -1,4 +1,3 @@
-
 import { getArticle, getArticles } from '@/lib/articles';
 import { articles as mockArticles } from '@/lib/mock-data';
 import { notFound } from 'next/navigation';

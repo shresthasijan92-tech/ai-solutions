@@ -1,11 +1,12 @@
 import { getJobs } from '@/lib/jobs';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { MapPin, Briefcase } from 'lucide-react';
+import { jobs as mockJobs } from '@/lib/mock-data';
 
 export default async function CareersPage() {
-  const jobs = await getJobs();
+  const jobsFromDb = await getJobs();
+  const jobs = jobsFromDb.length > 0 ? jobsFromDb : mockJobs;
 
   return (
     <div className="container py-12">

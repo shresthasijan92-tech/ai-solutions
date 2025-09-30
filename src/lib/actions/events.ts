@@ -1,4 +1,3 @@
-
 'use server';
 
 import { revalidatePath } from 'next/cache';
@@ -24,13 +23,7 @@ const EventBaseSchema = z.object({
   featured: z.boolean(),
 });
 
-// For creation, image is optional
-const CreateEventSchema = EventBaseSchema.extend({
-  imageFile: FileSchema,
-});
-
-// For updates, image is also optional
-const UpdateEventSchema = EventBaseSchema.extend({
+const EventActionSchema = EventBaseSchema.extend({
   imageFile: FileSchema,
 });
 
@@ -76,7 +69,6 @@ function parseFormData(formData: FormData) {
   };
 }
 
-// --- Reusable Revalidation Function ---
 function revalidateEventPaths(id?: string) {
   revalidatePath('/admin/events');
   revalidatePath('/events');
@@ -87,7 +79,7 @@ function revalidateEventPaths(id?: string) {
 // --- Server Actions ---
 export async function createEvent(prevState: EventFormState, formData: FormData): Promise<EventFormState> {
   const rawData = parseFormData(formData);
-  const validatedFields = CreateEventSchema.safeParse(rawData);
+  const validatedFields = EventActionSchema.safeParse(rawData);
 
   if (!validatedFields.success) {
     return {
@@ -100,19 +92,18 @@ export async function createEvent(prevState: EventFormState, formData: FormData)
   const { imageFile, date, ...data } = validatedFields.data;
 
   try {
-    const payload: Omit<Event, 'id' | 'date'> & { date: Timestamp; createdAt: any; updatedAt: any; } = {
-      ...data,
-      date: Timestamp.fromDate(date),
-      imageUrl: '',
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
-    };
-
+    let imageUrl = '';
     if (imageFile) {
-      payload.imageUrl = await uploadImage(imageFile);
+      imageUrl = await uploadImage(imageFile);
     }
     
-    await addDoc(collection(firestore, 'events'), payload);
+    await addDoc(collection(firestore, 'events'), {
+        ...data,
+        imageUrl,
+        date: Timestamp.fromDate(date),
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+    });
     revalidateEventPaths();
     return { message: 'Successfully created event.', success: true };
   } catch (error) {
@@ -126,7 +117,7 @@ export async function updateEvent(prevState: EventFormState, formData: FormData)
   if (!id) return { message: 'Failed to update event: Missing ID.', success: false };
 
   const rawData = parseFormData(formData);
-  const validatedFields = UpdateEventSchema.safeParse(rawData);
+  const validatedFields = EventActionSchema.safeParse(rawData);
 
   if (!validatedFields.success) {
     return {
@@ -146,13 +137,11 @@ export async function updateEvent(prevState: EventFormState, formData: FormData)
     }
     const existingData = docSnap.data() as Event;
 
-    const payload: Partial<Omit<Event, 'id' | 'date'>> & { date?: Timestamp; updatedAt: any } = {
+    const payload: Partial<Omit<Event, 'id'>> & { updatedAt: any } = {
       ...data,
+      date: Timestamp.fromDate(date),
       updatedAt: serverTimestamp(),
     };
-    if(date) {
-        payload.date = Timestamp.fromDate(date)
-    }
 
     if (imageFile) {
       payload.imageUrl = await uploadImage(imageFile);

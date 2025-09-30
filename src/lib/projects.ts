@@ -9,15 +9,9 @@ export async function getProjects(): Promise<Project[]> {
     const q = query(projectsCol);
     const projectsSnapshot = await getDocs(q);
     const projectsList = projectsSnapshot.docs.map((doc) => {
-      const data = doc.data();
       return {
         id: doc.id,
-        title: data.title,
-        description: data.description,
-        imageUrl: data.imageUrl,
-        technologies: data.technologies || [],
-        featured: data.featured || false,
-        caseStudy: data.caseStudy || '',
+        ...doc.data(),
       } as Project;
     });
     return projectsList;
@@ -36,10 +30,9 @@ export async function getProject(id: string): Promise<Project | null> {
       return null;
     }
 
-    const data = docSnap.data();
     return {
       id: docSnap.id,
-      ...data,
+      ...docSnap.data(),
     } as Project;
   } catch (error) {
     console.error(`Error fetching project ${id} from Firestore:`, error);

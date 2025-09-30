@@ -14,15 +14,9 @@ export async function getServices(): Promise<Service[]> {
     }
 
     const servicesList = servicesSnapshot.docs.map((doc) => {
-      const data = doc.data();
       return {
         id: doc.id,
-        title: data.title,
-        description: data.description,
-        imageUrl: data.imageUrl,
-        benefits: data.benefits || [],
-        price: data.price || '',
-        featured: data.featured || false,
+        ...doc.data()
       } as Service;
     });
     return servicesList;

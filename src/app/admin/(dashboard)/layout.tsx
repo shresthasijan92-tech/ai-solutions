@@ -1,4 +1,3 @@
-
 'use client';
 
 import { AdminSidebar } from '@/components/admin/admin-sidebar';

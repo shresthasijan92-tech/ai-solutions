@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useTestimonials } from '@/hooks/use-testimonials';

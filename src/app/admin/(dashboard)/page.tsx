@@ -1,21 +1,33 @@
-
 'use client';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Briefcase, FileText, MessageSquare } from 'lucide-react';
+import { Briefcase, FileText, MessageSquare, GalleryHorizontal, Calendar, Users, Lightbulb } from 'lucide-react';
 import { useServices } from '@/hooks/use-services';
 import { useProjects } from '@/hooks/use-projects';
 import { useTestimonials } from '@/hooks/use-testimonials';
+import { useArticles } from '@/hooks/use-articles';
+import { useEvents } from '@/hooks/use-events';
+import { useGalleryImages } from '@/hooks/use-gallery-images';
+import { useJobs } from '@/hooks/use-jobs';
 import { Skeleton } from '@/components/ui/skeleton';
+import { HomepageSuggestions } from '@/components/admin/homepage-suggestions';
 
 export default function AdminDashboardPage() {
   const { services, isLoading: isLoadingServices } = useServices();
   const { projects, isLoading: isLoadingProjects } = useProjects();
   const { testimonials, isLoading: isLoadingTestimonials } = useTestimonials();
+  const { articles, isLoading: isLoadingArticles } = useArticles();
+  const { events, isLoading: isLoadingEvents } = useEvents();
+  const { galleryImages, isLoading: isLoadingGallery } = useGalleryImages();
+  const { jobs, isLoading: isLoadingJobs } = useJobs();
 
   const stats = [
     { title: 'Total Services', value: services?.length ?? 0, icon: Briefcase, isLoading: isLoadingServices },
     { title: 'Total Projects', value: projects?.length ?? 0, icon: FileText, isLoading: isLoadingProjects },
+    { title: 'Total Articles', value: articles?.length ?? 0, icon: Lightbulb, isLoading: isLoadingArticles },
+    { title: 'Gallery Images', value: galleryImages?.length ?? 0, icon: GalleryHorizontal, isLoading: isLoadingGallery },
+    { title: 'Upcoming Events', value: events?.length ?? 0, icon: Calendar, isLoading: isLoadingEvents },
+    { title: 'Job Openings', value: jobs?.length ?? 0, icon: Users, isLoading: isLoadingJobs },
     { title: 'Total Feedback', value: testimonials?.length ?? 0, icon: MessageSquare, isLoading: isLoadingTestimonials },
   ];
 
@@ -41,6 +53,13 @@ export default function AdminDashboardPage() {
         ))}
       </div>
 
+       <div>
+        <h2 className="text-2xl font-headline font-bold mb-4">Homepage AI Suggestions</h2>
+        <p className="text-muted-foreground mb-4">
+            Select the content types you are featuring on your homepage to get AI-powered layout and design suggestions.
+        </p>
+        <HomepageSuggestions />
+       </div>
     </div>
   );
 }

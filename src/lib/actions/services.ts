@@ -1,4 +1,3 @@
-
 'use server';
 
 import { revalidatePath } from 'next/cache';
@@ -25,8 +24,7 @@ const ServiceBaseSchema = z.object({
   featured: z.boolean(),
 });
 
-const CreateServiceSchema = ServiceBaseSchema.extend({ imageFile: FileSchema });
-const UpdateServiceSchema = ServiceBaseSchema.extend({ imageFile: FileSchema });
+const ServiceActionSchema = ServiceBaseSchema.extend({ imageFile: FileSchema });
 
 export type ServiceFormState = {
   message: string;
@@ -81,7 +79,7 @@ function revalidateServicePaths(id?: string) {
 // --- Server Actions ---
 export async function createService(prevState: ServiceFormState, formData: FormData): Promise<ServiceFormState> {
   const rawData = parseFormData(formData);
-  const validatedFields = CreateServiceSchema.safeParse(rawData);
+  const validatedFields = ServiceActionSchema.safeParse(rawData);
 
   if (!validatedFields.success) {
     return {
@@ -94,21 +92,21 @@ export async function createService(prevState: ServiceFormState, formData: FormD
   const { imageFile, ...data } = validatedFields.data;
 
   try {
-    const payload: Omit<Service, 'id'> & { createdAt: any; updatedAt: any; } = {
+    let imageUrl = '';
+    if (imageFile) {
+        imageUrl = await uploadImage(imageFile);
+    }
+
+    await addDoc(collection(firestore, 'services'), {
       ...data,
       benefits: data.benefits ?? [],
       price: data.price ?? '',
       details: data.details ?? '',
-      imageUrl: '',
+      imageUrl,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
-    };
-
-    if (imageFile) {
-      payload.imageUrl = await uploadImage(imageFile);
-    }
+    });
     
-    await addDoc(collection(firestore, 'services'), payload);
     revalidateServicePaths();
     return { message: 'Successfully created service.', success: true };
   } catch (error) {
@@ -122,7 +120,7 @@ export async function updateService(prevState: ServiceFormState, formData: FormD
   if (!id) return { message: 'Failed to update service: Missing ID.', success: false };
 
   const rawData = parseFormData(formData);
-  const validatedFields = UpdateServiceSchema.safeParse(rawData);
+  const validatedFields = ServiceActionSchema.safeParse(rawData);
 
   if (!validatedFields.success) {
     return {

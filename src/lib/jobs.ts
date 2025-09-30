@@ -9,13 +9,9 @@ export async function getJobs(): Promise<Job[]> {
     const q = query(jobsCol);
     const jobsSnapshot = await getDocs(q);
     const jobsList = jobsSnapshot.docs.map((doc) => {
-      const data = doc.data();
       return {
         id: doc.id,
-        title: data.title,
-        location: data.location,
-        type: data.type,
-        description: data.description,
+        ...doc.data()
       } as Job;
     });
     return jobsList;

@@ -1,4 +1,3 @@
-
 import type { LucideIcon } from 'lucide-react';
 import { Timestamp } from 'firebase/firestore';
 
@@ -52,7 +51,7 @@ export type GalleryImage = {
 export type Event = {
   id: string;
   title: string;
-  date: string;
+  date: string | Timestamp | Date;
   location: string;
   description: string;
   featured: boolean;

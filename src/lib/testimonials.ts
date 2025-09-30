@@ -17,16 +17,14 @@ export async function getTestimonials(): Promise<Testimonial[]> {
     const testimonialsSnapshot = await getDocs(q);
     const testimonialsList = testimonialsSnapshot.docs.map((doc) => {
       const data = doc.data();
-      return {
-        id: doc.id,
-        name: data.name,
-        company: data.company,
-        feedback: data.feedback,
-        rating: data.rating,
-        createdAt:
+      const createdAt =
           data.createdAt instanceof Timestamp
             ? data.createdAt.toDate().toISOString()
-            : data.createdAt,
+            : data.createdAt;
+      return {
+        id: doc.id,
+        ...data,
+        createdAt
       } as Testimonial;
     });
     return testimonialsList;

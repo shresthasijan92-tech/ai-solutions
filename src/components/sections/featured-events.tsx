@@ -1,6 +1,3 @@
-'use client';
-
-import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { ArrowRight, Calendar, MapPin } from 'lucide-react';
@@ -12,24 +9,21 @@ import {
 } from '@/components/ui/card';
 import { getEvents } from '@/lib/events';
 import { events as mockEvents } from '@/lib/mock-data';
-import type { Event } from '@/lib/definitions';
+import { Timestamp } from 'firebase/firestore';
 
-export function FeaturedEvents() {
-  const [eventsToDisplay, setEventsToDisplay] = useState<Event[]>(
-    mockEvents.filter(e => e.featured)
-  );
+const toDate = (timestamp: string | Timestamp | Date): Date => {
+  if (timestamp instanceof Timestamp) {
+    return timestamp.toDate();
+  }
+  return new Date(timestamp);
+}
 
-  useEffect(() => {
-    async function loadEvents() {
-      const allEvents = await getEvents();
-      const featuredEvents = allEvents.filter(event => event.featured);
-      if (featuredEvents.length > 0) {
-        setEventsToDisplay(featuredEvents);
-      }
-    }
-    loadEvents();
-  }, []);
-  
+
+export async function FeaturedEvents() {
+  const allEvents = await getEvents();
+  const featuredEvents = allEvents.filter(event => event.featured);
+  const eventsToDisplay = featuredEvents.length > 0 ? featuredEvents : mockEvents.filter(e => e.featured);
+
   if (eventsToDisplay.length === 0) {
     return null;
   }
@@ -78,7 +72,7 @@ export function FeaturedEvents() {
                 </h3>
                 <div className="flex items-center text-sm text-muted-foreground mb-2">
                   <Calendar className="h-4 w-4 mr-2" />
-                  {new Date(event.date).toLocaleDateString('en-US', {
+                  {toDate(event.date).toLocaleDateString('en-US', {
                     year: 'numeric',
                     month: 'long',
                     day: 'numeric',

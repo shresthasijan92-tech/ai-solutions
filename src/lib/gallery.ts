@@ -12,10 +12,7 @@ export async function getGalleryImages(): Promise<GalleryImage[]> {
       const data = doc.data();
       return {
         id: doc.id,
-        title: data.title,
-        imageUrl: data.imageUrl,
-        category: data.category,
-        featured: data.featured || false,
+        ...data
       } as GalleryImage;
     });
     return galleryList;

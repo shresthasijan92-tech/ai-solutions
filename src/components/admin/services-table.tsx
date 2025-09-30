@@ -20,8 +20,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { MoreHorizontal, Trash2, Edit } from 'lucide-react';
+import { CheckCircle, MoreHorizontal, Trash2, Edit, XCircle } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -31,6 +30,7 @@ import {
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { deleteService } from '@/lib/actions/services';
+import Image from 'next/image';
 
 type ServicesTableProps = {
   services: Service[];
@@ -52,10 +52,11 @@ export function ServicesTable({ services, onEdit }: ServicesTableProps) {
 
     const result = await deleteService(serviceToDelete.id);
     if (result.message) {
-        toast({
-            title: 'Success',
-            description: result.message,
-        });
+        if (result.success) {
+            toast({ title: 'Success', description: result.message });
+        } else {
+            toast({ variant: 'destructive', title: 'Error', description: result.message });
+        }
     }
     setDialogOpen(false);
     setServiceToDelete(null);
@@ -67,6 +68,7 @@ export function ServicesTable({ services, onEdit }: ServicesTableProps) {
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead className="w-[100px]">Image</TableHead>
               <TableHead>Title</TableHead>
               <TableHead>Description</TableHead>
               <TableHead>Featured</TableHead>
@@ -76,10 +78,25 @@ export function ServicesTable({ services, onEdit }: ServicesTableProps) {
           <TableBody>
             {services.map((service) => (
               <TableRow key={service.id}>
+                <TableCell>
+                  {service.imageUrl && (
+                    <Image
+                      src={service.imageUrl}
+                      alt={service.title}
+                      width={80}
+                      height={60}
+                      className="rounded-md object-cover"
+                    />
+                  )}
+                </TableCell>
                 <TableCell className="font-medium">{service.title}</TableCell>
                 <TableCell className="max-w-xs truncate">{service.description}</TableCell>
                 <TableCell>
-                  {service.featured && <Badge>Yes</Badge>}
+                  {service.featured ? (
+                    <CheckCircle className="h-5 w-5 text-green-500" />
+                  ) : (
+                    <XCircle className="h-5 w-5 text-muted-foreground" />
+                  )}
                 </TableCell>
                 <TableCell className="text-right">
                   <DropdownMenu>

@@ -1,4 +1,3 @@
-
 'use server';
 
 import { revalidatePath } from 'next/cache';
@@ -6,7 +5,6 @@ import { z } from 'zod';
 import { firestore } from '@/firebase/server';
 import { collection, doc, addDoc, updateDoc, deleteDoc } from 'firebase/firestore';
 
-// --- Zod Schema for Validation ---
 const JobSchema = z.object({
   title: z.string().min(1, 'Title is required'),
   description: z.string().min(1, 'Description is required'),
@@ -20,7 +18,6 @@ export type JobFormState = {
   success: boolean;
 };
 
-// --- Helper Function ---
 function parseFormData(formData: FormData) {
   return {
     title: formData.get('title'),
@@ -30,13 +27,11 @@ function parseFormData(formData: FormData) {
   };
 }
 
-// --- Reusable Revalidation Function ---
 function revalidateJobPaths() {
   revalidatePath('/admin/careers');
   revalidatePath('/careers');
 }
 
-// --- Server Actions ---
 export async function createJob(prevState: JobFormState, formData: FormData): Promise<JobFormState> {
   const rawData = parseFormData(formData);
   const validatedFields = JobSchema.safeParse(rawData);
