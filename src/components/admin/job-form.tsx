@@ -1,7 +1,8 @@
 
 'use client';
 
-import { useActionState, useEffect, useTransition } from 'react';
+import { useActionState, useEffect } from 'react';
+import { useFormStatus } from 'react-dom';
 import { Loader2 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -18,7 +19,6 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { type Job } from '@/lib/definitions';
 import { createJob, updateJob, type JobFormState } from '@/lib/actions/jobs';
-import { useFormStatus } from 'react-dom';
 
 
 type JobFormProps = {
@@ -40,7 +40,7 @@ function SubmitButton({ isEditing }: { isEditing: boolean }) {
 export function JobForm({ job, onSuccess }: JobFormProps) {
   const { toast } = useToast();
 
-  const action = job?.id ? updateJob.bind(null, job.id) : createJob;
+  const action = job?.id ? updateJob : createJob;
   const [state, formAction] = useActionState<JobFormState, FormData>(
     action,
     { message: '', success: false, errors: {} }
@@ -60,6 +60,7 @@ export function JobForm({ job, onSuccess }: JobFormProps) {
 
   return (
     <form action={formAction} className="space-y-6">
+        {job?.id && <input type="hidden" name="id" value={job.id} />}
         <div className="space-y-2">
             <Label htmlFor="title">Title</Label>
             <Input id="title" name="title" placeholder="Senior AI Engineer" defaultValue={job?.title} />

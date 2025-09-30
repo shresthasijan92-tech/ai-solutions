@@ -12,8 +12,8 @@ import {
   getDoc,
   serverTimestamp,
   Timestamp,
+  deleteDoc,
 } from 'firebase/firestore';
-import type { Article } from '../definitions';
 
 // --- Zod Schemas for Validation ---
 const ArticleFormSchema = z.object({
@@ -103,23 +103,13 @@ export async function updateArticle(
   const articleDocRef = doc(firestore, 'articles', id);
 
   try {
-    const docSnap = await getDoc(articleDocRef);
-    if (!docSnap.exists()) {
-      return { message: 'Article not found.', success: false };
-    }
-
     const { publishedAt, ...rest } = validatedFields.data;
 
-    const payload: Omit<Partial<Article>, 'id' | 'publishedAt'> & {
-      updatedAt: any;
-      publishedAt: Timestamp;
-    } = {
+    await updateDoc(articleDocRef, {
       ...rest,
       publishedAt: Timestamp.fromDate(publishedAt),
       updatedAt: serverTimestamp(),
-    };
-
-    await updateDoc(articleDocRef, payload);
+    });
 
     revalidatePath('/admin/articles');
     revalidatePath('/blog');
@@ -140,7 +130,6 @@ export async function deleteArticle(
   }
   try {
     const articleDocRef = doc(firestore, 'articles', id);
-    // No need to delete from storage as we are using URLs now.
     await deleteDoc(articleDocRef);
 
     revalidatePath('/admin/articles');

@@ -10,7 +10,6 @@ import {
   addDoc,
   updateDoc,
   deleteDoc,
-  serverTimestamp,
 } from 'firebase/firestore';
 
 const JobSchema = z.object({
@@ -64,10 +63,10 @@ export async function createJob(
 }
 
 export async function updateJob(
-  id: string,
   prevState: JobFormState,
   formData: FormData
 ): Promise<JobFormState> {
+  const id = formData.get('id') as string;
   if (!id) {
     return { message: 'Failed to update job: Missing ID.', success: false };
   }
