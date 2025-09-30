@@ -1,36 +1,71 @@
 rules_version = '2';
-
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Helper function to check if a user is an administrator.
     function isAdmin() {
-      // Check if a document for the user's UID exists in the 'roles_admin' collection.
-      return request.auth != null && exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid));
+      // Check if the user's UID exists in the admin roles collection.
+      return exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid));
     }
 
-    // Rules for all content collections (Services, Projects, etc.)
-    // These collections are publicly readable but only writable by administrators.
-    match /{collection}/{docId} 
-    where collection in ['services', 'projects', 'articles', 'gallery', 'events', 'jobs'] {
-      // Allow public read access (get and list) for website pages.
-      allow get, list: if true;
-      // Allow write access (create, update, delete) only for admins.
-      allow write: if isAdmin();
-    }
-
-    // Special rules for the testimonials collection.
-    match /testimonials/{testimonialId} {
-      // Allow anyone to create (submit) feedback.
-      allow create: if true;
-      // Allow public read of individual testimonials if needed, and allow admins to list, update, and delete.
-      allow read, update, delete: if isAdmin();
+    // Default deny all reads and writes
+    match /{path=**} {
+      allow read, write: if false;
     }
     
-    // The roles_admin collection is only readable and writable by other admins.
-    // This prevents non-admins from making themselves an admin.
-    match /roles_admin/{userId} {
+    // PUBLIC ACCESS RULES
+    // These rules allow your public-facing website pages to read content.
+
+    // Allow public read for collections that have a "list" page.
+    match /services/{docId} {
+      allow get, list: if true;
+    }
+    match /projects/{docId} {
+      allow get, list: if true;
+    }
+    match /articles/{docId} {
+      allow get, list: if true;
+    }
+    match /gallery/{docId} {
+      allow get, list: if true;
+    }
+    match /events/{docId} {
+      allow get, list: if true;
+    }
+    match /jobs/{docId} {
+      allow get, list: if true;
+    }
+
+    // Testimonials can be created by anyone, but only listed/viewed publicly if approved (future feature).
+    // For now, individual GET is allowed for detail pages if ever needed. The public LIST is for approved items.
+    match /testimonials/{testimonialId} {
+      allow get: if true;
+      allow create: if true; // Anyone can submit feedback
+    }
+
+    // ADMIN ACCESS RULES
+    // These rules grant full access to authenticated administrators for the admin panel.
+    
+    match /services/{serviceId} {
       allow read, write: if isAdmin();
+    }
+    match /projects/{projectId} {
+      allow read, write: if isAdmin();
+    }
+    match /articles/{articleId} {
+      allow read, write: if isAdmin();
+    }
+    match /gallery/{galleryItemId} {
+      allow read, write: if isAdmin();
+    }
+    match /events/{eventId} {
+      allow read, write: if isAdmin();
+    }
+    match /jobs/{jobId} {
+      allow read, write: if isAdmin();
+    }
+    match /testimonials/{testimonialId} {
+       // Admins can read the full list and delete. Create is public.
+      allow list, delete, update: if isAdmin();
     }
   }
 }
