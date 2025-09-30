@@ -11,7 +11,7 @@ export default function AdminInquiriesPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-3xl font-headline font-bold">Contact Form Inquiries</h1>
+        <h1 className="text-3xl font-headline font-bold">Contacts</h1>
         <p className="text-muted-foreground mt-2">
           Review and manage messages submitted through the website's contact form.
         </p>
