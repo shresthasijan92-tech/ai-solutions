@@ -10,10 +10,12 @@ import type { Service } from '../definitions';
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const ACCEPTED_IMAGE_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
 
-const FileSchema = z.instanceof(File)
-  .optional()
-  .refine(file => !file || file.size === 0 || file.size <= MAX_FILE_SIZE, `Max image size is 5MB.`)
-  .refine(file => !file || file.size === 0 || ACCEPTED_IMAGE_TYPES.includes(file.type), 'Only .jpg, .jpeg, .png and .webp formats are supported.');
+const fileSchema = z.instanceof(File, { message: 'Image is required.' })
+  .refine((file) => file.size <= MAX_FILE_SIZE, `Max image size is 5MB.`)
+  .refine(
+    (file) => ACCEPTED_IMAGE_TYPES.includes(file.type),
+    'Only .jpg, .jpeg, .png and .webp formats are supported.'
+  );
 
 const ServiceBaseSchema = z.object({
   title: z.string().min(1, 'Title is required'),
@@ -24,8 +26,12 @@ const ServiceBaseSchema = z.object({
   featured: z.boolean(),
 });
 
-const CreateServiceSchema = ServiceBaseSchema.extend({ imageFile: FileSchema });
-const UpdateServiceSchema = ServiceBaseSchema.extend({ imageFile: FileSchema });
+const CreateServiceSchema = ServiceBaseSchema.extend({
+  imageFile: fileSchema.optional(),
+});
+const UpdateServiceSchema = ServiceBaseSchema.extend({
+    imageFile: fileSchema.optional(),
+});
 
 export type ServiceFormState = {
   message: string;
