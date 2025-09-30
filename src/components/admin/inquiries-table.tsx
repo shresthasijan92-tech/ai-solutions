@@ -85,67 +85,69 @@ export function InquiriesTable({ inquiries }: InquiriesTableProps) {
               <TableHead className="w-[50px] text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
-          <TableBody>
-            {inquiries.map((inquiry) => (
-              <Accordion asChild type="single" collapsible key={inquiry.id}>
-                <AccordionItem value={inquiry.id}>
-                  <TableRow>
-                    <TableCell>
-                      {toDate(inquiry.submittedAt).toLocaleString()}
-                    </TableCell>
-                    <TableCell className="font-medium">
-                      {inquiry.fullName}
-                    </TableCell>
-                    <TableCell>{inquiry.companyName}</TableCell>
-                    <TableCell>
-                      <a
-                        href={`mailto:${inquiry.email}`}
-                        className="text-primary hover:underline"
-                      >
-                        {inquiry.email}
-                      </a>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <AccordionTrigger className="p-2 hover:bg-accent rounded-md [&[data-state=open]>svg]:rotate-90" />
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleDeleteClick(inquiry)}
+          <Accordion asChild type="single" collapsible>
+            <TableBody>
+              {inquiries.map((inquiry) => (
+                <AccordionItem value={inquiry.id} asChild key={inquiry.id}>
+                  <>
+                    <TableRow>
+                      <TableCell>
+                        {toDate(inquiry.submittedAt).toLocaleString()}
+                      </TableCell>
+                      <TableCell className="font-medium">
+                        {inquiry.fullName}
+                      </TableCell>
+                      <TableCell>{inquiry.companyName}</TableCell>
+                      <TableCell>
+                        <a
+                          href={`mailto:${inquiry.email}`}
+                          className="text-primary hover:underline"
                         >
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell colSpan={5} className="p-0">
-                      <AccordionContent>
-                        <div className="p-6 bg-muted/50">
-                          <div className="grid grid-cols-2 gap-4 text-sm">
-                            <div>
-                              <p className="font-semibold">Country</p>
-                              <p>{inquiry.country}</p>
-                            </div>
-                            <div>
-                              <p className="font-semibold">Contact Number</p>
-                              <p>{inquiry.contactNumber || 'Not provided'}</p>
-                            </div>
-                            <div className="col-span-2">
-                              <p className="font-semibold">Project Details</p>
-                              <p className="whitespace-pre-wrap">
-                                {inquiry.projectDetails}
-                              </p>
+                          {inquiry.email}
+                        </a>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <AccordionTrigger className="p-2 hover:bg-accent rounded-md [&[data-state=open]>svg]:rotate-90" />
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleDeleteClick(inquiry)}
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell colSpan={5} className="p-0">
+                        <AccordionContent>
+                          <div className="p-6 bg-muted/50">
+                            <div className="grid grid-cols-2 gap-4 text-sm">
+                              <div>
+                                <p className="font-semibold">Country</p>
+                                <p>{inquiry.country}</p>
+                              </div>
+                              <div>
+                                <p className="font-semibold">Contact Number</p>
+                                <p>{inquiry.contactNumber || 'Not provided'}</p>
+                              </div>
+                              <div className="col-span-2">
+                                <p className="font-semibold">Project Details</p>
+                                <p className="whitespace-pre-wrap">
+                                  {inquiry.projectDetails}
+                                </p>
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      </AccordionContent>
-                    </TableCell>
-                  </TableRow>
+                        </AccordionContent>
+                      </TableCell>
+                    </TableRow>
+                  </>
                 </AccordionItem>
-              </Accordion>
-            ))}
-          </TableBody>
+              ))}
+            </TableBody>
+          </Accordion>
         </Table>
       </div>
       <AlertDialog open={dialogOpen} onOpenChange={setDialogOpen}>
