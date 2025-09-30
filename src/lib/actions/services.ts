@@ -13,7 +13,7 @@ const ServiceSchema = z.object({
   details: z.string().optional(),
   price: z.string().optional(),
   benefits: z.array(z.string()).optional(),
-  featured: z.boolean().default(false),
+  featured: z.preprocess((val) => val === true, z.boolean()),
   imageUrl: z.string().url('Please enter a valid URL.').optional().or(z.literal('')),
 });
 

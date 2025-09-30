@@ -68,7 +68,7 @@ export function ServiceForm({ service, onSuccess }: ServiceFormProps) {
       } else {
         // Handle potential validation errors from the server
         const errorMsg = result.errors ? Object.values(result.errors).flat().join(' ') : result.message;
-        toast({ variant: 'destructive', title: 'Error', description: errorMsg });
+        toast({ variant: 'destructive', title: 'Error', description: errorMsg || 'An unknown error occurred.' });
       }
     });
   };
