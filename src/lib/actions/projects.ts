@@ -18,7 +18,7 @@ const ProjectSchema = z.object({
   caseStudy: z.string().optional(),
   imageUrl: z.string().url('A valid image URL is required.'),
   technologies: z.preprocess(
-    (val) => (typeof val === 'string' && val ? val.split(',').map((s) => s.trim()).filter(Boolean) : []),
+    (val) => (typeof val === 'string' && val ? val.split(',').map((s) => s.trim()).filter(Boolean) : val),
     z.array(z.string()).min(1, 'At least one technology is required.')
   ),
   featured: z.boolean().default(false),
@@ -30,7 +30,8 @@ export type ProjectFormState = {
   errors?: z.ZodError<z.infer<typeof ProjectSchema>>['formErrors']['fieldErrors'];
 };
 
-type ProjectData = z.infer<typeof ProjectSchema>;
+type ProjectData = Omit<z.infer<typeof ProjectSchema>, 'technologies'> & { technologies: string | string[] };
+
 
 function revalidateProjectPaths(id?: string) {
   revalidatePath('/admin/projects');

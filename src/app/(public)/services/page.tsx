@@ -27,8 +27,6 @@ export default function ServicesPage() {
           console.error("Failed to fetch services.", error);
           setServices([]);
         }
-      } else {
-        setServices([]);
       }
       setIsLoading(false);
     }
@@ -63,12 +61,12 @@ export default function ServicesPage() {
       );
     }
 
-    if (!isFirebaseConfigured || services.length === 0) {
+    if (services.length === 0) {
       return (
         <div className="text-center py-10 border-2 border-dashed rounded-lg">
             <h3 className="text-xl font-semibold">No Services Found</h3>
             <p className="text-muted-foreground mt-2">
-                {isFirebaseConfigured ? "You can add services in the admin panel." : "Firebase is not configured. Please set up your .env file."}
+                {isFirebaseConfigured ? "The database might be empty, or there could be a connection issue." : "Firebase is not configured. Please set up your .env.local file."}
             </p>
         </div>
       )
