@@ -18,7 +18,12 @@ const ServiceSchema = z.object({
   details: z.string().optional(),
   price: z.string().optional(),
   benefits: z.preprocess(
-    (val) => (typeof val === 'string' && val ? val.split(',').map((s) => s.trim()).filter(Boolean) : []),
+    (val) => {
+      if (typeof val === 'string' && val.trim() !== '') {
+        return val.split(',').map((s) => s.trim()).filter(Boolean);
+      }
+      return [];
+    },
     z.array(z.string()).optional()
   ),
   imageUrl: z.string().url('Please enter a valid URL').optional().or(z.literal('')),
