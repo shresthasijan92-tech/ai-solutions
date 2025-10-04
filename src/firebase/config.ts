@@ -14,6 +14,6 @@ const firebaseConfig = {
 // This check determines if the app is configured.
 // It checks for the presence of a project ID. If it's missing or a placeholder,
 // the app will fall back to using mock data.
-export const isFirebaseConfigured = !!firebaseConfig.projectId && firebaseConfig.projectId !== 'YOUR_PROJECT_ID';
+const isFirebaseConfigured = !!firebaseConfig.projectId && firebaseConfig.projectId !== 'YOUR_PROJECT_ID';
 
-export { firebaseConfig };
+export { firebaseConfig, isFirebaseConfigured };
