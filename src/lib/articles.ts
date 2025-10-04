@@ -10,6 +10,7 @@ import {
   orderBy
 } from 'firebase/firestore';
 import type { Article } from './definitions';
+import { isFirebaseConfigured } from '@/firebase/config';
 
 // Helper function to safely convert Firestore Timestamps
 const toISOStringIfTimestamp = (value: any): string | any => {
@@ -21,6 +22,9 @@ const toISOStringIfTimestamp = (value: any): string | any => {
 
 
 export async function getArticles(): Promise<Article[]> {
+  if (!isFirebaseConfigured) {
+    return [];
+  }
   try {
     const articlesCol = collection(firestore, 'articles');
     const q = query(articlesCol, orderBy('publishedAt', 'desc'));
@@ -47,6 +51,9 @@ export async function getArticles(): Promise<Article[]> {
 }
 
 export async function getArticle(id: string): Promise<Article | null> {
+    if (!isFirebaseConfigured) {
+    return null;
+  }
   try {
     const articleDocRef = doc(firestore, 'articles', id);
     const docSnap = await getDoc(articleDocRef);

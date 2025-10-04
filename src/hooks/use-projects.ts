@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { collection, query, onSnapshot, type DocumentData, type FirestoreError } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
 import type { Project } from '@/lib/definitions';
+import { isFirebaseConfigured } from '@/firebase/config';
 
 export function useProjects() {
   const [projects, setProjects] = useState<Project[] | null>(null);
@@ -12,7 +13,7 @@ export function useProjects() {
   const firestore = useFirestore();
 
   const projectsQuery = useMemo(() => {
-    if (!firestore) return null;
+    if (!firestore || !isFirebaseConfigured) return null;
     return query(collection(firestore, 'projects'));
   }, [firestore]);
 

@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { collection, query, onSnapshot, type DocumentData, type FirestoreError } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
 import type { Job } from '@/lib/definitions';
+import { isFirebaseConfigured } from '@/firebase/config';
 
 export function useJobs() {
   const [jobs, setJobs] = useState<Job[] | null>(null);
@@ -12,7 +13,7 @@ export function useJobs() {
   const firestore = useFirestore();
 
   const jobsQuery = useMemo(() => {
-    if (!firestore) return null;
+    if (!firestore || !isFirebaseConfigured) return null;
     return query(collection(firestore, 'jobs'));
   }, [firestore]);
 

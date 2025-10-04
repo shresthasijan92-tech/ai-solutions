@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { collection, query, onSnapshot, orderBy, type FirestoreError } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
 import type { Contact } from '@/lib/definitions';
+import { isFirebaseConfigured } from '@/firebase/config';
 
 export function useInquiries() {
   const [inquiries, setInquiries] = useState<Contact[] | null>(null);
@@ -12,7 +13,7 @@ export function useInquiries() {
   const firestore = useFirestore();
 
   const inquiriesQuery = useMemo(() => {
-    if (!firestore) return null;
+    if (!firestore || !isFirebaseConfigured) return null;
     return query(collection(firestore, 'contacts'), orderBy('submittedAt', 'desc'));
   }, [firestore]);
 

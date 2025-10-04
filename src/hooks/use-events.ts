@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { collection, query, onSnapshot, orderBy, type DocumentData, type FirestoreError } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
 import type { Event } from '@/lib/definitions';
+import { isFirebaseConfigured } from '@/firebase/config';
 
 export function useEvents() {
   const [events, setEvents] = useState<Event[] | null>(null);
@@ -12,7 +13,7 @@ export function useEvents() {
   const firestore = useFirestore();
 
   const eventsQuery = useMemo(() => {
-    if (!firestore) return null;
+    if (!firestore || !isFirebaseConfigured) return null;
     return query(collection(firestore, 'events'), orderBy('date', 'desc'));
   }, [firestore]);
 

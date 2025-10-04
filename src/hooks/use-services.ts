@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { collection, query, onSnapshot, type DocumentData, type FirestoreError } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
 import type { Service } from '@/lib/definitions';
+import { isFirebaseConfigured } from '@/firebase/config';
 
 export function useServices() {
   const [services, setServices] = useState<Service[] | null>(null);
@@ -12,7 +13,7 @@ export function useServices() {
   const firestore = useFirestore();
 
   const servicesQuery = useMemo(() => {
-    if (!firestore) return null;
+    if (!firestore || !isFirebaseConfigured) return null;
     return query(collection(firestore, 'services'));
   }, [firestore]);
 

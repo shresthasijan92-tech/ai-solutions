@@ -10,6 +10,7 @@ import {
   orderBy
 } from 'firebase/firestore';
 import type { Event } from './definitions';
+import { isFirebaseConfigured } from '@/firebase/config';
 
 // Helper function to safely convert Firestore Timestamps
 const toISOStringIfTimestamp = (value: any): string | any => {
@@ -20,6 +21,9 @@ const toISOStringIfTimestamp = (value: any): string | any => {
 };
 
 export async function getEvents(): Promise<Event[]> {
+  if (!isFirebaseConfigured) {
+    return [];
+  }
   try {
     const eventsCol = collection(firestore, 'events');
     const q = query(eventsCol, orderBy('date', 'desc'));
@@ -45,6 +49,9 @@ export async function getEvents(): Promise<Event[]> {
 }
 
 export async function getEvent(id: string): Promise<Event | null> {
+  if (!isFirebaseConfigured) {
+    return null;
+  }
   try {
     const eventDocRef = doc(firestore, 'events', id);
     const docSnap = await getDoc(eventDocRef);

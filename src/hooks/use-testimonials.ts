@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { collection, query, onSnapshot, orderBy, type DocumentData, type FirestoreError } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
 import type { Testimonial } from '@/lib/definitions';
+import { isFirebaseConfigured } from '@/firebase/config';
 
 export function useTestimonials() {
   const [testimonials, setTestimonials] = useState<Testimonial[] | null>(null);
@@ -12,7 +13,7 @@ export function useTestimonials() {
   const firestore = useFirestore();
 
   const testimonialsQuery = useMemo(() => {
-    if (!firestore) return null;
+    if (!firestore || !isFirebaseConfigured) return null;
     return query(collection(firestore, 'testimonials'), orderBy('createdAt', 'desc'));
   }, [firestore]);
 

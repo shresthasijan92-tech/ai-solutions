@@ -2,6 +2,7 @@
 import { firestore } from '@/firebase/server';
 import { collection, getDocs, query, Timestamp } from 'firebase/firestore';
 import type { Service } from './definitions';
+import { isFirebaseConfigured } from '@/firebase/config';
 
 // Helper function to safely convert Firestore Timestamps
 const toISOStringIfTimestamp = (value: any): string | any => {
@@ -12,6 +13,9 @@ const toISOStringIfTimestamp = (value: any): string | any => {
 };
 
 export async function getServices(): Promise<Service[]> {
+  if (!isFirebaseConfigured) {
+    return [];
+  }
   try {
     const servicesCol = collection(firestore, 'services');
     const q = query(servicesCol);

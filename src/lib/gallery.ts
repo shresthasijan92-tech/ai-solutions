@@ -2,8 +2,12 @@
 import { firestore } from '@/firebase/server';
 import { collection, getDocs, query } from 'firebase/firestore';
 import type { GalleryImage } from './definitions';
+import { isFirebaseConfigured } from '@/firebase/config';
 
 export async function getGalleryImages(): Promise<GalleryImage[]> {
+  if (!isFirebaseConfigured) {
+    return [];
+  }
   try {
     const galleryCol = collection(firestore, 'gallery');
     const q = query(galleryCol);

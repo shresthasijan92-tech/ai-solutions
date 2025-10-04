@@ -2,8 +2,12 @@
 import { firestore } from '@/firebase/server';
 import { collection, getDocs, query, doc, getDoc } from 'firebase/firestore';
 import type { Project } from './definitions';
+import { isFirebaseConfigured } from '@/firebase/config';
 
 export async function getProjects(): Promise<Project[]> {
+  if (!isFirebaseConfigured) {
+    return [];
+  }
   try {
     const projectsCol = collection(firestore, 'projects');
     const q = query(projectsCol);
@@ -22,6 +26,9 @@ export async function getProjects(): Promise<Project[]> {
 }
 
 export async function getProject(id: string): Promise<Project | null> {
+  if (!isFirebaseConfigured) {
+    return null;
+  }
   try {
     const projectDocRef = doc(firestore, 'projects', id);
     const docSnap = await getDoc(projectDocRef);

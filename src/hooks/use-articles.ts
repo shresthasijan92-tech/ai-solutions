@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { collection, query, onSnapshot, orderBy, type DocumentData, type FirestoreError } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
 import type { Article } from '@/lib/definitions';
+import { isFirebaseConfigured } from '@/firebase/config';
 
 export function useArticles() {
   const [articles, setArticles] = useState<Article[] | null>(null);
@@ -12,7 +13,7 @@ export function useArticles() {
   const firestore = useFirestore();
 
   const articlesQuery = useMemo(() => {
-    if (!firestore) return null;
+    if (!firestore || !isFirebaseConfigured) return null;
     return query(collection(firestore, 'articles'), orderBy('publishedAt', 'desc'));
   }, [firestore]);
 
@@ -20,8 +21,6 @@ export function useArticles() {
   useEffect(() => {
     if (!articlesQuery) {
         setIsLoading(false);
-        // We can optionally set articles to an empty array to show "No articles" message
-        // instead of nothing, if that's the desired behavior when offline.
         setArticles([]); 
         return;
     };

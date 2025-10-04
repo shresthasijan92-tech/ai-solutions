@@ -8,6 +8,7 @@ import {
   Timestamp,
 } from 'firebase/firestore';
 import type { Testimonial } from './definitions';
+import { isFirebaseConfigured } from '@/firebase/config';
 
 // Helper function to safely convert Firestore Timestamps
 const toISOStringIfTimestamp = (value: any): string | any => {
@@ -18,6 +19,9 @@ const toISOStringIfTimestamp = (value: any): string | any => {
 };
 
 export async function getTestimonials(): Promise<Testimonial[]> {
+  if (!isFirebaseConfigured) {
+    return [];
+  }
   try {
     const testimonialsCol = collection(firestore, 'testimonials');
     const q = query(testimonialsCol, orderBy('createdAt', 'desc'));
