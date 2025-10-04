@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { collection, query, onSnapshot, type DocumentData, type FirestoreError } from 'firebase/firestore';
+import { collection, query, onSnapshot, type FirestoreError } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
 import type { Service } from '@/lib/definitions';
 import { isFirebaseConfigured } from '@/firebase/config';
@@ -12,18 +12,14 @@ export function useServices() {
   const [error, setError] = useState<FirestoreError | null>(null);
   const firestore = useFirestore();
 
-  const servicesQuery = useMemo(() => {
-    if (!firestore || !isFirebaseConfigured) return null;
-    return query(collection(firestore, 'services'));
-  }, [firestore]);
-
-
   useEffect(() => {
-    if (!servicesQuery) {
+    if (!isFirebaseConfigured || !firestore) {
         setIsLoading(false);
         setServices([]);
         return;
     };
+    
+    const servicesQuery = query(collection(firestore, 'services'));
 
     const unsubscribe = onSnapshot(servicesQuery, 
       (snapshot) => {
@@ -39,7 +35,7 @@ export function useServices() {
     );
 
     return () => unsubscribe();
-  }, [servicesQuery]);
+  }, [firestore]);
 
   return { services, isLoading, error };
 }

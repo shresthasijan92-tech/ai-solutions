@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { collection, query, onSnapshot, orderBy, type DocumentData, type FirestoreError } from 'firebase/firestore';
+import { collection, query, onSnapshot, orderBy, type FirestoreError } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
 import type { Article } from '@/lib/definitions';
 import { isFirebaseConfigured } from '@/firebase/config';
@@ -12,18 +12,14 @@ export function useArticles() {
   const [error, setError] = useState<FirestoreError | null>(null);
   const firestore = useFirestore();
 
-  const articlesQuery = useMemo(() => {
-    if (!firestore || !isFirebaseConfigured) return null;
-    return query(collection(firestore, 'articles'), orderBy('publishedAt', 'desc'));
-  }, [firestore]);
-
-
   useEffect(() => {
-    if (!articlesQuery) {
-        setIsLoading(false);
-        setArticles([]); 
-        return;
+    if (!isFirebaseConfigured || !firestore) {
+      setIsLoading(false);
+      setArticles([]); 
+      return;
     };
+
+    const articlesQuery = query(collection(firestore, 'articles'), orderBy('publishedAt', 'desc'));
 
     const unsubscribe = onSnapshot(articlesQuery, 
       (snapshot) => {
@@ -39,7 +35,7 @@ export function useArticles() {
     );
 
     return () => unsubscribe();
-  }, [articlesQuery]);
+  }, [firestore]);
 
   return { articles, isLoading, error };
 }

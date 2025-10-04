@@ -12,18 +12,14 @@ export function useInquiries() {
   const [error, setError] = useState<FirestoreError | null>(null);
   const firestore = useFirestore();
 
-  const inquiriesQuery = useMemo(() => {
-    if (!firestore || !isFirebaseConfigured) return null;
-    return query(collection(firestore, 'contacts'), orderBy('submittedAt', 'desc'));
-  }, [firestore]);
-
-
   useEffect(() => {
-    if (!inquiriesQuery) {
+    if (!isFirebaseConfigured || !firestore) {
         setIsLoading(false);
         setInquiries([]);
         return;
     };
+
+    const inquiriesQuery = query(collection(firestore, 'contacts'), orderBy('submittedAt', 'desc'));
 
     const unsubscribe = onSnapshot(inquiriesQuery, 
       (snapshot) => {
@@ -39,7 +35,7 @@ export function useInquiries() {
     );
 
     return () => unsubscribe();
-  }, [inquiriesQuery]);
+  }, [firestore]);
 
   return { inquiries, isLoading, error };
 }

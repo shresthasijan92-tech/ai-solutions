@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { collection, query, onSnapshot, orderBy, type DocumentData, type FirestoreError } from 'firebase/firestore';
+import { collection, query, onSnapshot, orderBy, type FirestoreError } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
 import type { Event } from '@/lib/definitions';
 import { isFirebaseConfigured } from '@/firebase/config';
@@ -12,18 +12,14 @@ export function useEvents() {
   const [error, setError] = useState<FirestoreError | null>(null);
   const firestore = useFirestore();
 
-  const eventsQuery = useMemo(() => {
-    if (!firestore || !isFirebaseConfigured) return null;
-    return query(collection(firestore, 'events'), orderBy('date', 'desc'));
-  }, [firestore]);
-
-
   useEffect(() => {
-    if (!eventsQuery) {
+    if (!isFirebaseConfigured || !firestore) {
         setIsLoading(false);
         setEvents([]);
         return;
     };
+
+    const eventsQuery = query(collection(firestore, 'events'), orderBy('date', 'desc'));
 
     const unsubscribe = onSnapshot(eventsQuery, 
       (snapshot) => {
@@ -39,7 +35,7 @@ export function useEvents() {
     );
 
     return () => unsubscribe();
-  }, [eventsQuery]);
+  }, [firestore]);
 
   return { events, isLoading, error };
 }

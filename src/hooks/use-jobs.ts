@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { collection, query, onSnapshot, type DocumentData, type FirestoreError } from 'firebase/firestore';
+import { collection, query, onSnapshot, type FirestoreError } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
 import type { Job } from '@/lib/definitions';
 import { isFirebaseConfigured } from '@/firebase/config';
@@ -12,18 +12,14 @@ export function useJobs() {
   const [error, setError] = useState<FirestoreError | null>(null);
   const firestore = useFirestore();
 
-  const jobsQuery = useMemo(() => {
-    if (!firestore || !isFirebaseConfigured) return null;
-    return query(collection(firestore, 'jobs'));
-  }, [firestore]);
-
-
   useEffect(() => {
-    if (!jobsQuery) {
+    if (!isFirebaseConfigured || !firestore) {
         setIsLoading(false);
         setJobs([]);
         return;
     };
+
+    const jobsQuery = query(collection(firestore, 'jobs'));
 
     const unsubscribe = onSnapshot(jobsQuery, 
       (snapshot) => {
@@ -39,7 +35,7 @@ export function useJobs() {
     );
 
     return () => unsubscribe();
-  }, [jobsQuery]);
+  }, [firestore]);
 
   return { jobs, isLoading, error };
 }

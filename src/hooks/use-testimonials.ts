@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { collection, query, onSnapshot, orderBy, type DocumentData, type FirestoreError } from 'firebase/firestore';
+import { collection, query, onSnapshot, orderBy, type FirestoreError } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
 import type { Testimonial } from '@/lib/definitions';
 import { isFirebaseConfigured } from '@/firebase/config';
@@ -12,18 +12,14 @@ export function useTestimonials() {
   const [error, setError] = useState<FirestoreError | null>(null);
   const firestore = useFirestore();
 
-  const testimonialsQuery = useMemo(() => {
-    if (!firestore || !isFirebaseConfigured) return null;
-    return query(collection(firestore, 'testimonials'), orderBy('createdAt', 'desc'));
-  }, [firestore]);
-
-
   useEffect(() => {
-    if (!testimonialsQuery) {
+    if (!isFirebaseConfigured || !firestore) {
         setIsLoading(false);
         setTestimonials([]);
         return;
     };
+
+    const testimonialsQuery = query(collection(firestore, 'testimonials'), orderBy('createdAt', 'desc'));
 
     const unsubscribe = onSnapshot(testimonialsQuery, 
       (snapshot) => {
@@ -39,7 +35,7 @@ export function useTestimonials() {
     );
 
     return () => unsubscribe();
-  }, [testimonialsQuery]);
+  }, [firestore]);
 
   return { testimonials, isLoading, error };
 }

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { collection, query, onSnapshot, type DocumentData, type FirestoreError } from 'firebase/firestore';
+import { collection, query, onSnapshot, type FirestoreError } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
 import type { GalleryImage } from '@/lib/definitions';
 import { isFirebaseConfigured } from '@/firebase/config';
@@ -12,18 +12,14 @@ export function useGalleryImages() {
   const [error, setError] = useState<FirestoreError | null>(null);
   const firestore = useFirestore();
 
-  const galleryQuery = useMemo(() => {
-    if (!firestore || !isFirebaseConfigured) return null;
-    return query(collection(firestore, 'gallery'));
-  }, [firestore]);
-
-
   useEffect(() => {
-    if (!galleryQuery) {
+    if (!isFirebaseConfigured || !firestore) {
         setIsLoading(false);
         setGalleryImages([]);
         return;
     };
+
+    const galleryQuery = query(collection(firestore, 'gallery'));
 
     const unsubscribe = onSnapshot(galleryQuery, 
       (snapshot) => {
@@ -39,7 +35,7 @@ export function useGalleryImages() {
     );
 
     return () => unsubscribe();
-  }, [galleryQuery]);
+  }, [firestore]);
 
   return { galleryImages, isLoading, error };
 }
