@@ -20,6 +20,7 @@ export function useEvents() {
   useEffect(() => {
     if (!eventsQuery) {
         setIsLoading(false);
+        setEvents([]);
         return;
     };
 

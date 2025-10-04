@@ -20,6 +20,9 @@ export function useArticles() {
   useEffect(() => {
     if (!articlesQuery) {
         setIsLoading(false);
+        // We can optionally set articles to an empty array to show "No articles" message
+        // instead of nothing, if that's the desired behavior when offline.
+        setArticles([]); 
         return;
     };
 

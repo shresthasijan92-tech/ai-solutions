@@ -20,6 +20,7 @@ export function useGalleryImages() {
   useEffect(() => {
     if (!galleryQuery) {
         setIsLoading(false);
+        setGalleryImages([]);
         return;
     };
 

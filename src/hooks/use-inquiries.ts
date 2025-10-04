@@ -20,6 +20,7 @@ export function useInquiries() {
   useEffect(() => {
     if (!inquiriesQuery) {
         setIsLoading(false);
+        setInquiries([]);
         return;
     };
 

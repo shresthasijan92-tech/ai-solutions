@@ -8,9 +8,9 @@ import { Auth, User, onAuthStateChanged } from 'firebase/auth';
 
 interface FirebaseProviderProps {
   children: ReactNode;
-  firebaseApp: FirebaseApp;
-  firestore: Firestore;
-  auth: Auth;
+  firebaseApp: FirebaseApp | null;
+  firestore: Firestore | null;
+  auth: Auth | null;
 }
 
 interface UserAuthState {
@@ -68,9 +68,9 @@ export const FirebaseProvider = ({
     const servicesAvailable = !!(firebaseApp && firestore && auth);
     return {
       areServicesAvailable: servicesAvailable,
-      firebaseApp: servicesAvailable ? firebaseApp : null,
-      firestore: servicesAvailable ? firestore : null,
-      auth: servicesAvailable ? auth : null,
+      firebaseApp,
+      firestore,
+      auth,
       user: userAuthState.user,
       isUserLoading: userAuthState.isUserLoading,
       userError: userAuthState.userError,
@@ -92,15 +92,13 @@ export const useFirebase = () => {
   return context;
 };
 
-export const useFirestore = (): Firestore => {
+export const useFirestore = (): Firestore | null => {
   const { firestore } = useFirebase();
-  if (!firestore) throw new Error("Firestore not available");
   return firestore;
 };
 
-export const useAuth = (): Auth => {
+export const useAuth = (): Auth | null => {
   const { auth } = useFirebase();
-  if (!auth) throw new Error("Auth not available");
   return auth;
 };
 

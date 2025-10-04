@@ -20,6 +20,7 @@ export function useServices() {
   useEffect(() => {
     if (!servicesQuery) {
         setIsLoading(false);
+        setServices([]);
         return;
     };
 

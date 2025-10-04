@@ -20,6 +20,7 @@ export function useTestimonials() {
   useEffect(() => {
     if (!testimonialsQuery) {
         setIsLoading(false);
+        setTestimonials([]);
         return;
     };
 

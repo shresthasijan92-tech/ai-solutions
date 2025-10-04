@@ -20,6 +20,7 @@ export function useJobs() {
   useEffect(() => {
     if (!jobsQuery) {
         setIsLoading(false);
+        setJobs([]);
         return;
     };
 

@@ -20,6 +20,7 @@ export function useProjects() {
   useEffect(() => {
     if (!projectsQuery) {
         setIsLoading(false);
+        setProjects([]);
         return;
     };
 
