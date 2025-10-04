@@ -20,8 +20,13 @@ export default async function BlogPage() {
   return (
     <div className="container py-12">
       <h1 className="text-4xl font-headline font-bold mb-8">Blog</h1>
-       {articles.length === 0 ? (
-        <p>No articles found. The database might be empty or not configured. You can add articles in the admin panel.</p>
+       {!isFirebaseConfigured || articles.length === 0 ? (
+         <div className="text-center py-10 border-2 border-dashed rounded-lg">
+            <h3 className="text-xl font-semibold">No Articles Found</h3>
+            <p className="text-muted-foreground mt-2">
+                {isFirebaseConfigured ? "You can add articles in the admin panel." : "Firebase is not configured. Please set up your .env file."}
+            </p>
+        </div>
       ) : (
         <div className="grid gap-8 md:grid-cols-1 lg:grid-cols-3">
           {articles.map((article) => {

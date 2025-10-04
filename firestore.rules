@@ -1,154 +1,162 @@
 /**
- * @fileoverview Firestore Security Rules for AISolutions Hub.
- *
- * Core Philosophy:
- * This ruleset provides public read access to all collections and restricts write access to authenticated administrators.
- * Users can submit feedback in the `/testimonials` collection, but only admins can modify or delete it.
- *
- * Data Structure:
- * The database consists of several top-level collections: `services`, `projects`, `articles`, `gallery`, `events`, `careers`, `testimonials`, and `homepageSections`.
- * Admin privileges are determined by the existence of a document in the `/roles_admin/{userId}` collection.
- *
- * Key Security Decisions:
- * - Public read access is granted for all top-level collections to facilitate content display.
- * - Write access (create, update, delete) to all collections is restricted to admin users.
- * - Users can create documents in the `/testimonials` collection to submit feedback.
- * - The existence of a document in `/roles_admin/{userId}` grants admin privileges to the corresponding user.
+ * @file Firestore Security Rules for AISolutions Hub Showcase
+ * @core_philosophy This ruleset provides public read access to most collections while strictly controlling write access to administrators only. Testimonials can be created by any user, but modification/deletion is admin-only.
+ * @data_structure The Firestore database contains several top-level collections: services, projects, articles, gallery, events, careers, testimonials, homepageSections, and roles_admin. Each collection stores data related to its respective entity.
+ * @key_security_decisions
+ *   - Public read access is granted to services, projects, articles, gallery, events, careers, and homepageSections.
+ *   - Only authenticated admins can create, update, or delete documents in the main collections.
+ *   - Testimonials collection allows create requests for all users, but update and delete requests are restricted to admins.
+ *   - Admin privileges are determined by the presence of a document in the `/roles_admin/{userId}` collection.
  */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * @description Checks if the user is signed in.
+     * @description Allows public read access to service details, but restricts writes to admins.
+     * @path /services/{serviceId}
+     * @allow (get, list): if true
+     * @allow (create, update, delete): if request.auth != null && exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid))
+     * @deny (create): if request.auth == null
+     * @deny (update): if request.auth == null
+     * @deny (delete): if request.auth == null
+     * @principle Grants public read access and restricts write access to authenticated admins.
      */
-    function isSignedIn() {
-      return request.auth != null;
+    match /services/{serviceId} {
+      allow get, list: if true;
+      allow create, update, delete: if isSignedIn() && isAdmin();
     }
 
     /**
-     * @description Checks if the user is an admin by verifying the existence of a document in `/roles_admin/{userId}`.
+     * @description Allows public read access to project details, but restricts writes to admins.
+     * @path /projects/{projectId}
+     * @allow (get, list): if true
+     * @allow (create, update, delete): if request.auth != null && exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid))
+     * @deny (create): if request.auth == null
+     * @deny (update): if request.auth == null
+     * @deny (delete): if request.auth == null
+     * @principle Grants public read access and restricts write access to authenticated admins.
      */
-    function isAdmin() {
-      return exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid));
-    }
-
-    match /services/{serviceId} {
-      /**
-       * @description Allows public read access to service details, but restricts write access to admins.
-       * @path /services/{serviceId}
-       * @allow (get, list): Any user can retrieve or list services.
-       * @allow (create, update, delete): An authenticated admin user can create, update, or delete a service.
-       * @deny (create, update, delete): A non-admin user cannot create, update, or delete a service.
-       * @principle Enforces admin-only writes for service management.
-       */
-      allow get, list: if true;
-      allow create, update, delete: if isSignedIn() && isAdmin();
-    }
-
     match /projects/{projectId} {
-      /**
-       * @description Allows public read access to project details, but restricts write access to admins.
-       * @path /projects/{projectId}
-       * @allow (get, list): Any user can retrieve or list projects.
-       * @allow (create, update, delete): An authenticated admin user can create, update, or delete a project.
-       * @deny (create, update, delete): A non-admin user cannot create, update, or delete a project.
-       * @principle Enforces admin-only writes for project management.
-       */
       allow get, list: if true;
       allow create, update, delete: if isSignedIn() && isAdmin();
     }
 
+    /**
+     * @description Allows public read access to article details, but restricts writes to admins.
+     * @path /articles/{articleId}
+     * @allow (get, list): if true
+     * @allow (create, update, delete): if request.auth != null && exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid))
+     * @deny (create): if request.auth == null
+     * @deny (update): if request.auth == null
+     * @deny (delete): if request.auth == null
+     * @principle Grants public read access and restricts write access to authenticated admins.
+     */
     match /articles/{articleId} {
-      /**
-       * @description Allows public read access to article details, but restricts write access to admins.
-       * @path /articles/{articleId}
-       * @allow (get, list): Any user can retrieve or list articles.
-       * @allow (create, update, delete): An authenticated admin user can create, update, or delete an article.
-       * @deny (create, update, delete): A non-admin user cannot create, update, or delete an article.
-       * @principle Enforces admin-only writes for article management.
-       */
       allow get, list: if true;
       allow create, update, delete: if isSignedIn() && isAdmin();
     }
 
+    /**
+     * @description Allows public read access to gallery item details, but restricts writes to admins.
+     * @path /gallery/{galleryItemId}
+     * @allow (get, list): if true
+     * @allow (create, update, delete): if request.auth != null && exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid))
+     * @deny (create): if request.auth == null
+     * @deny (update): if request.auth == null
+     * @deny (delete): if request.auth == null
+     * @principle Grants public read access and restricts write access to authenticated admins.
+     */
     match /gallery/{galleryItemId} {
-      /**
-       * @description Allows public read access to gallery item details, but restricts write access to admins.
-       * @path /gallery/{galleryItemId}
-       * @allow (get, list): Any user can retrieve or list gallery items.
-       * @allow (create, update, delete): An authenticated admin user can create, update, or delete a gallery item.
-       * @deny (create, update, delete): A non-admin user cannot create, update, or delete a gallery item.
-       * @principle Enforces admin-only writes for gallery management.
-       */
       allow get, list: if true;
       allow create, update, delete: if isSignedIn() && isAdmin();
     }
 
+    /**
+     * @description Allows public read access to event details, but restricts writes to admins.
+     * @path /events/{eventId}
+     * @allow (get, list): if true
+     * @allow (create, update, delete): if request.auth != null && exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid))
+     * @deny (create): if request.auth == null
+     * @deny (update): if request.auth == null
+     * @deny (delete): if request.auth == null
+     * @principle Grants public read access and restricts write access to authenticated admins.
+     */
     match /events/{eventId} {
-      /**
-       * @description Allows public read access to event details, but restricts write access to admins.
-       * @path /events/{eventId}
-       * @allow (get, list): Any user can retrieve or list events.
-       * @allow (create, update, delete): An authenticated admin user can create, update, or delete an event.
-       * @deny (create, update, delete): A non-admin user cannot create, update, or delete an event.
-       * @principle Enforces admin-only writes for event management.
-       */
       allow get, list: if true;
       allow create, update, delete: if isSignedIn() && isAdmin();
     }
 
+    /**
+     * @description Allows public read access to career details, but restricts writes to admins.
+     * @path /careers/{careerId}
+     * @allow (get, list): if true
+     * @allow (create, update, delete): if request.auth != null && exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid))
+     * @deny (create): if request.auth == null
+     * @deny (update): if request.auth == null
+     * @deny (delete): if request.auth == null
+     * @principle Grants public read access and restricts write access to authenticated admins.
+     */
     match /careers/{careerId} {
-      /**
-       * @description Allows public read access to career details, but restricts write access to admins.
-       * @path /careers/{careerId}
-       * @allow (get, list): Any user can retrieve or list careers.
-       * @allow (create, update, delete): An authenticated admin user can create, update, or delete a career.
-       * @deny (create, update, delete): A non-admin user cannot create, update, or delete a career.
-       * @principle Enforces admin-only writes for career management.
-       */
       allow get, list: if true;
       allow create, update, delete: if isSignedIn() && isAdmin();
     }
 
+    /**
+     * @description Allows public read access to testimonials, allows anyone to create, but restricts update/delete to admins.
+     * @path /testimonials/{testimonialId}
+     * @allow (get, list): if true
+     * @allow (create): if true;
+     * @allow (update, delete): if request.auth != null && exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid))
+     * @deny (update): if request.auth == null
+     * @deny (delete): if request.auth == null
+     * @principle Allows anyone to create a testimonial, but restricts modification and deletion to authenticated admins.
+     */
     match /testimonials/{testimonialId} {
-      /**
-       * @description Allows any user to create a testimonial, but restricts update and delete access to admins.
-       * @path /testimonials/{testimonialId}
-       * @allow (get, list): Any user can retrieve or list testimonials.
-       * @allow (create): Any user can create a testimonial.
-       * @allow (update, delete): An authenticated admin user can update or delete a testimonial.
-       * @deny (update, delete): A non-admin user cannot update or delete a testimonial.
-       * @principle Allows public feedback submission with admin-only moderation.
-       */
-      allow get, list: if true;
-      allow create: if true;
+      allow get, list, create: if true;
       allow update, delete: if isSignedIn() && isAdmin();
     }
 
+    /**
+     * @description Allows public read access to homepage section configurations, but restricts writes to admins.
+     * @path /homepageSections/{homepageSectionId}
+     * @allow (get, list): if true
+     * @allow (create, update, delete): if request.auth != null && exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid))
+     * @deny (create): if request.auth == null
+     * @deny (update): if request.auth == null
+     * @deny (delete): if request.auth == null
+     * @principle Grants public read access and restricts write access to authenticated admins.
+     */
     match /homepageSections/{homepageSectionId} {
-      /**
-       * @description Allows public read access to homepage section configurations, but restricts write access to admins.
-       * @path /homepageSections/{homepageSectionId}
-       * @allow (get, list): Any user can retrieve or list homepage sections.
-       * @allow (create, update, delete): An authenticated admin user can create, update, or delete a homepage section.
-       * @deny (create, update, delete): A non-admin user cannot create, update, or delete a homepage section.
-       * @principle Enforces admin-only writes for homepage configuration.
-       */
       allow get, list: if true;
       allow create, update, delete: if isSignedIn() && isAdmin();
     }
 
+    /**
+     * @description Checks if the user has admin privileges.
+     * @path /roles_admin/{userId}
+     * @allow get: if request.auth.uid == userId;
+     * @allow list: if false;
+     * @allow create: if request.auth.uid == userId;
+     * @allow update: if false;
+     * @allow delete: if false;
+     * @principle Only the authenticated user can check if they are an admin. No one can list admins.
+     */
     match /roles_admin/{userId} {
-      /**
-       * @description Allows only the user themselves to create their admin role document, and only if it matches their auth UID.  No one can read, update, or delete.
-       * @path /roles_admin/{userId}
-       * @allow create: if isSignedIn() && request.auth.uid == userId;
-       * @deny get, list, update, delete: Always deny these operations.
-       * @principle Enforces self-creation of admin role with UID matching.
-       */
-      allow create: if isSignedIn() && request.auth.uid == userId;
-      allow get, list, update, delete: if false;
+      allow get, create: if isOwner(userId);
+      allow list, update, delete: if false;
     }
+  }
+
+  function isSignedIn() {
+    return request.auth != null;
+  }
+
+  function isOwner(userId) {
+    return request.auth.uid == userId;
+  }
+
+  function isAdmin() {
+    return isSignedIn() && exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid));
   }
 }

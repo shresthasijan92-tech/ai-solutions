@@ -13,8 +13,13 @@ export default async function ProjectsPage() {
   return (
     <div className="container py-12">
       <h1 className="text-4xl font-headline font-bold mb-8">Our Projects</h1>
-      {projects.length === 0 ? (
-        <p>No projects found. The database might be empty or not configured. You can add projects in the admin panel.</p>
+      {!isFirebaseConfigured || projects.length === 0 ? (
+         <div className="text-center py-10 border-2 border-dashed rounded-lg">
+            <h3 className="text-xl font-semibold">No Projects Found</h3>
+            <p className="text-muted-foreground mt-2">
+                {isFirebaseConfigured ? "You can add projects in the admin panel." : "Firebase is not configured. Please set up your .env file."}
+            </p>
+        </div>
       ) : (
         <div className="grid gap-6 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
           {projects.map((project) => {

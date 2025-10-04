@@ -21,8 +21,13 @@ export default async function EventsPage() {
   return (
     <div className="container py-12">
       <h1 className="text-4xl font-headline font-bold mb-8">Events</h1>
-       {events.length === 0 ? (
-        <p>No events found. The database might be empty or not configured. You can add events in the admin panel.</p>
+       {!isFirebaseConfigured || events.length === 0 ? (
+        <div className="text-center py-10 border-2 border-dashed rounded-lg">
+            <h3 className="text-xl font-semibold">No Events Found</h3>
+            <p className="text-muted-foreground mt-2">
+                {isFirebaseConfigured ? "You can add events in the admin panel." : "Firebase is not configured. Please set up your .env file."}
+            </p>
+        </div>
       ) : (
         <div className="grid gap-8 md:grid-cols-1 lg:grid-cols-3">
           {events.map((event) => (

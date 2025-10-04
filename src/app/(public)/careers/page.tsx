@@ -17,8 +17,13 @@ export default async function CareersPage() {
       </div>
       
       <div className="mt-12 max-w-4xl mx-auto space-y-6">
-        {jobs.length === 0 ? (
-          <p className="text-center">No open positions at the moment. Please check back later!</p>
+        {!isFirebaseConfigured || jobs.length === 0 ? (
+          <div className="text-center py-10 border-2 border-dashed rounded-lg">
+            <h3 className="text-xl font-semibold">No Open Positions</h3>
+            <p className="text-muted-foreground mt-2">
+                {isFirebaseConfigured ? "Please check back later!" : "Firebase is not configured. Please set up your .env file."}
+            </p>
+        </div>
         ) : (
           jobs.map((job) => (
             <Card key={job.id} className="hover:shadow-lg transition-shadow">

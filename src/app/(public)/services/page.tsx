@@ -40,63 +40,80 @@ export default function ServicesPage() {
     setIsDialogOpen(true);
   };
   
+  const renderContent = () => {
+    if (isLoading) {
+       return (
+        <div className="grid gap-6 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <Card key={i}>
+              <CardHeader className="p-0">
+                <Skeleton className="h-48 w-full" />
+              </CardHeader>
+              <CardContent className="p-6">
+                <Skeleton className="h-6 w-1/2 mb-4" />
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-full mt-2" />
+              </CardContent>
+              <CardFooter>
+                <Skeleton className="h-10 w-full" />
+              </CardFooter>
+            </Card>
+          ))}
+        </div>
+      );
+    }
+
+    if (!isFirebaseConfigured || services.length === 0) {
+      return (
+        <div className="text-center py-10 border-2 border-dashed rounded-lg">
+            <h3 className="text-xl font-semibold">No Services Found</h3>
+            <p className="text-muted-foreground mt-2">
+                {isFirebaseConfigured ? "You can add services in the admin panel." : "Firebase is not configured. Please set up your .env file."}
+            </p>
+        </div>
+      )
+    }
+
+    return (
+        <div className="grid gap-6 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+        {services.map((service) => {
+            return (
+            <Card key={service.id} className="group flex flex-col overflow-hidden transition-all duration-300 hover:border-primary hover:shadow-lg">
+                <CardHeader className="p-0">
+                {service.imageUrl && (
+                    <div className="relative h-48 w-full">
+                    <Image 
+                        src={service.imageUrl}
+                        alt={service.title}
+                        fill
+                        className="object-cover"
+                    />
+                    </div>
+                )}
+                </CardHeader>
+                <CardContent className="p-6 flex flex-col flex-grow">
+                <CardTitle className="font-headline text-xl mb-4">{service.title}</CardTitle>
+                <CardDescription className="text-balance flex-grow">
+                    {service.description}
+                </CardDescription>
+                </CardContent>
+                <CardFooter>
+                <Button variant="outline" className="w-full" onClick={() => handleOpenDialog(service)}>
+                    Learn More
+                </Button>
+                </CardFooter>
+            </Card>
+            )
+        })}
+        </div>
+    );
+  }
+
   return (
     <>
       <div className="container py-12">
         <h1 className="text-4xl font-headline font-bold mb-8">Our Services</h1>
-        {isLoading ? (
-          <div className="grid gap-6 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-            {Array.from({ length: 3 }).map((_, i) => (
-              <Card key={i}>
-                <CardHeader className="p-0">
-                  <Skeleton className="h-48 w-full" />
-                </CardHeader>
-                <CardContent className="p-6">
-                  <Skeleton className="h-6 w-1/2 mb-4" />
-                  <Skeleton className="h-4 w-full" />
-                  <Skeleton className="h-4 w-full mt-2" />
-                </CardContent>
-                <CardFooter>
-                  <Skeleton className="h-10 w-full" />
-                </CardFooter>
-              </Card>
-            ))}
-          </div>
-        ) : services.length === 0 ? (
-          <p>No services found. The database might be empty or not configured. You can add services in the admin panel.</p>
-        ) : (
-          <div className="grid gap-6 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-            {services.map((service) => {
-              return (
-                <Card key={service.id} className="group flex flex-col overflow-hidden transition-all duration-300 hover:border-primary hover:shadow-lg">
-                  <CardHeader className="p-0">
-                    {service.imageUrl && (
-                      <div className="relative h-48 w-full">
-                        <Image 
-                          src={service.imageUrl}
-                          alt={service.title}
-                          fill
-                          className="object-cover"
-                        />
-                      </div>
-                    )}
-                  </CardHeader>
-                  <CardContent className="p-6 flex flex-col flex-grow">
-                    <CardTitle className="font-headline text-xl mb-4">{service.title}</CardTitle>
-                    <CardDescription className="text-balance flex-grow">
-                      {service.description}
-                    </CardDescription>
-                  </CardContent>
-                   <CardFooter>
-                    <Button variant="outline" className="w-full" onClick={() => handleOpenDialog(service)}>
-                      Learn More
-                    </Button>
-                  </CardFooter>
-                </Card>
-              )
-            })}
-          </div>
-        )}
+        {renderContent()}
       </div>
        {selectedService && (
         <ServiceDetailsDialog
