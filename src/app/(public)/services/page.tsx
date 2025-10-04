@@ -21,10 +21,15 @@ export default function ServicesPage() {
     async function loadServices() {
       setIsLoading(true);
       if (isFirebaseConfigured) {
-        const servicesFromDb = await getServices();
-        if (servicesFromDb.length > 0) {
-          setServices(servicesFromDb);
-        } else {
+        try {
+          const servicesFromDb = await getServices();
+          if (servicesFromDb.length > 0) {
+            setServices(servicesFromDb);
+          } else {
+            setServices(mockServices);
+          }
+        } catch (error) {
+          console.error("Failed to fetch services, falling back to mock data.", error);
           setServices(mockServices);
         }
       } else {
