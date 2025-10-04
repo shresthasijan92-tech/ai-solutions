@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { ServiceDetailsDialog } from '@/components/service-details-dialog';
 import type { Service } from '@/lib/definitions';
 import { Skeleton } from '@/components/ui/skeleton';
+import { isFirebaseConfigured } from '@/firebase/config';
 
 export default function ServicesPage() {
   const [services, setServices] = useState<Service[]>([]);
@@ -19,9 +20,13 @@ export default function ServicesPage() {
   useEffect(() => {
     async function loadServices() {
       setIsLoading(true);
-      const servicesFromDb = await getServices();
-      if (servicesFromDb.length > 0) {
-        setServices(servicesFromDb);
+      if (isFirebaseConfigured) {
+        const servicesFromDb = await getServices();
+        if (servicesFromDb.length > 0) {
+          setServices(servicesFromDb);
+        } else {
+          setServices(mockServices);
+        }
       } else {
         setServices(mockServices);
       }

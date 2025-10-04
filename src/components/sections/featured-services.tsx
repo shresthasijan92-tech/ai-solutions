@@ -10,6 +10,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter }
 import { getServices } from '@/lib/services';
 import type { Service } from '@/lib/definitions';
 import { ServiceDetailsDialog } from '@/components/service-details-dialog';
+import { isFirebaseConfigured } from '@/firebase/config';
 
 export function FeaturedServices() {
   const [servicesToDisplay, setServicesToDisplay] = useState<Service[]>(mockServices.filter(s => s.featured));
@@ -18,10 +19,12 @@ export function FeaturedServices() {
 
   useEffect(() => {
     async function loadServices() {
-      const allServices = await getServices();
-      const featuredServices = allServices.filter((service) => service.featured);
-      if (featuredServices.length > 0) {
-        setServicesToDisplay(featuredServices);
+      if (isFirebaseConfigured) {
+        const allServices = await getServices();
+        const featuredServices = allServices.filter((service) => service.featured);
+        if (featuredServices.length > 0) {
+          setServicesToDisplay(featuredServices);
+        }
       }
     }
     loadServices();
