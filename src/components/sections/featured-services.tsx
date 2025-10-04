@@ -4,21 +4,23 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { ArrowRight } from 'lucide-react';
-import { services as mockServices } from '@/lib/mock-data';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { getServices } from '@/lib/services';
 import type { Service } from '@/lib/definitions';
 import { ServiceDetailsDialog } from '@/components/service-details-dialog';
 import { isFirebaseConfigured } from '@/firebase/config';
+import { Skeleton } from '../ui/skeleton';
 
 export function FeaturedServices() {
-  const [servicesToDisplay, setServicesToDisplay] = useState<Service[]>(mockServices.filter(s => s.featured));
+  const [servicesToDisplay, setServicesToDisplay] = useState<Service[]>([]);
   const [selectedService, setSelectedService] = useState<Service | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     async function loadServices() {
+      setIsLoading(true);
       if (isFirebaseConfigured) {
         const allServices = await getServices();
         const featuredServices = allServices.filter((service) => service.featured);
@@ -26,6 +28,7 @@ export function FeaturedServices() {
           setServicesToDisplay(featuredServices);
         }
       }
+      setIsLoading(false);
     }
     loadServices();
   }, []);
@@ -34,6 +37,19 @@ export function FeaturedServices() {
     setSelectedService(service);
     setIsDialogOpen(true);
   };
+
+  if (isLoading) {
+    return (
+        <section className="py-12 md:py-20">
+            <div className="container">
+                <Skeleton className="h-8 w-48 mb-8" />
+                 <div className="grid gap-6 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+                    {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-96 w-full" />)}
+                 </div>
+            </div>
+        </section>
+    );
+  }
 
   if (servicesToDisplay.length === 0) {
     return null;

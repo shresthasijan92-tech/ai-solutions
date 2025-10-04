@@ -5,12 +5,13 @@ import { getProjects } from '@/lib/projects';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { projects as mockProjects } from '@/lib/mock-data';
+import { isFirebaseConfigured } from '@/firebase/config';
 
 export async function FeaturedProjects() {
+  if (!isFirebaseConfigured) return null;
+
   const allProjects = await getProjects();
-  const featuredProjects = allProjects.filter((project) => project.featured);
-  const projectsToDisplay = featuredProjects.length > 0 ? featuredProjects : mockProjects.filter(p => p.featured);
+  const projectsToDisplay = allProjects.filter((project) => project.featured);
 
   if (projectsToDisplay.length === 0) {
     return null;

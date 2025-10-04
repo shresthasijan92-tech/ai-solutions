@@ -4,8 +4,8 @@ import { ArrowRight, CalendarIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { getArticles } from '@/lib/articles';
-import { articles as mockArticles } from '@/lib/mock-data';
 import { Timestamp } from 'firebase/firestore';
+import { isFirebaseConfigured } from '@/firebase/config';
 
 const toDate = (timestamp: string | Timestamp | Date): Date => {
   if (timestamp instanceof Timestamp) {
@@ -15,9 +15,10 @@ const toDate = (timestamp: string | Timestamp | Date): Date => {
 }
 
 export async function FeaturedBlog() {
+  if (!isFirebaseConfigured) return null;
+
   const allArticles = await getArticles();
-  const featuredArticlesFromDb = allArticles.filter((article) => article.featured);
-  const featuredArticles = featuredArticlesFromDb.length > 0 ? featuredArticlesFromDb : mockArticles.filter(a => a.featured);
+  const featuredArticles = allArticles.filter((article) => article.featured);
 
   if (featuredArticles.length === 0) {
     return null;

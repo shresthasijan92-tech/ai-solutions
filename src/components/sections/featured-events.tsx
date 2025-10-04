@@ -8,8 +8,8 @@ import {
   CardHeader,
 } from '@/components/ui/card';
 import { getEvents } from '@/lib/events';
-import { events as mockEvents } from '@/lib/mock-data';
 import { Timestamp } from 'firebase/firestore';
+import { isFirebaseConfigured } from '@/firebase/config';
 
 const toDate = (timestamp: string | Timestamp | Date): Date => {
   if (timestamp instanceof Timestamp) {
@@ -20,9 +20,10 @@ const toDate = (timestamp: string | Timestamp | Date): Date => {
 
 
 export async function FeaturedEvents() {
+  if (!isFirebaseConfigured) return null;
+
   const allEvents = await getEvents();
-  const featuredEvents = allEvents.filter(event => event.featured);
-  const eventsToDisplay = featuredEvents.length > 0 ? featuredEvents : mockEvents.filter(e => e.featured);
+  const eventsToDisplay = allEvents.filter(event => event.featured);
 
   if (eventsToDisplay.length === 0) {
     return null;

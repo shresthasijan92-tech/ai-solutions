@@ -4,8 +4,8 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import Image from 'next/image';
 import { MapPin, Calendar, ArrowRight } from 'lucide-react';
-import { events as mockEvents } from '@/lib/mock-data';
 import { Timestamp } from 'firebase/firestore';
+import { isFirebaseConfigured } from '@/firebase/config';
 
 const toDate = (timestamp: string | Timestamp | Date): Date => {
   if (timestamp instanceof Timestamp) {
@@ -16,14 +16,13 @@ const toDate = (timestamp: string | Timestamp | Date): Date => {
 
 
 export default async function EventsPage() {
-  const eventsFromDb = await getEvents();
-  const events = eventsFromDb.length > 0 ? eventsFromDb : mockEvents;
+  const events = isFirebaseConfigured ? await getEvents() : [];
 
   return (
     <div className="container py-12">
       <h1 className="text-4xl font-headline font-bold mb-8">Events</h1>
        {events.length === 0 ? (
-        <p>No events found. The database might be empty. You can add events in the admin panel.</p>
+        <p>No events found. The database might be empty or not configured. You can add events in the admin panel.</p>
       ) : (
         <div className="grid gap-8 md:grid-cols-1 lg:grid-cols-3">
           {events.map((event) => (

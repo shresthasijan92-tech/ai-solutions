@@ -3,13 +3,13 @@
 import { useState, useEffect } from 'react';
 import { getGalleryImages } from '@/lib/gallery';
 import Image from 'next/image';
-import { galleryImages as mockGalleryImages } from '@/lib/mock-data';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import type { GalleryImage, GalleryCategory } from '@/lib/definitions';
 import { Skeleton } from '@/components/ui/skeleton';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
+import { isFirebaseConfigured } from '@/firebase/config';
 
 const categories: GalleryCategory[] = ["All", "Events", "Tech Solutions", "Team Collaboration"];
 
@@ -21,9 +21,10 @@ export default function GalleryPage() {
   useEffect(() => {
     async function loadImages() {
       setIsLoading(true);
-      const imagesFromDb = await getGalleryImages();
-      const images = imagesFromDb.length > 0 ? imagesFromDb : mockGalleryImages;
-      setGalleryImages(images);
+      if (isFirebaseConfigured) {
+          const images = await getGalleryImages();
+          setGalleryImages(images);
+      }
       setIsLoading(false);
     }
     loadImages();
@@ -59,7 +60,7 @@ export default function GalleryPage() {
           ))}
         </div>
       ) : filteredImages.length === 0 ? (
-        <p className="text-center py-10">No images found for this category.</p>
+        <p className="text-center py-10">No images found for this category. The database might be empty or not configured.</p>
       ) : (
         <div className="columns-1 sm:columns-2 md:columns-3 lg:columns-4 gap-4 space-y-4">
           {filteredImages.map((galleryImage) => (

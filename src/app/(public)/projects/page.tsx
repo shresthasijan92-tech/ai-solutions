@@ -5,17 +5,16 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { ArrowRight } from 'lucide-react';
-import { projects as mockProjects } from '@/lib/mock-data';
+import { isFirebaseConfigured } from '@/firebase/config';
 
 export default async function ProjectsPage() {
-  const projectsFromDb = await getProjects();
-  const projects = projectsFromDb.length > 0 ? projectsFromDb : mockProjects;
+  const projects = isFirebaseConfigured ? await getProjects() : [];
 
   return (
     <div className="container py-12">
       <h1 className="text-4xl font-headline font-bold mb-8">Our Projects</h1>
       {projects.length === 0 ? (
-        <p>No projects found. The database might be empty. You can add projects in the admin panel.</p>
+        <p>No projects found. The database might be empty or not configured. You can add projects in the admin panel.</p>
       ) : (
         <div className="grid gap-6 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
           {projects.map((project) => {

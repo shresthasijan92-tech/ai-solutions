@@ -4,7 +4,7 @@ import { getTestimonials } from '@/lib/testimonials';
 import { Card, CardContent } from '@/components/ui/card';
 import { Star } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { testimonials as mockTestimonials } from '@/lib/mock-data';
+import { isFirebaseConfigured } from '@/firebase/config';
 
 function StarRating({ rating }: { rating: number }) {
   return (
@@ -25,8 +25,7 @@ function StarRating({ rating }: { rating: number }) {
 }
 
 export async function TestimonialsList() {
-  const allTestimonials = await getTestimonials();
-  const testimonials = allTestimonials.length > 0 ? allTestimonials : mockTestimonials;
+  const testimonials = isFirebaseConfigured ? await getTestimonials() : [];
 
   if (!testimonials || testimonials.length === 0) {
     return <p>No testimonials have been submitted yet. Be the first!</p>;

@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import { getServices } from '@/lib/services';
 import { Card, CardDescription, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
-import { services as mockServices } from '@/lib/mock-data';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { ServiceDetailsDialog } from '@/components/service-details-dialog';
@@ -23,17 +22,13 @@ export default function ServicesPage() {
       if (isFirebaseConfigured) {
         try {
           const servicesFromDb = await getServices();
-          if (servicesFromDb.length > 0) {
-            setServices(servicesFromDb);
-          } else {
-            setServices(mockServices);
-          }
+          setServices(servicesFromDb);
         } catch (error) {
-          console.error("Failed to fetch services, falling back to mock data.", error);
-          setServices(mockServices);
+          console.error("Failed to fetch services.", error);
+          setServices([]);
         }
       } else {
-        setServices(mockServices);
+        setServices([]);
       }
       setIsLoading(false);
     }
@@ -68,7 +63,7 @@ export default function ServicesPage() {
             ))}
           </div>
         ) : services.length === 0 ? (
-          <p>No services found. The database might be empty. You can add services in the admin panel.</p>
+          <p>No services found. The database might be empty or not configured. You can add services in the admin panel.</p>
         ) : (
           <div className="grid gap-6 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
             {services.map((service) => {

@@ -1,5 +1,4 @@
 import { getArticle, getArticles } from '@/lib/articles';
-import { articles as mockArticles } from '@/lib/mock-data';
 import { notFound } from 'next/navigation';
 import Image from 'next/image';
 import { CalendarIcon, ArrowLeft } from 'lucide-react';
@@ -7,6 +6,7 @@ import { Timestamp } from 'firebase/firestore';
 import { ArticleRenderer } from '@/components/article-renderer';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
+import { isFirebaseConfigured } from '@/firebase/config';
 
 const toDate = (timestamp: string | Timestamp | Date): Date => {
   if (timestamp instanceof Timestamp) {
@@ -16,6 +16,9 @@ const toDate = (timestamp: string | Timestamp | Date): Date => {
 }
 
 export default async function ArticlePage({ params }: { params: { id: string } }) {
+  if (!isFirebaseConfigured) {
+    return notFound();
+  }
   const article = await getArticle(params.id);
 
   if (!article) {
@@ -59,8 +62,10 @@ export default async function ArticlePage({ params }: { params: { id: string } }
 }
 
 export async function generateStaticParams() {
-  const articlesFromDb = await getArticles();
-  const articles = articlesFromDb.length > 0 ? articlesFromDb : mockArticles;
+    if (!isFirebaseConfigured) {
+        return [];
+    }
+  const articles = await getArticles();
  
   return articles.map((article) => ({
     id: article.id,

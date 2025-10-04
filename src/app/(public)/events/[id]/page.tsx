@@ -1,11 +1,11 @@
 import { getEvent, getEvents } from '@/lib/events';
-import { events as mockEvents } from '@/lib/mock-data';
 import { notFound } from 'next/navigation';
 import Image from 'next/image';
 import { CalendarIcon, ArrowLeft, MapPin } from 'lucide-react';
 import { Timestamp } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
+import { isFirebaseConfigured } from '@/firebase/config';
 
 const toDate = (timestamp: string | Timestamp | Date): Date => {
   if (timestamp instanceof Timestamp) {
@@ -15,6 +15,9 @@ const toDate = (timestamp: string | Timestamp | Date): Date => {
 }
 
 export default async function EventPage({ params }: { params: { id: string } }) {
+  if (!isFirebaseConfigured) {
+    return notFound();
+  }
   const event = await getEvent(params.id);
 
   if (!event) {
@@ -64,8 +67,10 @@ export default async function EventPage({ params }: { params: { id: string } }) 
 }
 
 export async function generateStaticParams() {
-  const eventsFromDb = await getEvents();
-  const events = eventsFromDb.length > 0 ? eventsFromDb : mockEvents;
+  if (!isFirebaseConfigured) {
+    return [];
+  }
+  const events = await getEvents();
  
   return events.map((event) => ({
     id: event.id,

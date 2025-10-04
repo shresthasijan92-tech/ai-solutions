@@ -1,5 +1,4 @@
 import { getProject, getProjects } from '@/lib/projects';
-import { projects as mockProjects } from '@/lib/mock-data';
 import { notFound } from 'next/navigation';
 import Image from 'next/image';
 import { ArrowLeft } from 'lucide-react';
@@ -7,8 +6,12 @@ import { ArticleRenderer } from '@/components/article-renderer';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
+import { isFirebaseConfigured } from '@/firebase/config';
 
 export default async function ProjectPage({ params }: { params: { id: string } }) {
+  if (!isFirebaseConfigured) {
+    return notFound();
+  }
   const project = await getProject(params.id);
 
   if (!project) {
@@ -63,8 +66,10 @@ export default async function ProjectPage({ params }: { params: { id: string } }
 }
 
 export async function generateStaticParams() {
-  const projectsFromDb = await getProjects();
-  const projects = projectsFromDb.length > 0 ? projectsFromDb : mockProjects;
+    if (!isFirebaseConfigured) {
+        return [];
+    }
+  const projects = await getProjects();
  
   return projects.map((project) => ({
     id: project.id,

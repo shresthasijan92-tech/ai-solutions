@@ -2,16 +2,14 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { ArrowRight } from 'lucide-react';
 import { getGalleryImages } from '@/lib/gallery';
-import { galleryImages as mockGalleryImages } from '@/lib/mock-data';
 import { Button } from '@/components/ui/button';
+import { isFirebaseConfigured } from '@/firebase/config';
 
 export async function FeaturedGallery() {
+  if (!isFirebaseConfigured) return null;
+
   const allImages = await getGalleryImages();
-  const featuredImagesFromDb = allImages.filter((image) => image.featured);
-  
-  const imagesToDisplay = featuredImagesFromDb.length > 0 
-    ? featuredImagesFromDb.slice(0, 4) 
-    : mockGalleryImages.filter(i => i.featured).slice(0, 4);
+  const imagesToDisplay = allImages.filter((image) => image.featured).slice(0, 4);
 
   if (imagesToDisplay.length === 0) {
     return null;

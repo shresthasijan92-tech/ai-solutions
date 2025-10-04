@@ -2,11 +2,10 @@ import { getJobs } from '@/lib/jobs';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { MapPin, Briefcase } from 'lucide-react';
-import { jobs as mockJobs } from '@/lib/mock-data';
+import { isFirebaseConfigured } from '@/firebase/config';
 
 export default async function CareersPage() {
-  const jobsFromDb = await getJobs();
-  const jobs = jobsFromDb.length > 0 ? jobsFromDb : mockJobs;
+  const jobs = isFirebaseConfigured ? await getJobs() : [];
 
   return (
     <div className="container py-12">

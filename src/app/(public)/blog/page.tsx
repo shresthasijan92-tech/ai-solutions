@@ -3,9 +3,9 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import Image from 'next/image';
 import Link from 'next/link';
 import { CalendarIcon, ArrowRight } from 'lucide-react';
-import { articles as mockArticles } from '@/lib/mock-data';
 import { Timestamp } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
+import { isFirebaseConfigured } from '@/firebase/config';
 
 const toDate = (timestamp: string | Timestamp | Date): Date => {
   if (timestamp instanceof Timestamp) {
@@ -15,14 +15,13 @@ const toDate = (timestamp: string | Timestamp | Date): Date => {
 }
 
 export default async function BlogPage() {
-  const articlesFromDb = await getArticles();
-  const articles = articlesFromDb.length > 0 ? articlesFromDb : mockArticles;
+  const articles = isFirebaseConfigured ? await getArticles() : [];
 
   return (
     <div className="container py-12">
       <h1 className="text-4xl font-headline font-bold mb-8">Blog</h1>
        {articles.length === 0 ? (
-        <p>No articles found. The database might be empty. You can add articles in the admin panel.</p>
+        <p>No articles found. The database might be empty or not configured. You can add articles in the admin panel.</p>
       ) : (
         <div className="grid gap-8 md:grid-cols-1 lg:grid-cols-3">
           {articles.map((article) => {
