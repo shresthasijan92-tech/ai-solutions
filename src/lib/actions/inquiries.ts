@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { firestore } from '@/firebase/server';
 import { collection, addDoc, doc, deleteDoc, Timestamp } from 'firebase/firestore';
+import { isFirebaseConfigured } from '@/firebase/config';
 
 const InquiryFormSchema = z.object({
   fullName: z.string().min(1, 'Full name is required'),
@@ -36,10 +37,10 @@ export async function sendInquiryMessage(
     };
   }
   
-  if (!firestore) {
+  if (!isFirebaseConfigured || !firestore) {
     console.error('Firestore is not initialized on the server.');
     return {
-        message: 'The server is not configured correctly to connect to the database.',
+        message: 'There was an error sending your message. Please try again later.',
         success: false,
     };
   }
@@ -70,7 +71,7 @@ export async function deleteInquiry(id: string): Promise<{ success: boolean; mes
     return { success: false, message: 'Failed to delete inquiry: Missing ID.' };
   }
   
-  if (!firestore) {
+  if (!isFirebaseConfigured || !firestore) {
      return {
       success: false,
       message: 'The server is not configured correctly to connect to the database.',
