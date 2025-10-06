@@ -22,7 +22,7 @@ const toISOStringIfTimestamp = (value: any): string | any => {
 
 
 export async function getArticles(): Promise<Article[]> {
-  if (!isFirebaseConfigured) {
+  if (!isFirebaseConfigured || !firestore) {
     return [];
   }
   try {
@@ -51,7 +51,7 @@ export async function getArticles(): Promise<Article[]> {
 }
 
 export async function getArticle(id: string): Promise<Article | null> {
-    if (!isFirebaseConfigured) {
+    if (!isFirebaseConfigured || !firestore) {
     return null;
   }
   try {

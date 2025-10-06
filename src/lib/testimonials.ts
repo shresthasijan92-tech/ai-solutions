@@ -19,7 +19,7 @@ const toISOStringIfTimestamp = (value: any): string | any => {
 };
 
 export async function getTestimonials(): Promise<Testimonial[]> {
-  if (!isFirebaseConfigured) {
+  if (!isFirebaseConfigured || !firestore) {
     return [];
   }
   try {

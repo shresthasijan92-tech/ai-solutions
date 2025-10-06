@@ -5,7 +5,7 @@ import type { Job } from './definitions';
 import { isFirebaseConfigured } from '@/firebase/config';
 
 export async function getJobs(): Promise<Job[]> {
-  if (!isFirebaseConfigured) {
+  if (!isFirebaseConfigured || !firestore) {
     return [];
   }
   try {

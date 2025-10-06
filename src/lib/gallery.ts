@@ -5,7 +5,7 @@ import type { GalleryImage } from './definitions';
 import { isFirebaseConfigured } from '@/firebase/config';
 
 export async function getGalleryImages(): Promise<GalleryImage[]> {
-  if (!isFirebaseConfigured) {
+  if (!isFirebaseConfigured || !firestore) {
     return [];
   }
   try {

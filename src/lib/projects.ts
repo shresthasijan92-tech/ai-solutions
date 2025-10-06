@@ -5,7 +5,7 @@ import type { Project } from './definitions';
 import { isFirebaseConfigured } from '@/firebase/config';
 
 export async function getProjects(): Promise<Project[]> {
-  if (!isFirebaseConfigured) {
+  if (!isFirebaseConfigured || !firestore) {
     return [];
   }
   try {
@@ -26,7 +26,7 @@ export async function getProjects(): Promise<Project[]> {
 }
 
 export async function getProject(id: string): Promise<Project | null> {
-  if (!isFirebaseConfigured) {
+  if (!isFirebaseConfigured || !firestore) {
     return null;
   }
   try {
