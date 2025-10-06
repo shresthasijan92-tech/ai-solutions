@@ -38,7 +38,6 @@ export async function sendInquiryMessage(
   }
   
   if (!isFirebaseConfigured || !firestore) {
-    console.error('Firestore is not initialized on the server.');
     return {
         message: 'There was an error sending your message. Please try again later.',
         success: false,
@@ -58,7 +57,21 @@ export async function sendInquiryMessage(
       message: "We've received your message and will get back to you shortly.",
       success: true,
     };
-  } catch (error) {
+  } catch (error: any) {
+     if (error.code === 'permission-denied') {
+      // This is a placeholder for a more sophisticated error handling system.
+      // In a real application, you would log this error and might re-throw a custom,
+      // more detailed error to be handled by a global error handler.
+      console.error("Firestore Permission Denied:", {
+        collection: 'inquiries',
+        operation: 'create',
+        data: validatedFields.data,
+      });
+      return {
+        message: 'A security rule is preventing your message from being sent. Please contact support.',
+        success: false,
+      };
+    }
     console.error('Error sending contact message:', error);
     return {
       message: 'There was an error sending your message. Please try again later.',
