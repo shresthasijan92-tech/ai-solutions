@@ -13,11 +13,18 @@ export default async function ProjectsPage() {
   return (
     <div className="container py-12">
       <h1 className="text-4xl font-headline font-bold mb-8">Our Projects</h1>
-      {!isFirebaseConfigured || projects.length === 0 ? (
+      {!isFirebaseConfigured ? (
+         <div className="text-center py-10 border-2 border-dashed rounded-lg">
+            <h3 className="text-xl font-semibold">Firebase Not Configured</h3>
+            <p className="text-muted-foreground mt-2">
+                Please set up your .env.local file with your Firebase credentials to see projects.
+            </p>
+        </div>
+      ) : projects.length === 0 ? (
          <div className="text-center py-10 border-2 border-dashed rounded-lg">
             <h3 className="text-xl font-semibold">No Projects Found</h3>
             <p className="text-muted-foreground mt-2">
-                {isFirebaseConfigured ? "You can add projects in the admin panel." : "Firebase is not configured. Please set up your .env file."}
+                You can add projects in the admin panel.
             </p>
         </div>
       ) : (

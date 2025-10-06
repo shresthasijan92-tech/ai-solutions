@@ -17,11 +17,18 @@ export default async function CareersPage() {
       </div>
       
       <div className="mt-12 max-w-4xl mx-auto space-y-6">
-        {!isFirebaseConfigured || jobs.length === 0 ? (
+        {!isFirebaseConfigured ? (
+          <div className="text-center py-10 border-2 border-dashed rounded-lg">
+            <h3 className="text-xl font-semibold">Firebase Not Configured</h3>
+            <p className="text-muted-foreground mt-2">
+                Please set up your .env.local file with your Firebase credentials to see job listings.
+            </p>
+        </div>
+        ) : jobs.length === 0 ? (
           <div className="text-center py-10 border-2 border-dashed rounded-lg">
             <h3 className="text-xl font-semibold">No Open Positions</h3>
             <p className="text-muted-foreground mt-2">
-                {isFirebaseConfigured ? "Please check back later!" : "Firebase is not configured. Please set up your .env file."}
+                Please check back later!
             </p>
         </div>
         ) : (

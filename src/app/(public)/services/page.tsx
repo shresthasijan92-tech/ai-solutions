@@ -61,12 +61,23 @@ export default function ServicesPage() {
       );
     }
 
+    if (!isFirebaseConfigured) {
+      return (
+        <div className="text-center py-10 border-2 border-dashed rounded-lg">
+            <h3 className="text-xl font-semibold">Firebase Not Configured</h3>
+            <p className="text-muted-foreground mt-2">
+                Please set up your .env.local file with your Firebase credentials to see services.
+            </p>
+        </div>
+      )
+    }
+
     if (services.length === 0) {
       return (
         <div className="text-center py-10 border-2 border-dashed rounded-lg">
             <h3 className="text-xl font-semibold">No Services Found</h3>
             <p className="text-muted-foreground mt-2">
-                {isFirebaseConfigured ? "The database might be empty, or there could be a connection issue." : "Firebase is not configured. Please set up your .env.local file."}
+                The database might be empty, or there could be a connection issue.
             </p>
         </div>
       )
