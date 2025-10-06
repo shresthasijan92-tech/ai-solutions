@@ -19,7 +19,7 @@ export function useJobs() {
         return;
     };
 
-    const jobsQuery = query(collection(firestore, 'jobs'));
+    const jobsQuery = query(collection(firestore, 'careers'));
 
     const unsubscribe = onSnapshot(jobsQuery, 
       (snapshot) => {

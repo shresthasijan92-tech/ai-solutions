@@ -38,7 +38,7 @@ export async function createJob(data: JobData): Promise<JobFormState> {
   }
 
   try {
-    await addDoc(collection(firestore, 'jobs'), validatedFields.data);
+    await addDoc(collection(firestore, 'careers'), validatedFields.data);
     revalidateJobPaths();
     return { message: 'Successfully created job.', success: true };
   } catch (error) {
@@ -61,7 +61,7 @@ export async function updateJob(id: string, data: JobData): Promise<JobFormState
   }
 
   try {
-    await updateDoc(doc(firestore, 'jobs', id), validatedFields.data);
+    await updateDoc(doc(firestore, 'careers', id), validatedFields.data);
     revalidateJobPaths();
     return { message: 'Successfully updated job.', success: true };
   } catch (error) {
@@ -73,7 +73,7 @@ export async function updateJob(id: string, data: JobData): Promise<JobFormState
 export async function deleteJob(id: string): Promise<{ message: string; success: boolean }> {
   if (!id) return { message: 'Failed to delete job: Missing ID.', success: false };
   try {
-    await deleteDoc(doc(firestore, 'jobs', id));
+    await deleteDoc(doc(firestore, 'careers', id));
     revalidateJobPaths();
     return { message: 'Successfully deleted job.', success: true };
   } catch (error) {

@@ -9,7 +9,7 @@ export async function getJobs(): Promise<Job[]> {
     return [];
   }
   try {
-    const jobsCol = collection(firestore, 'jobs');
+    const jobsCol = collection(firestore, 'careers');
     const q = query(jobsCol);
     const jobsSnapshot = await getDocs(q);
     const jobsList = jobsSnapshot.docs.map((doc) => {
