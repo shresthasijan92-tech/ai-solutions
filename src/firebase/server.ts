@@ -9,31 +9,31 @@ let firestore: Firestore | null = null;
 let auth: Auth | null = null;
 let storage: FirebaseStorage | null = null;
 
+// Only initialize Firebase services if the configuration is valid.
 if (isFirebaseConfigured) {
-    if (getApps().length === 0) {
-      try {
-        if (process.env.GOOGLE_CLOUD_PROJECT) {
-          firebaseApp = initializeApp();
-        } else {
-          firebaseApp = initializeApp(firebaseConfig);
-        }
-      } catch (e) {
-        console.warn(
-          'Firebase initialization failed. Using config as fallback.',
-          e
-        );
+  if (getApps().length === 0) {
+    try {
+      if (process.env.GOOGLE_CLOUD_PROJECT) {
+        firebaseApp = initializeApp();
+      } else {
         firebaseApp = initializeApp(firebaseConfig);
       }
-    } else {
-      firebaseApp = getApp();
+    } catch (e) {
+      console.warn(
+        'Firebase initialization failed. Using config as fallback.',
+        e
+      );
+      firebaseApp = initializeApp(firebaseConfig);
     }
+  } else {
+    firebaseApp = getApp();
+  }
 
-    if (firebaseApp) {
-        firestore = getFirestore(firebaseApp);
-        auth = getAuth(firebaseApp);
-        storage = getStorage(firebaseApp);
-    }
+  if (firebaseApp) {
+      firestore = getFirestore(firebaseApp);
+      auth = getAuth(firebaseApp);
+      storage = getStorage(firebaseApp);
+  }
 }
-
 
 export { firebaseApp, firestore, auth, storage };
