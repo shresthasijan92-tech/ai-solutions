@@ -4,7 +4,6 @@ import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { firestore } from '@/firebase/server';
 import { collection, addDoc, doc, deleteDoc, Timestamp } from 'firebase/firestore';
-import { isFirebaseConfigured } from '@/firebase/config';
 
 const InquiryFormSchema = z.object({
   fullName: z.string().min(1, 'Full name is required'),
@@ -36,13 +35,6 @@ export async function sendInquiryMessage(
       success: false,
     };
   }
-  
-  if (!isFirebaseConfigured || !firestore) {
-    return {
-      message: 'Firebase is not configured. Could not send message.',
-      success: false,
-    };
-  }
 
   try {
     await addDoc(collection(firestore, 'inquiries'), {
@@ -70,7 +62,7 @@ export async function deleteInquiry(id: string): Promise<{ success: boolean; mes
     return { success: false, message: 'Failed to delete inquiry: Missing ID.' };
   }
   
-  if (!isFirebaseConfigured || !firestore) {
+  if (!firestore) {
     return { success: false, message: 'Firebase is not configured.' };
   }
 
