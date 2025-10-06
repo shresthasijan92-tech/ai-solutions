@@ -38,7 +38,7 @@ export async function sendContactMessage(
 
   if (!firestore) {
     return {
-      message: 'Firebase is not configured. Could not send message.',
+      message: 'Please configure Firebase to send messages.',
       success: false,
     };
   }
