@@ -4,27 +4,25 @@ import { getAuth, type Auth } from 'firebase/auth';
 import { getStorage, type FirebaseStorage } from 'firebase/storage';
 import { getFirebaseConfig, isFirebaseConfigured } from './config';
 
-let firebaseApp: FirebaseApp | null = null;
-let firestore: Firestore | null = null;
-let auth: Auth | null = null;
-let storage: FirebaseStorage | null = null;
+let firebaseApp: FirebaseApp;
+let firestore: Firestore;
+let auth: Auth;
+let storage: FirebaseStorage;
 
-// Only initialize Firebase services if the configuration is valid.
 if (isFirebaseConfigured) {
   const firebaseConfig = getFirebaseConfig();
   if (firebaseConfig) {
-    if (getApps().length === 0) {
+    if (!getApps().length) {
       firebaseApp = initializeApp(firebaseConfig);
     } else {
       firebaseApp = getApp();
     }
 
-    if (firebaseApp) {
-        firestore = getFirestore(firebaseApp);
-        auth = getAuth(firebaseApp);
-        storage = getStorage(firebaseApp);
-    }
+    firestore = getFirestore(firebaseApp);
+    auth = getAuth(firebaseApp);
+    storage = getStorage(firebaseApp);
   }
 }
 
+// @ts-ignore
 export { firebaseApp, firestore, auth, storage };
