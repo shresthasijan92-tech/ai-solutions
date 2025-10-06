@@ -46,7 +46,8 @@ export async function sendInquiryMessage(
   }
 
   try {
-    await addDoc(collection(firestore, 'inquiries'), {
+    const inquiriesCollection = collection(firestore, 'inquiries');
+    await addDoc(inquiriesCollection, {
         ...validatedFields.data,
         submittedAt: Timestamp.now(),
     });
@@ -79,7 +80,8 @@ export async function deleteInquiry(id: string): Promise<{ success: boolean; mes
   }
 
   try {
-    await deleteDoc(doc(firestore, 'inquiries', id));
+    const inquiryDoc = doc(firestore, 'inquiries', id);
+    await deleteDoc(inquiryDoc);
     revalidateInquiryPaths();
     return { success: true, message: `Inquiry has been deleted.` };
   } catch (error: any) {
