@@ -27,18 +27,20 @@ function revalidateInquiryPaths() {
 export async function sendInquiryMessage(
   data: z.infer<typeof InquiryFormSchema>
 ): Promise<InquiryFormState> {
-  if (!firestore) {
-    return {
-        message: 'Firebase is not configured correctly on the server.',
-        success: false,
-    };
-  }
   const validatedFields = InquiryFormSchema.safeParse(data);
 
   if (!validatedFields.success) {
     return {
       message: 'Invalid form data.',
       success: false,
+    };
+  }
+  
+  if (!firestore) {
+    console.error('Firestore is not initialized on the server.');
+    return {
+        message: 'The server is not configured correctly to connect to the database.',
+        success: false,
     };
   }
 
@@ -69,7 +71,10 @@ export async function deleteInquiry(id: string): Promise<{ success: boolean; mes
   }
   
   if (!firestore) {
-    return { success: false, message: 'Firebase is not configured.' };
+     return {
+      success: false,
+      message: 'The server is not configured correctly to connect to the database.',
+    };
   }
 
   try {
