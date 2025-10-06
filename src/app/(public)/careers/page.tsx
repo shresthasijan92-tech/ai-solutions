@@ -21,7 +21,7 @@ export default async function CareersPage() {
           <div className="text-center py-10 border-2 border-dashed rounded-lg">
             <h3 className="text-xl font-semibold">Firebase Not Configured</h3>
             <p className="text-muted-foreground mt-2">
-                what is this?
+                please configure firebase
             </p>
         </div>
         ) : jobs.length === 0 ? (
