@@ -18,9 +18,9 @@ import {
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { sendContactMessage } from '@/lib/actions/contact';
+import { sendInquiryMessage } from '@/lib/actions/inquiries';
 
-const ContactFormSchema = z.object({
+const InquiryFormSchema = z.object({
   fullName: z.string().min(1, 'Full name is required'),
   email: z.string().email('Invalid email address'),
   companyName: z.string().min(1, 'Company name is required'),
@@ -29,14 +29,14 @@ const ContactFormSchema = z.object({
   message: z.string().min(10, 'Please provide a message with at least 10 characters.'),
 });
 
-type ContactFormValues = z.infer<typeof ContactFormSchema>;
+type InquiryFormValues = z.infer<typeof InquiryFormSchema>;
 
 export function ContactForm() {
   const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
 
-  const form = useForm<ContactFormValues>({
-    resolver: zodResolver(ContactFormSchema),
+  const form = useForm<InquiryFormValues>({
+    resolver: zodResolver(InquiryFormSchema),
     defaultValues: {
       fullName: '',
       email: '',
@@ -47,9 +47,9 @@ export function ContactForm() {
     },
   });
 
-  const onSubmit = (data: ContactFormValues) => {
+  const onSubmit = (data: InquiryFormValues) => {
     startTransition(async () => {
-      const result = await sendContactMessage(data);
+      const result = await sendInquiryMessage(data);
 
       if (result.success) {
         toast({

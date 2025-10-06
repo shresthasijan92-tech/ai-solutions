@@ -77,7 +77,7 @@ export type Testimonial = {
   createdAt: Timestamp | Date | string;
 };
 
-export type Contact = {
+export type Inquiry = {
   id: string;
   fullName: string;
   email: string;

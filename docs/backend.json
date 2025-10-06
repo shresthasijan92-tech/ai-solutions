@@ -244,9 +244,9 @@
         "createdAt"
       ]
     },
-    "Contact": {
+    "Inquiry": {
       "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Contact",
+      "title": "Inquiry",
       "type": "object",
       "description": "Represents a contact form submission.",
       "properties": {
@@ -489,16 +489,16 @@
         }
       },
        {
-        "path": "/contacts/{contactId}",
+        "path": "/inquiries/{inquiryId}",
         "definition": {
-          "entityName": "Contact",
+          "entityName": "Inquiry",
           "schema": {
-            "$ref": "#/backend/entities/Contact"
+            "$ref": "#/backend/entities/Inquiry"
           },
           "description": "Stores contact form submissions. Admin access controlled via /roles_admin/{uid}.",
           "params": [
             {
-              "name": "contactId",
+              "name": "inquiryId",
               "description": "Unique identifier for the contact inquiry."
             }
           ]
@@ -537,6 +537,6 @@
         }
       }
     ],
-    "reasoning": "The Firestore structure is designed to ensure security, scalability, and ease of debugging. All top-level collections are intended for public read access, with write access restricted to administrators. The `/testimonials` collection allows any user to create a document (submit feedback), but only admins can modify or delete documents. The `/contacts` collection allows any user to create a document (submit an inquiry), with read and delete access restricted to admins. Admin privileges are managed through the existence of a document in the `/roles_admin/{uid}` collection."
+    "reasoning": "The Firestore structure is designed to ensure security, scalability, and ease of debugging. All top-level collections are intended for public read access, with write access restricted to administrators. The `/testimonials` collection allows any user to create a document (submit feedback), but only admins can modify or delete documents. The `/inquiries` collection allows any user to create a document (submit an inquiry), with read and delete access restricted to admins. Admin privileges are managed through the existence of a document in the `/roles_admin/{uid}` collection."
   }
 }

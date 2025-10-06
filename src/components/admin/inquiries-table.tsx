@@ -12,8 +12,8 @@ import {
 import { Button } from '@/components/ui/button';
 import { Trash2, ChevronDown } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { deleteInquiry } from '@/lib/actions/contact';
-import { type Contact } from '@/lib/definitions';
+import { deleteInquiry } from '@/lib/actions/inquiries';
+import { type Inquiry } from '@/lib/definitions';
 import { Timestamp } from 'firebase/firestore';
 import {
   AlertDialog,
@@ -29,7 +29,7 @@ import { cn } from '@/lib/utils';
 
 
 type InquiriesTableProps = {
-  inquiries: Contact[];
+  inquiries: Inquiry[];
 };
 
 const toDate = (timestamp: string | Timestamp | Date): Date => {
@@ -42,14 +42,14 @@ const toDate = (timestamp: string | Timestamp | Date): Date => {
 export function InquiriesTable({ inquiries }: InquiriesTableProps) {
   const { toast } = useToast();
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [inquiryToDelete, setInquiryToDelete] = useState<Contact | null>(null);
+  const [inquiryToDelete, setInquiryToDelete] = useState<Inquiry | null>(null);
   const [openInquiryId, setOpenInquiryId] = useState<string | null>(null);
 
   const toggleInquiry = (id: string) => {
     setOpenInquiryId(currentId => currentId === id ? null : id);
   };
 
-  const handleDeleteClick = (inquiry: Contact) => {
+  const handleDeleteClick = (inquiry: Inquiry) => {
     setInquiryToDelete(inquiry);
     setDialogOpen(true);
   };
