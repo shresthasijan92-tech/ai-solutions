@@ -2,7 +2,7 @@ import { initializeApp, getApps, getApp, type FirebaseApp } from 'firebase/app';
 import { getFirestore, type Firestore } from 'firebase/firestore';
 import { getAuth, type Auth } from 'firebase/auth';
 import { getStorage, type FirebaseStorage } from 'firebase/storage';
-import { firebaseConfig, isFirebaseConfigured } from './config';
+import { getFirebaseConfig, isFirebaseConfigured } from './config';
 
 let firebaseApp: FirebaseApp | null = null;
 let firestore: Firestore | null = null;
@@ -11,28 +11,19 @@ let storage: FirebaseStorage | null = null;
 
 // Only initialize Firebase services if the configuration is valid.
 if (isFirebaseConfigured) {
-  if (getApps().length === 0) {
-    try {
-      if (process.env.GOOGLE_CLOUD_PROJECT) {
-        firebaseApp = initializeApp();
-      } else {
-        firebaseApp = initializeApp(firebaseConfig);
-      }
-    } catch (e) {
-      console.warn(
-        'Firebase initialization failed. Using config as fallback.',
-        e
-      );
+  const firebaseConfig = getFirebaseConfig();
+  if (firebaseConfig) {
+    if (getApps().length === 0) {
       firebaseApp = initializeApp(firebaseConfig);
+    } else {
+      firebaseApp = getApp();
     }
-  } else {
-    firebaseApp = getApp();
-  }
 
-  if (firebaseApp) {
-      firestore = getFirestore(firebaseApp);
-      auth = getAuth(firebaseApp);
-      storage = getStorage(firebaseApp);
+    if (firebaseApp) {
+        firestore = getFirestore(firebaseApp);
+        auth = getAuth(firebaseApp);
+        storage = getStorage(firebaseApp);
+    }
   }
 }
 

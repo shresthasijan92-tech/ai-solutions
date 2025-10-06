@@ -1,6 +1,6 @@
 'use client';
 
-import { firebaseConfig, isFirebaseConfigured } from '@/firebase/config';
+import { getFirebaseConfig, isFirebaseConfigured } from '@/firebase/config';
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
 import { getAuth, Auth } from 'firebase/auth';
 import { getFirestore, Firestore } from 'firebase/firestore'
@@ -17,7 +17,9 @@ type FirebaseServices = {
 
 // IMPORTANT: DO NOT MODIFY THIS FUNCTION
 export function initializeFirebase(): FirebaseServices {
-  if (!isFirebaseConfigured) {
+  const firebaseConfig = getFirebaseConfig();
+
+  if (!firebaseConfig) {
     return { firebaseApp: null, auth: null, firestore: null };
   }
 
