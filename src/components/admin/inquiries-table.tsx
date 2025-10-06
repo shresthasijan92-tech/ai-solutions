@@ -177,5 +177,3 @@ export function InquiriesTable({ inquiries }: InquiriesTableProps) {
     </>
   );
 }
-
-    

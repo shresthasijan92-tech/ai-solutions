@@ -540,5 +540,3 @@
     "reasoning": "The Firestore structure is designed to ensure security, scalability, and ease of debugging. All top-level collections are intended for public read access, with write access restricted to administrators. The `/testimonials` collection allows any user to create a document (submit feedback), but only admins can modify or delete documents. The `/contacts` collection allows any user to create a document (submit an inquiry), with read and delete access restricted to admins. Admin privileges are managed through the existence of a document in the `/roles_admin/{uid}` collection."
   }
 }
-
-    

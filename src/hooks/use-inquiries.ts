@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { collection, query, onSnapshot, orderBy, type FirestoreError } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
 import type { Contact } from '@/lib/definitions';
@@ -39,5 +39,3 @@ export function useInquiries() {
 
   return { inquiries, isLoading, error };
 }
-
-    

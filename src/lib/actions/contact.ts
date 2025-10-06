@@ -6,12 +6,12 @@ import { firestore } from '@/firebase/server';
 import { collection, addDoc, doc, deleteDoc, Timestamp } from 'firebase/firestore';
 
 const ContactFormSchema = z.object({
-  fullName: z.string(),
-  email: z.string().email(),
+  fullName: z.string().min(1, 'Full name is required'),
+  email: z.string().email('Invalid email address'),
   companyName: z.string().min(1, 'Company name is required'),
   country: z.string().min(1, 'Country is required'),
   contactNumber: z.string().optional(),
-  message: z.string(),
+  message: z.string().min(10, 'Please provide a message with at least 10 characters.'),
 });
 
 export type ContactFormState = {
@@ -32,6 +32,13 @@ export async function sendContactMessage(
   if (!validatedFields.success) {
     return {
       message: 'Invalid form data.',
+      success: false,
+    };
+  }
+
+  if (!firestore) {
+    return {
+      message: 'Firebase is not configured. Could not send message.',
       success: false,
     };
   }
@@ -61,6 +68,10 @@ export async function deleteInquiry(id: string): Promise<{ success: boolean; mes
   if (!id) {
     return { success: false, message: 'Failed to delete inquiry: Missing ID.' };
   }
+  
+  if (!firestore) {
+    return { success: false, message: 'Firebase is not configured.' };
+  }
 
   try {
     await deleteDoc(doc(firestore, 'contacts', id));
@@ -74,5 +85,3 @@ export async function deleteInquiry(id: string): Promise<{ success: boolean; mes
     };
   }
 }
-
-    
