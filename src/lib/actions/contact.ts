@@ -74,3 +74,5 @@ export async function deleteInquiry(id: string): Promise<{ success: boolean; mes
     };
   }
 }
+
+    

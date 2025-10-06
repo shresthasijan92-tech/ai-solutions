@@ -39,3 +39,5 @@ export function useInquiries() {
 
   return { inquiries, isLoading, error };
 }
+
+    

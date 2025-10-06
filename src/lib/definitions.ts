@@ -87,3 +87,5 @@ export type Contact = {
   message: string;
   submittedAt: Timestamp | Date | string;
 };
+
+    
