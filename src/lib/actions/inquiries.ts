@@ -39,7 +39,7 @@ export async function sendInquiryMessage(
   
   if (!firestore) {
     return {
-        message: 'There was an error sending your message. Please try again later.',
+        message: 'The server is not configured correctly to connect to the database.',
         success: false,
     };
   }
@@ -60,19 +60,16 @@ export async function sendInquiryMessage(
     };
   } catch (error: any) {
      if (error.code === 'permission-denied') {
-      // This is a placeholder for a more sophisticated error handling system.
-      // In a real application, you would log this error and might re-throw a custom,
-      // more detailed error to be handled by a global error handler.
       console.error(
-        "Firestore Permission Denied: A security rule is preventing the action.",
-        {
+        "Firestore Permission Denied: A security rule is preventing the action. Detailed context: ",
+        JSON.stringify({
           path: `inquiries`,
           operation: 'create',
           resource: {
             ...validatedFields.data,
             submittedAt: new Date().toISOString(),
           },
-        }
+        }, null, 2)
       );
       return {
         message: 'A security rule is preventing your message from being sent. Please contact support.',
