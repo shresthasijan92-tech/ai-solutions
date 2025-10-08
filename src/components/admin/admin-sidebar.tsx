@@ -1,11 +1,12 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { Home, Briefcase, FileText, Image as ImageIcon, Calendar, Users, MessageSquare, BriefcaseBusiness, ArrowUpLeft, Lightbulb, MailQuestion } from 'lucide-react';
+import { usePathname, useRouter } from 'next/navigation';
+import { Home, Briefcase, FileText, Image as ImageIcon, Calendar, Users, MessageSquare, BriefcaseBusiness, ArrowUpLeft, Lightbulb, MailQuestion, LogOut } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 import { Logo } from '@/components/logo';
+import { Button } from '../ui/button';
 
 const adminNavItems = [
   { href: '/admin', label: 'Dashboard', icon: Home },
@@ -21,13 +22,19 @@ const adminNavItems = [
 
 export function AdminSidebar() {
   const pathname = usePathname();
+  const router = useRouter();
+
+  const handleLogout = () => {
+    localStorage.removeItem('isAdminLoggedIn');
+    router.push('/admin/login');
+  };
 
   return (
     <aside className="hidden w-64 flex-col border-r bg-card p-4 md:flex">
       <div className="mb-8">
         <Logo href="/admin" />
       </div>
-      <nav className="flex flex-col gap-2">
+      <nav className="flex flex-col gap-2 flex-1">
         {adminNavItems.map((item) => (
           <Link
             key={item.href}
@@ -44,7 +51,7 @@ export function AdminSidebar() {
           </Link>
         ))}
       </nav>
-      <div className="mt-auto">
+      <div className="mt-auto flex flex-col gap-2">
         <Link
             href="/"
             className="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
@@ -52,6 +59,10 @@ export function AdminSidebar() {
             <ArrowUpLeft className="h-4 w-4" />
             Back to Site
         </Link>
+         <Button variant="ghost" onClick={handleLogout} className="justify-start px-3 text-muted-foreground hover:bg-secondary hover:text-foreground">
+            <LogOut className="h-4 w-4 mr-3" />
+            Logout
+        </Button>
       </div>
     </aside>
   );
