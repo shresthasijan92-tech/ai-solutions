@@ -30,6 +30,7 @@ const InquiryFormSchema = z.object({
   companyName: z.string().min(1, 'Company name is required'),
   country: z.string().min(1, 'Country is required'),
   contactNumber: z.string()
+    .max(14, 'Contact number cannot exceed 14 characters.')
     .refine((val) => val === '' || phoneRegex.test(val), {
       message: "Invalid phone number format",
     })
