@@ -23,7 +23,6 @@ export function SiteFooter() {
             </div>
             <div className="flex flex-col gap-2">
               <h4 className="font-headline font-semibold">Company</h4>
-              <Link href="/careers" className="text-sm text-muted-foreground hover:text-primary">Careers</Link>
               <Link href="/contact" className="text-sm text-muted-foreground hover:text-primary">Contact</Link>
               <Link href="/feedback" className="text-sm text-muted-foreground hover:text-primary">Feedback</Link>
             </div>

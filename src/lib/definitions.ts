@@ -60,14 +60,6 @@ export type Event = {
   imageUrl?: string;
 };
 
-export type Job = {
-  id: string;
-  title: string;
-  location: string;
-  type: 'Full-time' | 'Part-time' | 'Contract';
-  description: string;
-};
-
 export type Testimonial = {
   id: string;
   name: string;

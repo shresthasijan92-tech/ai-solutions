@@ -51,14 +51,6 @@ erDiagram
         boolean featured
     }
 
-    Job {
-        string id PK
-        string title
-        string location
-        string type "Enum: Full-time, Part-time, Contract"
-        string description
-    }
-
     Testimonial {
         string id PK
         string name

@@ -178,31 +178,6 @@
         "description"
       ]
     },
-    "Career": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Career",
-      "type": "object",
-      "description": "Represents an open job position.",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the career."
-        },
-        "title": {
-          "type": "string",
-          "description": "Title of the job position."
-        },
-        "description": {
-          "type": "string",
-          "description": "Description of the job responsibilities and requirements."
-        }
-      },
-      "required": [
-        "id",
-        "title",
-        "description"
-      ]
-    },
     "Feedback": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Feedback",
@@ -452,22 +427,6 @@
             {
               "name": "eventId",
               "description": "Unique identifier for the event."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/careers/{careerId}",
-        "definition": {
-          "entityName": "Career",
-          "schema": {
-            "$ref": "#/backend/entities/Career"
-          },
-          "description": "Stores career details. Admin access controlled via /roles_admin/{uid}.",
-          "params": [
-            {
-              "name": "careerId",
-              "description": "Unique identifier for the career."
             }
           ]
         }

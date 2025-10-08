@@ -8,7 +8,6 @@ import { useTestimonials } from '@/hooks/use-testimonials';
 import { useArticles } from '@/hooks/use-articles';
 import { useEvents } from '@/hooks/use-events';
 import { useGalleryImages } from '@/hooks/use-gallery-images';
-import { useJobs } from '@/hooks/use-jobs';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export default function AdminDashboardPage() {
@@ -18,7 +17,6 @@ export default function AdminDashboardPage() {
   const { articles, isLoading: isLoadingArticles } = useArticles();
   const { events, isLoading: isLoadingEvents } = useEvents();
   const { galleryImages, isLoading: isLoadingGallery } = useGalleryImages();
-  const { jobs, isLoading: isLoadingJobs } = useJobs();
 
   const stats = [
     { title: 'Total Services', value: services?.length ?? 0, icon: Briefcase, isLoading: isLoadingServices },
@@ -26,7 +24,6 @@ export default function AdminDashboardPage() {
     { title: 'Total Articles', value: articles?.length ?? 0, icon: Lightbulb, isLoading: isLoadingArticles },
     { title: 'Gallery Images', value: galleryImages?.length ?? 0, icon: GalleryHorizontal, isLoading: isLoadingGallery },
     { title: 'Upcoming Events', value: events?.length ?? 0, icon: Calendar, isLoading: isLoadingEvents },
-    { title: 'Job Openings', value: jobs?.length ?? 0, icon: Users, isLoading: isLoadingJobs },
     { title: 'Total Feedback', value: testimonials?.length ?? 0, icon: MessageSquare, isLoading: isLoadingTestimonials },
   ];
 
