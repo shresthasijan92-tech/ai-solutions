@@ -20,12 +20,20 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { sendInquiryMessage } from '@/lib/actions/inquiries';
 
+const phoneRegex = new RegExp(
+  /^([+]?[\s0-9]+)?(\d{3}|[(]?[0-9]+[)])?([-]?[\s]?[0-9])+$/
+);
+
 const InquiryFormSchema = z.object({
   fullName: z.string().min(1, 'Full name is required'),
   email: z.string().email('Invalid email address'),
   companyName: z.string().min(1, 'Company name is required'),
   country: z.string().min(1, 'Country is required'),
-  contactNumber: z.string().optional(),
+  contactNumber: z.string()
+    .refine((val) => val === '' || phoneRegex.test(val), {
+      message: "Invalid phone number format",
+    })
+    .optional(),
   message: z.string().min(10, 'Please provide a message with at least 10 characters.'),
 });
 
