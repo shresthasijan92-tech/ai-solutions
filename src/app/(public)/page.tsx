@@ -4,6 +4,7 @@ import { FeaturedProjects } from '@/components/sections/featured-projects';
 import { FeaturedBlog } from '@/components/sections/featured-blog';
 import { FeaturedGallery } from '@/components/sections/featured-gallery';
 import { FeaturedEvents } from '@/components/sections/featured-events';
+import { FeaturedTestimonials } from '@/components/sections/featured-testimonials';
 
 export default function HomePage() {
   return (
@@ -14,6 +15,7 @@ export default function HomePage() {
       <FeaturedBlog />
       <FeaturedGallery />
       <FeaturedEvents />
+      <FeaturedTestimonials />
     </>
   );
 }
