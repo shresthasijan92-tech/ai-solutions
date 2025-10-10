@@ -9,3 +9,4 @@ config();
 
 // Import all flow files here
 import '@/ai/flows/homepage-content-suggestions';
+import '@/ai/flows/chatbot';
